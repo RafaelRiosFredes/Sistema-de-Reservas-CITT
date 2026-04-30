@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @NoArgsConstructor@AllArgsConstructor
 @Entity
 @Table(name = "articulo")// 1. Intercepta el comando DELETE y lo transforma en un UPDATE
-@SQLDelete(sql = "UPDATE articulo SET eliminado = true WHERE id=?")
+@SQLDelete(sql = "UPDATE articulo SET eliminado = true WHERE id_articulo=?")
 // 2. Filtra automáticamente los artículos eliminados en todos los SELECTs
 @SQLRestriction("eliminado = false")
 public class Articulo {

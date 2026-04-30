@@ -66,7 +66,7 @@ public class ArticuloServiceImpl implements ArticuloService{
     @Override
     public ArticuloResponseDTO registrarArticulo(ArticuloRequestDTO dto) {
         if(articuloRepository.existsByCodigoDuocIgnoreCase(dto.getCodigoDuoc())){
-            throw new IllegalArgumentException("Ya existe un articulo con ese código");
+            throw new ReglaNegocioException("No se puede registrar: Ya existe un artículo con el código DUOC '" + dto.getCodigoDuoc() + "'.");
         }
         Articulo saved = articuloRepository.save(fromCreate(dto));
         return toDTO(saved);
