@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-CittBackendApplication<citt-backend>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.duoc.citt.citt_backend.CittBackendApplication",
+      "projectName": "citt-backend",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
