@@ -9,7 +9,9 @@ import cl.duoc.citt.citt_backend.repositories.UsuarioRepository;
 import cl.duoc.citt.citt_backend.security.JwtUtilidades;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.RefreshToken;
+import cl.duoc.citt.citt_backend.model.TokenRecuperacion;
 import cl.duoc.citt.citt_backend.repositories.RefreshTokenRepository;
+import cl.duoc.citt.citt_backend.repositories.TokenRecuperacionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,6 +38,7 @@ public class AutenticacionService {
     private final EmailService emailService;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenRecuperacionRepository tokenRecuperacionRepository;
 
     /**
      * Proceso de Registro:
@@ -239,6 +244,55 @@ public class AutenticacionService {
         usuario.setPassword(passwordEncoder.encode(solicitud.getNuevaPassword()));
         usuario.setDebeCambiarPassword(false);
         usuarioRepository.save(usuario);
+    }
+
+    /**
+     * Inicia el proceso de recuperación de contraseña.
+     * Genera un token de 6 dígitos que expira en 15 minutos.
+     */
+    @Transactional
+    public void solicitarRecuperacionPassword(OlvidoPasswordRequestDTO solicitud) {
+        Usuario usuario = usuarioRepository.findByEmail(solicitud.getEmail())
+                .orElseThrow(() -> new ReglaNegocioException("Si el correo está registrado, recibirás un código en breve."));
+
+        // Limpiar tokens anteriores si existen
+        tokenRecuperacionRepository.deleteByUsuario(usuario);
+
+        // Generar un código de 6 dígitos
+        String token = String.format("%06d", (int) (Math.random() * 1000000));
+
+        TokenRecuperacion tokenEntity = TokenRecuperacion.builder()
+                .token(token)
+                .usuario(usuario)
+                .fechaExpiracion(Instant.now().plus(15, ChronoUnit.MINUTES))
+                .build();
+
+        tokenRecuperacionRepository.save(tokenEntity);
+        emailService.enviarTokenRecuperacion(usuario.getEmail(), token);
+    }
+
+    /**
+     * Completa el proceso de recuperación de contraseña usando el token.
+     */
+    @Transactional
+    public void resetearPassword(ResetPasswordRequestDTO solicitud) {
+        TokenRecuperacion tokenEntity = tokenRecuperacionRepository.findByToken(solicitud.getToken())
+                .orElseThrow(() -> new ReglaNegocioException("Token de recuperación inválido o ya utilizado"));
+
+        if (tokenEntity.getFechaExpiracion().isBefore(Instant.now())) {
+            tokenRecuperacionRepository.delete(tokenEntity);
+            throw new ReglaNegocioException("El token de recuperación ha expirado");
+        }
+
+        Usuario usuario = tokenEntity.getUsuario();
+        usuario.setPassword(passwordEncoder.encode(solicitud.getNuevaPassword()));
+        usuario.setDebeCambiarPassword(false); // Ya no tiene que cambiarla al entrar
+        usuarioRepository.save(usuario);
+
+        // Limpiar el token usado
+        tokenRecuperacionRepository.delete(tokenEntity);
+        // También limpiar refresh tokens por seguridad para forzar re-login en todos lados
+        refreshTokenService.eliminarPorUsuario(usuario.getId());
     }
 
 

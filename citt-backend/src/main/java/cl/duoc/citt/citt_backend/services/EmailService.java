@@ -34,4 +34,19 @@ public class EmailService {
             log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
         }
     }
+
+    public void enviarTokenRecuperacion(String destinatario, String token) {
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setTo(destinatario);
+        mensaje.setSubject("Recuperación de Contraseña - CITT");
+        mensaje.setText("Hola,\n\nHas solicitado restablecer tu contraseña. Tu código de recuperación es:\n\n" +
+                token + "\n\nEste código expirará en 15 minutos.\n\nSi no realizaste esta solicitud, puedes ignorar este correo.\n\nSaludos,\nEquipo CITT");
+
+        try {
+            mailSender.send(mensaje);
+            log.info("Correo de recuperación enviado exitosamente a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar correo de recuperación a {}: {}", destinatario, e.getMessage());
+        }
+    }
 }

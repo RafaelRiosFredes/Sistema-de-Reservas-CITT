@@ -30,7 +30,7 @@ public class ConfiguracionSeguridad {
                 // Configuración de permisos de rutas
                 .authorizeHttpRequests(auth -> auth
                         // Rutas públicas
-                        .requestMatchers("/api/auth/login", "/api/auth/auto-registro", "/api/auth/refresh", "/api/auth/logout", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/auto-registro", "/api/auth/refrescar-token", "/api/auth/olvido-password", "/api/auth/restablecer-password", "/api/auth/logout", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Cualquier otra ruta requiere que el usuario esté autenticado
                         .anyRequest().authenticated()
                 )
