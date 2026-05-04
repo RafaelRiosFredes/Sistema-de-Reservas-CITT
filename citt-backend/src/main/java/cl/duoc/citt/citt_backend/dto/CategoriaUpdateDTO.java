@@ -1,5 +1,8 @@
 package cl.duoc.citt.citt_backend.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 @Getter
@@ -8,6 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoriaUpdateDTO {
+    @NotBlank(message = "El nombre de la categoría no puede estar vacío")
     private String nombreCategoria;
-    private Integer cantidadTotal;
+
 }

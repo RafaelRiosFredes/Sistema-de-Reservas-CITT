@@ -21,4 +21,9 @@ public class ArticuloResponseDTO {
     private LocalDate fechaCompra;
     private String codigoDuoc;
 
+    private Long idCategoria;
+    private String nombreCategoria;
+
+    private Long idEstadoArticulo;
+    private String nombreEstado;
 }

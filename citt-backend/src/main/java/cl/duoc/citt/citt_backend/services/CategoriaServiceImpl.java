@@ -6,7 +6,7 @@ import cl.duoc.citt.citt_backend.dto.CategoriaUpdateDTO;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.Categoria;
 import cl.duoc.citt.citt_backend.repositories.CategoriaRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +21,6 @@ public class CategoriaServiceImpl implements CategoriaService{
     private Categoria fromCreate(CategoriaRequestDTO d){
         Categoria cat = new Categoria();
         cat.setNombreCategoria(d.getNombreCategoria());
-        cat.setCantidadTotal(d.getCantidadTotal());
         return cat;
     }
 
@@ -35,21 +34,38 @@ public class CategoriaServiceImpl implements CategoriaService{
 
     private void aplicarUpdate(Categoria c, CategoriaUpdateDTO d){
         c.setNombreCategoria(d.getNombreCategoria());
-        c.setCantidadTotal(d.getCantidadTotal());
     }
 
     @Override
     public CategoriaResponseDTO crearCategoria(CategoriaRequestDTO dto) {
-        if(categoriaRepository.existsByNombreCategoriaIgnoreCase(dto.getNombreCategoria())){
-            throw new ReglaNegocioException("No se puede crear: Ya existe una categoria con el nombre " + dto.getNombreCategoria() + ".");
+        dto.setNombreCategoria(dto.getNombreCategoria().trim());
+        if(categoriaRepository.contarPorNombreIgnorandoFiltros(dto.getNombreCategoria()) > 0){
+            throw new ReglaNegocioException("No se puede crear: Ya existe una categoria con el nombre " + dto.getNombreCategoria() + " (activa o eliminada).");
         }
         Categoria saved = categoriaRepository.save(fromCreate(dto));
         return toDTO(saved);
     }
 
     @Override
+    public CategoriaResponseDTO obtenerCategoriaPorId(Long id) {
+        Categoria c = categoriaRepository.findById(id)
+                .orElseThrow(()-> new ReglaNegocioException("Categoria " + id + " no existe"));
+        return toDTO(c);
+    }
+
+    @Override
     public CategoriaResponseDTO actualizarCategoria(Long id, CategoriaUpdateDTO dto) {
+        dto.setNombreCategoria(dto.getNombreCategoria().trim());
         Categoria c = categoriaRepository.findById(id).orElseThrow(()-> new ReglaNegocioException("Categoria " + id + " no existe"));
+
+        // Si el usuario está intentando cambiar el nombre por uno distinto...
+        if (!c.getNombreCategoria().equalsIgnoreCase(dto.getNombreCategoria())) {
+            // ...revisamos si el nuevo nombre choca con algún fantasma o categoría viva
+            if (categoriaRepository.contarPorNombreIgnorandoFiltros(dto.getNombreCategoria()) > 0) {
+                throw new ReglaNegocioException("No se puede actualizar: Ya existe otra categoría con el nombre '" + dto.getNombreCategoria() + "' (activa o eliminada).");
+            }
+        }
+
         aplicarUpdate(c,dto);
         Categoria saved = categoriaRepository.save(c);
         return toDTO(saved);

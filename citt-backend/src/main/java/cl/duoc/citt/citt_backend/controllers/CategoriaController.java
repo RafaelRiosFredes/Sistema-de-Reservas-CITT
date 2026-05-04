@@ -27,6 +27,11 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.listarCategorias());
     }
 
+    @Operation(summary = "Obtener un artículo", description = "Busca un artículo específico por su ID.")
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoriaResponseDTO> obtenerCategoria(@PathVariable Long id){
+        return ResponseEntity.ok(categoriaService.obtenerCategoriaPorId(id));
+    }
 
     @Operation(summary = "Registrar una nueva categoria",description = "Crea una nueva categoria validando que su nombre no exista previamente.")
     @PostMapping

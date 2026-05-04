@@ -29,6 +29,12 @@ public class ArticuloController {
         return ResponseEntity.ok(articuloService.listarArticulos());
     }
 
+    @Operation(summary = "Obtener un artículo", description = "Busca un artículo específico por su ID.")
+    @GetMapping("/{id}")
+    public ResponseEntity<ArticuloResponseDTO> obtenerArticulo(@PathVariable Long id){
+        return ResponseEntity.ok(articuloService.obtenerArticuloPorId(id));
+    }
+
     @Operation(summary = "Registrar un nuevo artículo",description = "Crea un artículo validando que el código Duoc no exista previamente.")
     @PostMapping
     public ResponseEntity<ArticuloResponseDTO> registrarArticulo(@Valid @RequestBody ArticuloRequestDTO dto){

@@ -26,7 +26,6 @@ public class ArticuloServiceImpl implements ArticuloService{
         art.setColliers(d.getColliers());
         art.setNumeroSerie(d.getNumeroSerie());
         art.setValor(d.getValor());
-        art.setCantidad(d.getCantidad());
         art.setEtiqueta(d.getEtiqueta());
         art.setTipoArticulo(d.getTipoArticulo());
         art.setFechaCompra(d.getFechaCompra());
@@ -43,7 +42,6 @@ public class ArticuloServiceImpl implements ArticuloService{
                 .colliers(a.getColliers())
                 .numeroSerie(a.getNumeroSerie())
                 .valor(a.getValor())
-                .cantidad(a.getCantidad())
                 .etiqueta(a.getEtiqueta())
                 .tipoArticulo(a.getTipoArticulo())
                 .fechaCompra(a.getFechaCompra())
@@ -58,22 +56,35 @@ public class ArticuloServiceImpl implements ArticuloService{
         a.setColliers(d.getColliers());
         a.setNumeroSerie(d.getNumeroSerie());
         a.setValor(d.getValor());
-        a.setCantidad(d.getCantidad());
         a.setEtiqueta(d.getEtiqueta());
+        a.setTipoArticulo(d.getTipoArticulo());
+        a.setFechaCompra(d.getFechaCompra());
     }
 
 
     @Override
     public ArticuloResponseDTO registrarArticulo(ArticuloRequestDTO dto) {
-        if(articuloRepository.existsByCodigoDuocIgnoreCase(dto.getCodigoDuoc())){
-            throw new ReglaNegocioException("No se puede registrar: Ya existe un artículo con el código DUOC '" + dto.getCodigoDuoc() + "'.");
+        dto.setNombreArticulo(dto.getNombreArticulo().trim());
+        dto.setCodigoDuoc(dto.getCodigoDuoc().trim().toUpperCase());
+
+        if(articuloRepository.contarPorCodigoDuocIgnorandoFiltros(dto.getCodigoDuoc()) > 0){
+            throw new ReglaNegocioException("No se puede registrar: El código DUOC '" + dto.getCodigoDuoc() + "' ya fue utilizado por un artículo (activo o dado de baja).");
         }
         Articulo saved = articuloRepository.save(fromCreate(dto));
         return toDTO(saved);
     }
 
     @Override
+    public ArticuloResponseDTO obtenerArticuloPorId(Long id) {
+        Articulo a = articuloRepository.findById(id)
+                .orElseThrow(()-> new ReglaNegocioException("Artículo " + id + " no existe"));
+        return toDTO(a);
+    }
+
+    @Override
     public ArticuloResponseDTO actualizarArticulo(Long id, ArticuloUpdateDTO dto) {
+        dto.setNombreArticulo(dto.getNombreArticulo().trim());
+
         Articulo a = articuloRepository.findById(id).orElseThrow(() -> new ReglaNegocioException("Articulo " + id + " no existe"));
         aplicarUpdate(a,dto);
         Articulo saved = articuloRepository.save(a);

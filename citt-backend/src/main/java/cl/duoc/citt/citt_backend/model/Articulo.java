@@ -13,10 +13,9 @@ import java.time.LocalDate;
 @Getter@Setter
 @NoArgsConstructor@AllArgsConstructor
 @Entity
-@Table(name = "articulo")// 1. Intercepta el comando DELETE y lo transforma en un UPDATE
-@SQLDelete(sql = "UPDATE articulo SET eliminado = true WHERE id_articulo=?")
-// 2. Filtra automáticamente los artículos eliminados en todos los SELECTs
-@SQLRestriction("eliminado = false")
+@Table(name = "articulo")
+@SQLDelete(sql = "UPDATE articulo SET eliminado = true WHERE id_articulo=?") // 1. Intercepta el comando DELETE y lo transforma en un UPDATE
+@SQLRestriction("eliminado = false") // 2. Filtra automáticamente los artículos eliminados en todos los SELECTs
 public class Articulo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,7 +52,7 @@ public class Articulo {
     @Column(name = "fecha_compra",nullable = true)
     private LocalDate fechaCompra;
 
-    @Column(name = "codigo_duoc",unique = true,nullable = false)
+    @Column(name = "codigo_duoc", unique = true, nullable = false, length = 13)
     private String codigoDuoc;
 
     @Column(nullable = false)

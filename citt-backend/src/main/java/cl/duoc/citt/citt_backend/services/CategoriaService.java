@@ -9,6 +9,8 @@ import java.util.List;
 public interface CategoriaService {
     CategoriaResponseDTO crearCategoria(CategoriaRequestDTO dto);
 
+    CategoriaResponseDTO obtenerCategoriaPorId(Long id);
+
     CategoriaResponseDTO actualizarCategoria(Long id, CategoriaUpdateDTO dto);
 
     List<CategoriaResponseDTO> listarCategorias();

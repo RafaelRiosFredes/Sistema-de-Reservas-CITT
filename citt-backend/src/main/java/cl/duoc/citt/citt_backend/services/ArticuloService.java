@@ -9,6 +9,8 @@ import java.util.List;
 public interface ArticuloService {
     ArticuloResponseDTO registrarArticulo(ArticuloRequestDTO dto);
 
+    ArticuloResponseDTO obtenerArticuloPorId(Long id);
+
     ArticuloResponseDTO actualizarArticulo(Long id, ArticuloUpdateDTO dto);
 
     List<ArticuloResponseDTO> listarArticulos();

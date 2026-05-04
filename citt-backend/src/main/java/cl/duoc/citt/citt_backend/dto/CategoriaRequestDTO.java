@@ -14,7 +14,4 @@ public class CategoriaRequestDTO {
     @NotBlank
     private String nombreCategoria;
 
-    @NotNull
-    @PositiveOrZero
-    private Integer cantidadTotal;
 }
