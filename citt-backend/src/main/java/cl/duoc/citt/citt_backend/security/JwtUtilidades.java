@@ -3,7 +3,6 @@ package cl.duoc.citt.citt_backend.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,6 +30,21 @@ public class JwtUtilidades {
         return extraerClaim(token, Claims::getSubject);
     }
 
+    /**
+     * Extrae el nombre de usuario incluso si el token ha expirado.
+     * Útil para procesos como el Logout donde el token ya no es válido para autenticar
+     * pero aún necesitamos saber a quién pertenece para limpiar su sesión en BD.
+     */
+    public String extraerUsernameInclusoSiExpirado(String token) {
+        try {
+            return extraerUsername(token);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return e.getClaims().getSubject();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // Método genérico para extraer cualquier dato específico (Claim) del token.
     public <T> T extraerClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extraerTodosLosClaims(token);
@@ -44,7 +58,8 @@ public class JwtUtilidades {
     public String generarToken(UserDetails detallesUsuario) {
         Map<String, Object> extraClaims = new HashMap<>();
 
-        // Guarda los roles del usuario dentro del token para que el frontend los pueda leer
+        // Guarda los roles del usuario dentro del token para que el frontend los pueda
+        // leer
         var roles = detallesUsuario.getAuthorities().stream()
                 .map(auth -> auth.getAuthority())
                 .toList();
@@ -52,14 +67,14 @@ public class JwtUtilidades {
 
         // Si es un usuario del sistema, añade el estado de su contraseña
         if (detallesUsuario instanceof cl.duoc.citt.citt_backend.model.Usuario) {
-            extraClaims.put("debeCambiarPassword", ((cl.duoc.citt.citt_backend.model.Usuario) detallesUsuario).isDebeCambiarPassword());
+            extraClaims.put("debeCambiarPassword",
+                    ((cl.duoc.citt.citt_backend.model.Usuario) detallesUsuario).isDebeCambiarPassword());
         }
 
         return generarToken(extraClaims, detallesUsuario);
     }
 
-
-       // Construye el JWT con la fecha de emisión, expiración y la firma digital.
+    // Construye el JWT con la fecha de emisión, expiración y la firma digital.
     public String generarToken(Map<String, Object> extraClaims, UserDetails detallesUsuario) {
         return Jwts.builder()
                 .setClaims(extraClaims)

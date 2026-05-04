@@ -16,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.UUID;
@@ -165,6 +166,7 @@ public class AutenticacionService {
      * Refresca el Access Token usando un Refresh Token válido.
      * Implementa 'Refresh Token Rotation': genera un nuevo refresh token y borra el usado.
      */
+    @Transactional
     public AutenticacionResponseDTO refrescarToken(TokenRefreshRequestDTO solicitud) {
         return refreshTokenRepository.findByToken(solicitud.getRefreshToken())
                 .map(refreshTokenService::verificarExpiracion)
@@ -172,7 +174,7 @@ public class AutenticacionService {
                 .map(usuario -> {
                     // 1. Generar nuevo Access Token
                     String token = jwtUtilidades.generarToken(usuario);
-                    
+
                     // 2. ROTACIÓN: Generar un nuevo Refresh Token y borrar el anterior
                     var nuevoRefreshToken = refreshTokenService.crearRefreshToken(usuario.getId());
 
@@ -189,11 +191,29 @@ public class AutenticacionService {
 
     /**
      * Cierra la sesión del usuario eliminando su Refresh Token de la base de datos.
+     * Soporta cerrar sesión incluso si el JWT ya ha expirado.
      */
-    public void cerrarSesion() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    public void cerrarSesion(String authHeader) {
+        String email = null;
+
+        // 1. Intentar obtener el email desde el contexto de seguridad (si el token es válido)
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            email = auth.getName();
+        }
+        // 2. Si no hay auth (token expirado), extraerlo manualmente del header
+        else if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            email = jwtUtilidades.extraerUsernameInclusoSiExpirado(token);
+        }
+
+        if (email == null) {
+            throw new ReglaNegocioException("No se pudo identificar al usuario para cerrar sesión");
+        }
+
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
+
         refreshTokenService.eliminarPorUsuario(usuario.getId());
     }
 
@@ -221,30 +241,6 @@ public class AutenticacionService {
         usuarioRepository.save(usuario);
     }
 
-    // Filtra qué correos pueden tener qué cargos.
-    private void validarDominioCorreo(String email, String rolNombre) {
-        String dominio = email.substring(email.lastIndexOf("@"));
-
-        switch (rolNombre) {
-            case "ALUMNO":
-            case "AYUDANTE":
-                if (!dominio.equalsIgnoreCase("@duocuc.cl")) {
-                    throw new ReglaNegocioException("Correo inválido para ALUMNO/AYUDANTE. Debe usar @duocuc.cl");
-                }
-                break;
-            case "DOCENTE":
-                if (!dominio.equalsIgnoreCase("@profesor.duoc.cl")) {
-                    throw new ReglaNegocioException("Correo inválido para DOCENTE. Debe usar @profesor.duoc.cl");
-                }
-                break;
-            case "DIRECTOR":
-            case "COORDINADOR":
-                if (!dominio.equalsIgnoreCase("@duoc.cl")) {
-                    throw new ReglaNegocioException("Correo inválido para DIRECTOR/COORDINADOR. Debe usar @duoc.cl");
-                }
-                break;
-        }
-    }
 
     /**
      * Detecta automáticamente el rol según el dominio del correo.
@@ -259,7 +255,7 @@ public class AutenticacionService {
             case "@profesor.duoc.cl" -> "DOCENTE";
             case "@duoc.cl" -> throw new ReglaNegocioException(
                     "Los correos @duoc.cl no pueden auto-registrarse. " +
-                    "Contacte a un COORDINADOR o DIRECTOR para que le cree una cuenta.");
+                            "Contacte a un COORDINADOR o DIRECTOR para que le cree una cuenta.");
             default -> throw new ReglaNegocioException(
                     "Dominio de correo no válido. Solo se permiten: @duocuc.cl, @profesor.duoc.cl");
         };

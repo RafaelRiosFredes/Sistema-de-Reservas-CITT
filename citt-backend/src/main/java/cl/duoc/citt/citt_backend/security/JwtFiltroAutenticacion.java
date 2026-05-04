@@ -42,28 +42,36 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
 
         // Extrae el token (quitando la palabra "Bearer " que son 7 caracteres)
         jwt = authHeader.substring(7);
-        userEmail = jwtUtilidades.extraerUsername(jwt);
 
-        // Si hay un email y el usuario aún no ha sido autenticado
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+        try {
+            userEmail = jwtUtilidades.extraerUsername(jwt);
 
-            // Valida si el token no ha expirado y pertenece al usuario
-            if (jwtUtilidades.esTokenValido(jwt, userDetails)) {
-                // Crea el objeto de autenticación con los datos del usuario y sus permisos
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                // Agrega detalles adicionales de la petición
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                // Guarda la autenticación
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                // DEBUG: ver qué usuario y roles se están procesando
-                System.out.println(">>> JWT Auth: " + userEmail + " | Roles: " + userDetails.getAuthorities());
+            // Si hay un email y el usuario aún no ha sido autenticado
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+                // Valida si el token no ha expirado y pertenece al usuario
+                if (jwtUtilidades.esTokenValido(jwt, userDetails)) {
+                    // Crea el objeto de autenticación con los datos del usuario y sus permisos
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+                    // Agrega detalles adicionales de la petición
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    // Guarda la autenticación
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // DEBUG: ver qué usuario y roles se están procesando
+                    System.out.println(">>> JWT Auth: " + userEmail + " | Roles: " + userDetails.getAuthorities());
+                }
             }
+        } catch (Exception e) {
+            // Si el token es inválido o está expirado, simplemente no autenticamos
+            // pero dejamos que la petición continúe (necesario para el /refresh)
+            System.out.println(">>> JWT Auth Error: " + e.getMessage());
         }
+
         // Continúa con el siguiente filtro
         filterChain.doFilter(request, response);
     }

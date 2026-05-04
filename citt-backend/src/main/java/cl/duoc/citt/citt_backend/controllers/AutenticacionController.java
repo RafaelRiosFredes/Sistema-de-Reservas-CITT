@@ -53,8 +53,8 @@ public class AutenticacionController {
 
     // Cierra la sesión eliminando el Refresh Token del servidor
     @PostMapping("/logout")
-    public ResponseEntity<Void> cerrarSesion() {
-        autenticacionService.cerrarSesion();
+    public ResponseEntity<Void> cerrarSesion(@RequestHeader(value = "Authorization", required = false) String token) {
+        autenticacionService.cerrarSesion(token);
         return ResponseEntity.noContent().build();
     }
 }
