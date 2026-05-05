@@ -61,7 +61,7 @@ public class AutenticacionController {
 
     // Procesa el cambio de contraseña con el token
     @PostMapping("/restablecer-password")
-    public ResponseEntity<String> resetearPassword(@Valid @RequestBody ResetPasswordRequestDTO solicitud) {
+    public ResponseEntity<String> resetearPassword(@Valid @RequestBody RecuperarPasswordRequestDTO solicitud) {
         autenticacionService.resetearPassword(solicitud);
         return ResponseEntity.ok("Contraseña restablecida exitosamente.");
     }

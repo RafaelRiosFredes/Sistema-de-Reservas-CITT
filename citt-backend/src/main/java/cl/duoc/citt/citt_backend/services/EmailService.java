@@ -11,15 +11,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class EmailService {
 
-    // Interfaz de Spring para enviar correos usando el protocolo SMTP.
     private final JavaMailSender mailSender;
 
-
-    /**
-     * Construye y envía un correo con la contraseña temporal generada.
-     * @param destinatario El email del usuario registrado.
-     * @param password La clave temporal creada por AutenticacionService.
-     */
     public void enviarPasswordProvisoria(String destinatario, String password) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
         mensaje.setTo(destinatario);
@@ -35,12 +28,14 @@ public class EmailService {
         }
     }
 
-    public void enviarTokenRecuperacion(String destinatario, String token) {
+    public void enviarPasswordRecuperacion(String destinatario, String passwordTemporal) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
         mensaje.setTo(destinatario);
         mensaje.setSubject("Recuperación de Contraseña - CITT");
-        mensaje.setText("Hola,\n\nHas solicitado restablecer tu contraseña. Tu código de recuperación es:\n\n" +
-                token + "\n\nEste código expirará en 15 minutos.\n\nSi no realizaste esta solicitud, puedes ignorar este correo.\n\nSaludos,\nEquipo CITT");
+        mensaje.setText("Hola,\n\nHas solicitado restablecer tu contraseña.\n\n" +
+                "Tu contraseña temporal para recuperar tu cuenta es: " + passwordTemporal + "\n\n" +
+                "Ve a la opción de 'Restablecer Contraseña', ingresa esta clave temporal y elige tu nueva contraseña segura.\n\n" +
+                "Saludos,\nEquipo CITT");
 
         try {
             mailSender.send(mensaje);
