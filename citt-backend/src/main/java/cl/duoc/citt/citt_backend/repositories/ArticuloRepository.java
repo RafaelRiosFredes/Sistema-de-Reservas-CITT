@@ -8,4 +8,7 @@ import org.springframework.data.repository.query.Param;
 public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
     @Query(value = "SELECT COUNT(*) FROM articulo WHERE LOWER(codigo_duoc) = LOWER(:codigoDuoc)", nativeQuery = true)
     int contarPorCodigoDuocIgnorandoFiltros(@Param("codigoDuoc") String codigoDuoc);
+
+    @Query(value = "SELECT COUNT(*) FROM articulo WHERE id_categoria = :idCategoria", nativeQuery = true)
+    int contarPorCategoriaIdIgnorandoEliminados(@Param("idCategoria") Long idCategoria);
 }

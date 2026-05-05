@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class ArticuloResponseDTO {
     private Long idArticulo;
     private String nombreArticulo;
+    private String marca;
     private String comentarios;
     private String sfai;
     private String colliers;

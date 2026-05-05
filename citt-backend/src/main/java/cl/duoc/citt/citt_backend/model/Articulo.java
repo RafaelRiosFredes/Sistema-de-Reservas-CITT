@@ -25,6 +25,9 @@ public class Articulo {
     @Column(name = "nombre_articulo",nullable = false)
     private String nombreArticulo;
 
+    @Column(name = "marca",nullable = false)
+    private String marca;
+
     @Column(name = "comentarios",nullable = true)
     private String comentarios;
 
@@ -46,7 +49,7 @@ public class Articulo {
     @Column(name = "fecha_compra",nullable = true)
     private LocalDate fechaCompra;
 
-    @Column(name = "codigo_duoc", unique = true, nullable = false, length = 13)
+    @Column(name = "codigo_duoc", unique = true, nullable = true, length = 13)
     private String codigoDuoc;
 
     @Column(nullable = false)

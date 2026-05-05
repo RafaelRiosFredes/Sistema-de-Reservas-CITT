@@ -28,6 +28,7 @@ public class ArticuloServiceImpl implements ArticuloService{
     private Articulo fromCreate(ArticuloRequestDTO d){
         Articulo art = new Articulo();
         art.setNombreArticulo(d.getNombreArticulo());
+        art.setMarca(d.getMarca());
         art.setComentarios(d.getComentarios());
         art.setSfai(d.getSfai());
         art.setColliers(d.getColliers());
@@ -37,15 +38,15 @@ public class ArticuloServiceImpl implements ArticuloService{
         art.setFechaCompra(d.getFechaCompra());
         art.setCodigoDuoc(d.getCodigoDuoc());
 
-        // 1. Buscamos la Categoría en la BD
+
         Categoria cat = categoriaRepository.findById(d.getIdCategoria())
                 .orElseThrow(() -> new ReglaNegocioException("La categoría con ID " + d.getIdCategoria() + " no existe."));
 
-        // 2. Buscamos el Estado en la BD
+
         EstadoArticulo est = estadoArticuloRepository.findById(d.getIdEstadoArticulo())
                 .orElseThrow(() -> new ReglaNegocioException("El estado con ID " + d.getIdEstadoArticulo() + " no existe."));
 
-        // 3. Los conectamos al Artículo
+
         art.setCategoria(cat);
         art.setEstadoArticulo(est);
 
@@ -73,6 +74,7 @@ public class ArticuloServiceImpl implements ArticuloService{
 
     private void aplicarUpdate(Articulo a, ArticuloUpdateDTO d){
         a.setNombreArticulo(d.getNombreArticulo());
+        a.setMarca(d.getMarca());
         a.setComentarios(d.getComentarios());
         a.setSfai(d.getSfai());
         a.setColliers(d.getColliers());
@@ -96,11 +98,17 @@ public class ArticuloServiceImpl implements ArticuloService{
     @Override
     public ArticuloResponseDTO registrarArticulo(ArticuloRequestDTO dto) {
         dto.setNombreArticulo(dto.getNombreArticulo().trim());
-        dto.setCodigoDuoc(dto.getCodigoDuoc().trim().toUpperCase());
+        dto.setMarca(dto.getMarca().trim().toUpperCase());
+        if (dto.getCodigoDuoc() != null && !dto.getCodigoDuoc().isBlank()) {
+            dto.setCodigoDuoc(dto.getCodigoDuoc().trim().toUpperCase());
 
-        if(articuloRepository.contarPorCodigoDuocIgnorandoFiltros(dto.getCodigoDuoc()) > 0){
-            throw new ReglaNegocioException("No se puede registrar: El código DUOC '" + dto.getCodigoDuoc() + "' ya fue utilizado por un artículo (activo o dado de baja).");
+            if(articuloRepository.contarPorCodigoDuocIgnorandoFiltros(dto.getCodigoDuoc()) > 0){
+                throw new ReglaNegocioException("No se puede registrar: El código DUOC '" + dto.getCodigoDuoc() + "' ya fue utilizado por un artículo (activo o dado de baja).");
+            }
+        } else {
+            dto.setCodigoDuoc(null);
         }
+
         Articulo saved = articuloRepository.save(fromCreate(dto));
         return toDTO(saved);
     }
@@ -115,6 +123,7 @@ public class ArticuloServiceImpl implements ArticuloService{
     @Override
     public ArticuloResponseDTO actualizarArticulo(Long id, ArticuloUpdateDTO dto) {
         dto.setNombreArticulo(dto.getNombreArticulo().trim());
+        dto.setMarca(dto.getMarca().trim().toUpperCase());
 
         Articulo a = articuloRepository.findById(id).orElseThrow(() -> new ReglaNegocioException("Articulo " + id + " no existe"));
         aplicarUpdate(a,dto);

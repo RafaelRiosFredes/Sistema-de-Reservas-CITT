@@ -5,6 +5,7 @@ import cl.duoc.citt.citt_backend.dto.CategoriaResponseDTO;
 import cl.duoc.citt.citt_backend.dto.CategoriaUpdateDTO;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.Categoria;
+import cl.duoc.citt.citt_backend.repositories.ArticuloRepository;
 import cl.duoc.citt.citt_backend.repositories.CategoriaRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,11 @@ import java.util.List;
 @Transactional
 public class CategoriaServiceImpl implements CategoriaService{
     private final CategoriaRepository categoriaRepository;
+    private final ArticuloRepository articuloRepository;
 
     private Categoria fromCreate(CategoriaRequestDTO d){
         Categoria cat = new Categoria();
         cat.setNombreCategoria(d.getNombreCategoria());
-        cat.setCantidadTotal(d.getCantidadTotal());
         cat.setEsTecnologico(d.getEsTecnologico());
         return cat;
     }
@@ -30,14 +31,12 @@ public class CategoriaServiceImpl implements CategoriaService{
         return CategoriaResponseDTO.builder()
                 .idCategoria(c.getIdCategoria())
                 .nombreCategoria(c.getNombreCategoria())
-                .cantidadTotal(c.getCantidadTotal())
                 .esTecnologico(c.isEsTecnologico())
                 .build();
     }
 
     private void aplicarUpdate(Categoria c, CategoriaUpdateDTO d){
         c.setNombreCategoria(d.getNombreCategoria());
-        c.setCantidadTotal(d.getCantidadTotal());
         c.setEsTecnologico(d.getEsTecnologico());
     }
 
@@ -89,6 +88,11 @@ public class CategoriaServiceImpl implements CategoriaService{
         if(!categoriaRepository.existsById(id)){
             throw new ReglaNegocioException("La categoria no existe.");
         }
+
+        if(articuloRepository.contarPorCategoriaIdIgnorandoEliminados(id) > 0) {
+            throw new ReglaNegocioException("No se puede eliminar la categoría porque aún tiene artículos registrados. Reasígnelos o elimínelos primero.");
+        }
+
         categoriaRepository.deleteById(id);
     }
 }

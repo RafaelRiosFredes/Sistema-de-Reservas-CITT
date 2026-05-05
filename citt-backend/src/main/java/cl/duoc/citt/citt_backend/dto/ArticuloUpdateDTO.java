@@ -14,6 +14,9 @@ public class ArticuloUpdateDTO {
     @NotBlank(message = "El nombre del artículo no puede estar vacío")
     private String nombreArticulo;
 
+    @NotBlank(message = "La marca es obligatoria (escriba 'Genérico' si no tiene)")
+    private String marca;
+
     private String comentarios;
     private String sfai;
     private String colliers;

@@ -11,6 +11,5 @@ import lombok.*;
 public class CategoriaResponseDTO {
     private Long idCategoria;
     private String nombreCategoria;
-    private Integer cantidadTotal;
     private Boolean esTecnologico;
 }

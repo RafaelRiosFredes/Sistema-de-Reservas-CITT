@@ -23,9 +23,6 @@ public class Categoria {
     @Column(name = "nombre_categoria", unique = true, nullable = false)
     private String nombreCategoria;
 
-    @Column(name = "cantidad_total")
-    private Integer cantidadTotal = 0;
-
     @Column(nullable = false)
     private boolean eliminado = false;
 
