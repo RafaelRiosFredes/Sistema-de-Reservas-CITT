@@ -19,14 +19,7 @@ public class ArticuloRequestDTO {
     @PositiveOrZero(message = "El valor no puede ser negativo")
     private Double valor;
 
-    @NotNull(message = "La cantidad no puede ser nula")
-    @PositiveOrZero(message = "La cantidad debe ser 0 o un número positivo")
-    private Integer cantidad;
-
     private String etiqueta;
-
-    @NotBlank(message = "El tipo de articulo no puede ser nulo")
-    private String tipoArticulo;
 
     @PastOrPresent(message = "La fecha de compra no puede ser en el futuro")
     private LocalDate fechaCompra;

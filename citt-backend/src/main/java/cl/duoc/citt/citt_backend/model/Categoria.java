@@ -28,4 +28,7 @@ public class Categoria {
 
     @Column(nullable = false)
     private boolean eliminado = false;
+
+    @Column(name = "es_tecnologico", nullable = false)
+    private boolean esTecnologico = true; // Por defecto asumimos que es prestable
 }

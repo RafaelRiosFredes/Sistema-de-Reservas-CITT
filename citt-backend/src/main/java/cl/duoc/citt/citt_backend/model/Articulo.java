@@ -40,14 +40,8 @@ public class Articulo {
     @Column(name = "valor",nullable = true)
     private Double valor;
 
-    @Column(name = "cantidad",nullable = false)
-    private Integer cantidad;
-
     @Column(name = "etiqueta",nullable = true)
     private String etiqueta;
-
-    @Column(name = "tipo_articulo",nullable = false)
-    private String tipoArticulo; //inmobiliario o tecnológico
 
     @Column(name = "fecha_compra",nullable = true)
     private LocalDate fechaCompra;
@@ -57,4 +51,14 @@ public class Articulo {
 
     @Column(nullable = false)
     private boolean eliminado = false;
+
+    // --- RELACIONES FÍSICAS ---
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_categoria", nullable = false)
+    private Categoria categoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_estado_articulo", nullable = false)
+    private EstadoArticulo estadoArticulo;
 }

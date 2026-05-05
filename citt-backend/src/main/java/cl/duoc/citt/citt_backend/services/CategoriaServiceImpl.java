@@ -21,6 +21,8 @@ public class CategoriaServiceImpl implements CategoriaService{
     private Categoria fromCreate(CategoriaRequestDTO d){
         Categoria cat = new Categoria();
         cat.setNombreCategoria(d.getNombreCategoria());
+        cat.setCantidadTotal(d.getCantidadTotal());
+        cat.setEsTecnologico(d.getEsTecnologico());
         return cat;
     }
 
@@ -29,11 +31,14 @@ public class CategoriaServiceImpl implements CategoriaService{
                 .idCategoria(c.getIdCategoria())
                 .nombreCategoria(c.getNombreCategoria())
                 .cantidadTotal(c.getCantidadTotal())
+                .esTecnologico(c.isEsTecnologico())
                 .build();
     }
 
     private void aplicarUpdate(Categoria c, CategoriaUpdateDTO d){
         c.setNombreCategoria(d.getNombreCategoria());
+        c.setCantidadTotal(d.getCantidadTotal());
+        c.setEsTecnologico(d.getEsTecnologico());
     }
 
     @Override

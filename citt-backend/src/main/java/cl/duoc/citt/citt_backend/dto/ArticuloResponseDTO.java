@@ -15,9 +15,7 @@ public class ArticuloResponseDTO {
     private String colliers;
     private String numeroSerie;
     private Double valor;
-    private Integer cantidad;
     private String etiqueta;
-    private String tipoArticulo;
     private LocalDate fechaCompra;
     private String codigoDuoc;
 

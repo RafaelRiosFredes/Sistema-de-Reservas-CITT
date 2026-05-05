@@ -5,7 +5,11 @@ import cl.duoc.citt.citt_backend.dto.ArticuloResponseDTO;
 import cl.duoc.citt.citt_backend.dto.ArticuloUpdateDTO;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.Articulo;
+import cl.duoc.citt.citt_backend.model.Categoria;
+import cl.duoc.citt.citt_backend.model.EstadoArticulo;
 import cl.duoc.citt.citt_backend.repositories.ArticuloRepository;
+import cl.duoc.citt.citt_backend.repositories.CategoriaRepository;
+import cl.duoc.citt.citt_backend.repositories.EstadoArticuloRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +22,9 @@ import java.util.List;
 public class ArticuloServiceImpl implements ArticuloService{
     private final ArticuloRepository articuloRepository;
 
+    private final CategoriaRepository categoriaRepository;
+    private final EstadoArticuloRepository estadoArticuloRepository;
+
     private Articulo fromCreate(ArticuloRequestDTO d){
         Articulo art = new Articulo();
         art.setNombreArticulo(d.getNombreArticulo());
@@ -27,9 +34,21 @@ public class ArticuloServiceImpl implements ArticuloService{
         art.setNumeroSerie(d.getNumeroSerie());
         art.setValor(d.getValor());
         art.setEtiqueta(d.getEtiqueta());
-        art.setTipoArticulo(d.getTipoArticulo());
         art.setFechaCompra(d.getFechaCompra());
         art.setCodigoDuoc(d.getCodigoDuoc());
+
+        // 1. Buscamos la Categoría en la BD
+        Categoria cat = categoriaRepository.findById(d.getIdCategoria())
+                .orElseThrow(() -> new ReglaNegocioException("La categoría con ID " + d.getIdCategoria() + " no existe."));
+
+        // 2. Buscamos el Estado en la BD
+        EstadoArticulo est = estadoArticuloRepository.findById(d.getIdEstadoArticulo())
+                .orElseThrow(() -> new ReglaNegocioException("El estado con ID " + d.getIdEstadoArticulo() + " no existe."));
+
+        // 3. Los conectamos al Artículo
+        art.setCategoria(cat);
+        art.setEstadoArticulo(est);
+
         return art;
     }
 
@@ -43,9 +62,12 @@ public class ArticuloServiceImpl implements ArticuloService{
                 .numeroSerie(a.getNumeroSerie())
                 .valor(a.getValor())
                 .etiqueta(a.getEtiqueta())
-                .tipoArticulo(a.getTipoArticulo())
                 .fechaCompra(a.getFechaCompra())
                 .codigoDuoc(a.getCodigoDuoc())
+                .idCategoria(a.getCategoria().getIdCategoria())
+                .nombreCategoria(a.getCategoria().getNombreCategoria())
+                .idEstadoArticulo(a.getEstadoArticulo().getIdEstadoArticulo())
+                .nombreEstado(a.getEstadoArticulo().getNombreEstado())
                 .build();
     }
 
@@ -57,8 +79,17 @@ public class ArticuloServiceImpl implements ArticuloService{
         a.setNumeroSerie(d.getNumeroSerie());
         a.setValor(d.getValor());
         a.setEtiqueta(d.getEtiqueta());
-        a.setTipoArticulo(d.getTipoArticulo());
         a.setFechaCompra(d.getFechaCompra());
+
+        // Actualizamos las relaciones si el usuario mandó IDs diferentes
+        Categoria cat = categoriaRepository.findById(d.getIdCategoria())
+                .orElseThrow(() -> new ReglaNegocioException("La categoría con ID " + d.getIdCategoria() + " no existe."));
+
+        EstadoArticulo est = estadoArticuloRepository.findById(d.getIdEstadoArticulo())
+                .orElseThrow(() -> new ReglaNegocioException("El estado con ID " + d.getIdEstadoArticulo() + " no existe."));
+
+        a.setCategoria(cat);
+        a.setEstadoArticulo(est);
     }
 
 
