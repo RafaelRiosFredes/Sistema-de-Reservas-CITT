@@ -23,11 +23,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     *  "Plan B". Captura cualquier otra excepción que no sea de negocio
-     * (ej: errores de base de datos, fallos de conexión, NullPointer, etc.).
-     */
-
+    // "Plan B". Captura cualquier otra excepción que no sea de negocio
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> manejarExcepcionGlobal(Exception ex) {
         ErrorResponseDTO error = ErrorResponseDTO.builder()

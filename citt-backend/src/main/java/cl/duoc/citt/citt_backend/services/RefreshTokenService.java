@@ -22,9 +22,9 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UsuarioRepository usuarioRepository;
 
-    /**
-     * Crea o actualiza un Refresh Token para un usuario.
-     */
+
+     // Crea o actualiza un Refresh Token para un usuario.
+
     @Transactional
     public RefreshToken crearRefreshToken(Long usuarioId) {
         var usuario = usuarioRepository.findById(usuarioId)
@@ -43,9 +43,8 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
-    /**
-     * Verifica si el token ha expirado.
-     */
+
+     // Verifica si el token ha expirado.
     public RefreshToken verificarExpiracion(RefreshToken token) {
         if (token.getFechaExpiracion().compareTo(Instant.now()) < 0) {
             refreshTokenRepository.delete(token);

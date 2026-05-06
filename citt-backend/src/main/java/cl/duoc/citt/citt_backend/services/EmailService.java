@@ -18,7 +18,7 @@ public class EmailService {
         mensaje.setTo(destinatario);
         mensaje.setSubject("Tu cuenta CITT ha sido creada - Contraseña Provisoria");
         mensaje.setText("Hola,\n\nTu cuenta ha sido creada exitosamente. Tu contraseña provisoria es: " + password +
-                "\n\nPor favor, inicia sesión y cámbiala.\n\nSaludos,\nEquipo CITT");
+                "\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT");
 
         try {
             mailSender.send(mensaje);
@@ -34,8 +34,8 @@ public class EmailService {
         mensaje.setSubject("Recuperación de Contraseña - CITT");
         mensaje.setText("Hola,\n\nHas solicitado restablecer tu contraseña.\n\n" +
                 "Tu contraseña temporal para recuperar tu cuenta es: " + passwordTemporal + "\n\n" +
-                "Ve a la opción de 'Restablecer Contraseña', ingresa esta clave temporal y elige tu nueva contraseña segura.\n\n" +
-                "Saludos,\nEquipo CITT");
+                "Ve a la opción de 'Restablecer Contraseña', ingresa esta clave temporal y elige tu nueva contraseña.\n\n" +
+                "CittSaludos,\nEquipo CITT");
 
         try {
             mailSender.send(mensaje);

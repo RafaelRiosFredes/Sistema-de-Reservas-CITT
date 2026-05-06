@@ -34,6 +34,14 @@ public class AutenticacionService {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    /**
+     * Registra un nuevo usuario de forma manual (por un administrador).
+     * Valida que el correo sea institucional y que no esté registrado previamente.
+     * Genera una contraseña provisoria y la envía por correo.
+     *
+     * @param solicitud DTO con los datos del registro.
+     * @return Respuesta con el estado del registro y datos del usuario.
+     */
     public RegistroResponseDTO registrar(RegistroRequestDTO solicitud) {
         if (solicitud.getEmail() == null || solicitud.getRolesNombres() == null || solicitud.getRolesNombres().isEmpty()) {
             throw new ReglaNegocioException("Faltan datos obligatorios: email y roles");
@@ -41,15 +49,18 @@ public class AutenticacionService {
 
         validarCorreoInstitucional(solicitud.getEmail());
 
+        // Verificar si el usuario ya existe
         if(usuarioRepository.findByEmail(solicitud.getEmail()).isPresent()) {
             throw new ReglaNegocioException("El correo electrónico ya se encuentra registrado");
         }
 
+        // Mapear nombres de roles a entidades Rol
         Set<Rol> roles = solicitud.getRolesNombres().stream()
                 .map(nombre -> rolRepository.findByNombre(nombre.toUpperCase())
                         .orElseThrow(() -> new ReglaNegocioException("Error: El rol " + nombre + " no existe")))
                 .collect(Collectors.toSet());
 
+        // Generar contraseña aleatoria de 8 caracteres
         String passwordProvisoria = UUID.randomUUID().toString().substring(0, 8);
 
         var usuario = Usuario.builder()
@@ -60,6 +71,7 @@ public class AutenticacionService {
                 .build();
         usuarioRepository.save(usuario);
 
+        // Notificar al usuario por correo
         emailService.enviarPasswordProvisoria(usuario.getEmail(), passwordProvisoria);
 
         return RegistroResponseDTO.builder()
@@ -69,6 +81,14 @@ public class AutenticacionService {
                 .build();
     }
 
+    /**
+     * Permite que un usuario se registre por sí mismo basándose en su dominio de correo institucional.
+     * Detecta automáticamente si es ALUMNO o DOCENTE
+     * un COORDINADOR siempre se agrega de forma manual.
+     *
+     *  @param solicitud DTO con el email del usuario.
+     *  @return Respuesta con el estado del registro.
+     */
     public RegistroResponseDTO autoRegistrar(AutoRegistroRequestDTO solicitud) {
         if (solicitud.getEmail() == null || solicitud.getEmail().isBlank()) {
             throw new ReglaNegocioException("El correo electrónico es obligatorio");
@@ -78,6 +98,7 @@ public class AutenticacionService {
             throw new ReglaNegocioException("El correo electrónico ya se encuentra registrado");
         }
 
+        // Determinar rol (ALUMNO o DOCENTE) según el dominio
         String rolDetectado = detectarRolPorDominio(solicitud.getEmail());
 
         Rol rol = rolRepository.findByNombre(rolDetectado)
@@ -102,7 +123,15 @@ public class AutenticacionService {
                 .build();
     }
 
+    /**
+     * Valida las credenciales e inicia sesión.
+     * Genera un token JWT de acceso y un Refresh Token.
+     *
+     *  @param solicitud Credenciales del usuario.
+     *  @return DTO con los tokens y datos básicos del usuario.
+     */
     public AutenticacionResponseDTO iniciarSesion(InicioSesionRequestDTO solicitud) {
+        // El AuthenticationManager se encarga de validar email y password
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(solicitud.getEmail(), solicitud.getPassword())
         );
@@ -122,6 +151,13 @@ public class AutenticacionService {
                 .build();
     }
 
+    /**
+     * Genera un nuevo token JWT utilizando un Refresh Token válido.
+     * Implementa rotación de Refresh Tokens para mayor seguridad.
+     *
+     * @param solicitud Contiene el refresh token actual.
+     * @return Nuevos tokens (JWT y Refresh).
+     */
     @Transactional
     public AutenticacionResponseDTO refrescarToken(TokenRefreshRequestDTO solicitud) {
         return refreshTokenRepository.findByToken(solicitud.getRefreshToken())
@@ -142,10 +178,16 @@ public class AutenticacionService {
                 .orElseThrow(() -> new ReglaNegocioException("El Refresh Token no existe o ya fue utilizado"));
     }
 
+    /**
+     * Invalida la sesión del usuario eliminando su Refresh Token de la base de datos.
+     *
+     *  @param authHeader Encabezado Authorization para identificar al usuario si la sesión expiró.
+     */
     public void cerrarSesion(String authHeader) {
         String email = null;
         var auth = SecurityContextHolder.getContext().getAuthentication();
 
+        // Intentar obtener el email del contexto de seguridad o del token en el header
         if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
             email = auth.getName();
         } else if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -163,6 +205,12 @@ public class AutenticacionService {
         refreshTokenService.eliminarPorUsuario(usuario.getId());
     }
 
+    /**
+     * Permite al usuario autenticado cambiar su propia contraseña.
+     * Actualiza el flag 'debeCambiarPassword' a false.
+     *
+     * @param solicitud Contiene la contraseña actual y la nueva.
+     */
     public void cambiarPassword(CambioPasswordRequestDTO solicitud) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Usuario usuario = usuarioRepository.findByEmail(email)
@@ -177,6 +225,8 @@ public class AutenticacionService {
         usuarioRepository.save(usuario);
     }
 
+
+      // Lógica de detección de roles basada en el dominio del correo.
     private String detectarRolPorDominio(String email) {
         String dominio = email.substring(email.lastIndexOf("@")).toLowerCase();
 
@@ -190,6 +240,9 @@ public class AutenticacionService {
         };
     }
 
+
+     // Valida que el dominio del correo pertenezca a la institución.
+
     private void validarCorreoInstitucional(String email) {
         String dominio = email.substring(email.lastIndexOf("@")).toLowerCase();
         if (!dominio.equals("@duocuc.cl") && !dominio.equals("@profesor.duoc.cl") && !dominio.equals("@duoc.cl")) {
@@ -198,6 +251,10 @@ public class AutenticacionService {
         }
     }
 
+    /**
+     * Inicia el flujo de recuperación de contraseña.
+     * Genera una contraseña temporal y fuerza el cambio en el próximo inicio de sesión.
+     */
     @Transactional
     public void solicitarRecuperacionPassword(OlvidoPasswordRequestDTO solicitud) {
         Usuario usuario = usuarioRepository.findByEmail(solicitud.getEmail())
@@ -209,11 +266,14 @@ public class AutenticacionService {
         usuario.setDebeCambiarPassword(true);
         usuarioRepository.save(usuario);
 
+        // Invalidar sesiones activas por seguridad
         refreshTokenService.eliminarPorUsuario(usuario.getId());
 
         emailService.enviarPasswordRecuperacion(usuario.getEmail(), passwordTemporal);
     }
 
+
+     // Permite resetear la contraseña utilizando la contraseña provisoria recibida por correo.
     @Transactional
     public void resetearPassword(RecuperarPasswordRequestDTO solicitud) {
         Usuario usuario = usuarioRepository.findByEmail(solicitud.getEmail())

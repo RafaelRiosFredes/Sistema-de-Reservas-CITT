@@ -30,11 +30,8 @@ public class JwtUtilidades {
         return extraerClaim(token, Claims::getSubject);
     }
 
-    /**
-     * Extrae el nombre de usuario incluso si el token ha expirado.
-     * Útil para procesos como el Logout donde el token ya no es válido para autenticar
-     * pero aún necesitamos saber a quién pertenece para limpiar su sesión en BD.
-     */
+
+     // Extrae el nombre de usuario incluso si el token ha expirado.
     public String extraerUsernameInclusoSiExpirado(String token) {
         try {
             return extraerUsername(token);
@@ -58,8 +55,7 @@ public class JwtUtilidades {
     public String generarToken(UserDetails detallesUsuario) {
         Map<String, Object> extraClaims = new HashMap<>();
 
-        // Guarda los roles del usuario dentro del token para que el frontend los pueda
-        // leer
+        // Guarda los roles del usuario dentro del token para que el frontend los pueda leer
         var roles = detallesUsuario.getAuthorities().stream()
                 .map(auth -> auth.getAuthority())
                 .toList();
