@@ -28,7 +28,7 @@ public class EspacioServiceImpl implements EspacioService {
 
         EstadoEspacio disponible = estadoRepository.findAll()
                 .stream()
-                .filter(e -> e.getNombre().equalsIgnoreCase("Disponible"))
+                .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE"))
                 .findFirst()
                 .orElseThrow(() -> new ReglaNegocioException("Estado DISPONIBLE no existe"));
 
@@ -40,6 +40,7 @@ public class EspacioServiceImpl implements EspacioService {
 
         return mapToDTO(repository.save(espacio));
     }
+
 
     @Override
     public List<EspacioResponseDTO>listar(){

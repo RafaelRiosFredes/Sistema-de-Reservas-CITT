@@ -22,7 +22,7 @@ public class Espacio {
     private String comentarios;
 
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "estado_id")
     private  EstadoEspacio estado;
 
