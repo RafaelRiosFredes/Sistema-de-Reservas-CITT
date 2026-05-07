@@ -4,11 +4,14 @@ import cl.duoc.citt.citt_backend.dto.EspacioRequestDTO;
 import cl.duoc.citt.citt_backend.dto.EspacioResponseDTO;
 import cl.duoc.citt.citt_backend.dto.EspacioUpdateDTO;
 import cl.duoc.citt.citt_backend.services.EspacioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/espacios")
@@ -18,7 +21,7 @@ public class EspacioController {
     private final EspacioService service;
 
     @PostMapping
-    public ResponseEntity<EspacioResponseDTO> crear(@RequestBody EspacioRequestDTO dto) {
+    public ResponseEntity<?> crear(@Valid @RequestBody EspacioRequestDTO dto) {
         return ResponseEntity.ok(service.crear(dto));
     }
 
@@ -39,8 +42,10 @@ public class EspacioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
         service.eliminar(id);
-        return ResponseEntity.noContent().build();
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "Espacio eliminado correctamente");
+        return ResponseEntity.ok(respuesta);
     }
 }
