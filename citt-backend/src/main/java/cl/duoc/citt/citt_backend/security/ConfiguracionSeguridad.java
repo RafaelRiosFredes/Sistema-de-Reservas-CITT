@@ -15,33 +15,53 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@EnableMethodSecurity
+@EnableMethodSecurity // Permite usar @PreAuthorize en los controladores
 public class ConfiguracionSeguridad {
 
     private final JwtFiltroAutenticacion jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
-    // se decide qué peticiones pasan y cuáles se bloquean.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Desactiva CSRF (Cross-Site Request Forgery) porque usamos tokens JWT, no cookies
+                // Desactivamos CSRF ya que usamos JWT (Stateless) y no Cookies.
                 .csrf(AbstractHttpConfigurer::disable)
-                // Configuración de permisos de rutas
+
+                // reglas de autorización de las rutas
                 .authorizeHttpRequests(auth -> auth
-                        // Rutas públicas
-                        .requestMatchers("/api/auth/login", "/api/auth/auto-registro", "/api/auth/refrescar-token", "/api/auth/olvido-password", "/api/auth/restablecer-password", "/api/auth/logout", "/h2-console/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // Cualquier otra ruta requiere que el usuario esté autenticado
+                        // --- RUTAS PÚBLICAS ---
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/auto-registro",
+                                "/api/auth/refrescar-token",
+                                "/api/auth/olvido-password",
+                                "/api/auth/restablecer-password",
+                                "/h2-console/**",     // Consola de base de datos
+                                "/swagger-ui/**",     // Documentación visual API
+                                "/v3/api-docs/**"     // Metadatos OpenAPI
+                        ).permitAll()
+
+                        // --- RUTAS PROTEGIDAS  ---
+                        // El Logout ahora es privado para asegurar que solo un usuario real pueda cerrar sesión.
+                        .requestMatchers("/api/auth/logout").authenticated()
+
+                        // Cualquier otra petición que no esté en la lista de arriba requiere login
                         .anyRequest().authenticated()
                 )
-                // No se guardan sesiones en el servidor
-                // Cada petición debe traer su propio token JWT
+
+
+                // El servidor no guarda sesiones; cada petición debe traer su propio JWT.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                //  proveedor de autenticación personalizado
                 .authenticationProvider(authenticationProvider)
-                // Añade el filtro JWT antes del filtro de usuario/contraseña estándar
+
+                // Se agrega el FILTRO JWT.
+                // Spring que ejecuta 'jwtAuthFilter' ANTES del filtro estándar de usuario/password.
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                // Desactiva la protección de frames para poder ver la consola H2 en el navegador
-                .headers(headers -> headers.frameOptions(frame -> frame.disable())); // Para H2 Console
+
+                // Configuración extra para la consola H2 (Permite verla en el navegador)
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();
     }

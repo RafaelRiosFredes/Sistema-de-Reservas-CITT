@@ -1,6 +1,5 @@
 package cl.duoc.citt.citt_backend.services;
 
-
 import cl.duoc.citt.citt_backend.dto.*;
 import cl.duoc.citt.citt_backend.model.RefreshToken;
 import cl.duoc.citt.citt_backend.model.Rol;
@@ -27,15 +26,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Logica central de autenticacion.
+ * Lógica central de autenticación del sistema.
  *
- * Gestiona el ciclo de vida del usuario:
- *      Registro
- *      Login
- *      Seguridad
- *      Recuperación
- *
- * Se implementa un sistema de 3 capas de tokens para máxima seguridad.
+ *   Gestiona:
+ * 1. Registro (Manual y Auto-registro con validación de dominio)
+ * 2. Sesiones (Login, Logout y Refresh Token)
+ * 3. Seguridad (Cambio y Recuperación de contraseña)
  */
 @Service
 @RequiredArgsConstructor
@@ -51,6 +47,7 @@ public class AutenticacionService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final RecuperarPasswordRepository passwordRecuperarRepository;
 
+    // Dominios inyectados desde application.properties para fácil mantenimiento
     @Value("${app.dominios.alumno:@duocuc.cl}")
     private String dominioAlumno;
     @Value("${app.dominios.docente:@profesor.duoc.cl}")
@@ -58,43 +55,36 @@ public class AutenticacionService {
     @Value("${app.dominios.manual:@duoc.cl}")
     private String dominioManual;
 
-
     /**
-     * REGISTRO MANUAL: Un administrador crea a otro usuario.
+     * REGISTRO MANUAL: Realizado por un Administrador/Coordinador.
      */
     public RegistroResponseDTO registrar(RegistroRequestDTO solicitud) {
-        // Validar que los campos básicos no vengan nulos
         if (solicitud.getEmail() == null || solicitud.getRolesNombres() == null || solicitud.getRolesNombres().isEmpty()) {
             throw new ReglaNegocioException("Faltan datos obligatorios: email y roles");
         }
 
-        // Verificar que el correo pertenezca a @duocuc.cl, @profesor.duoc.cl o @duoc.cl
+        // Valida que el correo sea institucional
         validarCorreoInstitucional(solicitud.getEmail());
 
-        // El email debe ser único en la BD
         if (usuarioRepository.findByEmail(solicitud.getEmail()).isPresent()) {
             throw new ReglaNegocioException("El correo electrónico ya se encuentra registrado");
         }
 
-        // Convertir los nombres de roles (String) a entidades Rol de la BD
         Set<Rol> roles = solicitud.getRolesNombres().stream()
                 .map(nombre -> rolRepository.findByNombre(nombre.toUpperCase())
                         .orElseThrow(() -> new ReglaNegocioException("Error: El rol " + nombre + " no existe")))
                 .collect(Collectors.toSet());
 
-        // Generar una clave temporal de 8 caracteres
         String passwordProvisoria = UUID.randomUUID().toString().substring(0, 8);
 
-        // Construir el nuevo usuario
         var usuario = Usuario.builder()
                 .email(solicitud.getEmail())
-                .password(passwordEncoder.encode(passwordProvisoria)) // Guardar clave encriptada (Bcrypt)
+                .password(passwordEncoder.encode(passwordProvisoria))
                 .roles(roles)
-                .debeCambiarPassword(true) // Forzar cambio de clave al entrar
+                .debeCambiarPassword(true) // Obliga al usuario a cambiar clave al entrar
                 .build();
-        usuarioRepository.save(usuario);
 
-        // Enviar la clave por email al usuario
+        usuarioRepository.save(usuario);
         emailService.enviarPasswordProvisoria(usuario.getEmail(), passwordProvisoria);
 
         return RegistroResponseDTO.builder()
@@ -105,21 +95,21 @@ public class AutenticacionService {
     }
 
     /**
-     * AUTO-REGISTRO:
-     * <p>
-     * Permite a alumnos y docentes crear su propia cuenta.
-     * El sistema asigna el rol automáticamente según el dominio del correo.
+     * AUTO-REGISTRO: El usuario crea su propia cuenta (solo Alumnos y Docentes).
      */
     public RegistroResponseDTO autoRegistrar(AutoRegistroRequestDTO solicitud) {
         if (solicitud.getEmail() == null || solicitud.getEmail().isBlank()) {
             throw new ReglaNegocioException("El correo electrónico es obligatorio");
         }
 
+        // Validación de seguridad centralizada
+        validarCorreoInstitucional(solicitud.getEmail());
+
         if (usuarioRepository.findByEmail(solicitud.getEmail()).isPresent()) {
             throw new ReglaNegocioException("El correo electrónico ya se encuentra registrado");
         }
 
-        // Detectar si es ALUMNO o DOCENTE mirando el dominio
+        // Detecta el rol automáticamente basado en el dominio (@duocuc.cl -> ALUMNO)
         String rolDetectado = detectarRolPorDominio(solicitud.getEmail());
 
         Rol rol = rolRepository.findByNombre(rolDetectado)
@@ -133,8 +123,8 @@ public class AutenticacionService {
                 .roles(Set.of(rol))
                 .debeCambiarPassword(true)
                 .build();
-        usuarioRepository.save(usuario);
 
+        usuarioRepository.save(usuario);
         emailService.enviarPasswordProvisoria(usuario.getEmail(), passwordProvisoria);
 
         return RegistroResponseDTO.builder()
@@ -145,11 +135,9 @@ public class AutenticacionService {
     }
 
     /**
-     * LOGIN: Valida credenciales y entrega los tokens de sesión.
-     * Entrega un Access Token (JWT corto) y un Refresh Token (largo y persistente).
+     * LOGIN: Genera Access Token (JWT) y Refresh Token.
      */
     public AutenticacionResponseDTO iniciarSesion(InicioSesionRequestDTO solicitud) {
-        // Spring Security valida el correo y la contraseña contra la BD
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(solicitud.getEmail(), solicitud.getPassword())
         );
@@ -157,7 +145,6 @@ public class AutenticacionService {
         var usuario = usuarioRepository.findByEmail(solicitud.getEmail())
                 .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
 
-        // Generar los 2 tokens de sesión
         var tokenJwt = jwtUtilidades.generarToken(usuario);
         var refreshToken = refreshTokenService.crearRefreshToken(usuario.getId());
 
@@ -171,36 +158,12 @@ public class AutenticacionService {
     }
 
     /**
-     * RENOVACION DE SESION: Usa un Refresh Token para obtener un nuevo Access Token.
-     */
-    @Transactional
-    public AutenticacionResponseDTO refrescarToken(TokenRefreshRequestDTO solicitud) {
-        return refreshTokenRepository.findByToken(solicitud.getRefreshToken())
-                .map(refreshTokenService::verificarExpiracion)
-                .map(RefreshToken::getUsuario)
-                .map(usuario -> {
-                    String token = jwtUtilidades.generarToken(usuario);
-                    var nuevoRefreshToken = refreshTokenService.crearRefreshToken(usuario.getId());
-
-                    return AutenticacionResponseDTO.builder()
-                            .token(token)
-                            .refreshToken(nuevoRefreshToken.getToken())
-                            .email(usuario.getEmail())
-                            .roles(usuario.getRoles().stream().map(Rol::getNombre).collect(Collectors.toSet()))
-                            .debeCambiarPassword(usuario.isDebeCambiarPassword())
-                            .build();
-                })
-                .orElseThrow(() -> new ReglaNegocioException("Token de refresco inválido o expirado"));
-    }
-
-    /**
-     * LOGOUT: Elimina el Refresh Token de la BD.
+     * LOGOUT: Invalida la sesión eliminando el Refresh Token.
      */
     public void cerrarSesion(String authHeader) {
         String email = null;
         var auth = SecurityContextHolder.getContext().getAuthentication();
 
-        // Obtener el usuario actual desde el contexto de Spring o del Header Bearer
         if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
             email = auth.getName();
         } else if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -213,41 +176,24 @@ public class AutenticacionService {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
 
-        // Borrar el token de la BD para cerrar la sesión físicamente
         refreshTokenService.eliminarPorUsuario(usuario.getId());
     }
 
     /**
-     * CAMBIO DE CLAVE: El usuario cambia su clave.
-     */
-    public void cambiarPassword(CambioPasswordRequestDTO solicitud) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
-
-        // Verificar que la clave actual sea correcta antes de cambiarla
-        if (!passwordEncoder.matches(solicitud.getPasswordActual(), usuario.getPassword())) {
-            throw new ReglaNegocioException("La contraseña actual es incorrecta");
-        }
-
-        usuario.setPassword(passwordEncoder.encode(solicitud.getNuevaPassword()));
-        usuario.setDebeCambiarPassword(false);
-        usuarioRepository.save(usuario);
-    }
-
-    /**
-     * RECUPERACIÓN PASO 1: Generar Token de Reseteo.
-     * No cambia la clave del usuario aún, solo envía un código temporal.
+     * RECUPERACIÓN DE CONTRASEÑA (Paso 1): Genera un Token seguro.
      */
     @Transactional
     public void solicitarRecuperacionPassword(OlvidoPasswordRequestDTO solicitud) {
-        Usuario usuario = usuarioRepository.findByEmail(solicitud.getEmail())
-                .orElseThrow(() -> new ReglaNegocioException("Si el correo existe, recibirás instrucciones."));
+        var usuarioOpt = usuarioRepository.findByEmail(solicitud.getEmail());
 
-        // Limpiar intentos de recuperación anteriores
+        // PROTECCIÓN: No revelamos si el correo existe o no
+        if (usuarioOpt.isEmpty()) {
+            return;
+        }
+
+        Usuario usuario = usuarioOpt.get();
         passwordRecuperarRepository.deleteByUsuario(usuario);
 
-        // Generar un UUID (código largo y seguro) y tiene 30 min de vida
         String token = UUID.randomUUID().toString();
         RecuperarPasswordToken resetToken = RecuperarPasswordToken.builder()
                 .token(token)
@@ -256,64 +202,88 @@ public class AutenticacionService {
                 .build();
 
         passwordRecuperarRepository.save(resetToken);
-
-        // Envia el codigo por email
         emailService.enviarPasswordRecuperacion(usuario.getEmail(), token);
     }
 
     /**
-     * RECUPERACIÓN PASO 2: Validar Código y Cambiar Clave.
-     * Usa el "codigoRecuperacion" para identificar al usuario y autorizar el cambio.
+     * RESTABLECER CONTRASEÑA (Paso 2): Valida el Token y cambia la clave.
      */
     @Transactional
     public void resetearPassword(RecuperarPasswordRequestDTO solicitud) {
-        // Buscar el token enviado en la tabla de recuperación
         RecuperarPasswordToken resetToken = passwordRecuperarRepository.findByToken(solicitud.getCodigoRecuperacion())
                 .orElseThrow(() -> new ReglaNegocioException("El código de recuperación es inválido o no existe"));
 
-        // Validar que el token no haya pasado los 30 minutos
         if (resetToken.estaExpirado()) {
             passwordRecuperarRepository.delete(resetToken);
             throw new ReglaNegocioException("El código de recuperación ha expirado");
         }
 
-        // Si el token es válido, obtenemos al usuario y actualizamos su clave definitiva
         Usuario usuario = resetToken.getUsuario();
         usuario.setPassword(passwordEncoder.encode(solicitud.getNuevaPassword()));
         usuario.setDebeCambiarPassword(false);
         usuarioRepository.save(usuario);
 
-        // Eliminar el token usado por seguridad (solo se usa una vez)
         passwordRecuperarRepository.delete(resetToken);
-        // También cerramos sesiones activas
-        refreshTokenService.eliminarPorUsuario(usuario.getId());
+        refreshTokenService.eliminarPorUsuario(usuario.getId()); // Cierra sesiones en otros dispositivos
     }
 
     /**
-     * Lógica para asignar roles automáticamente según el dominio de email.
+     * VALIDACIÓN DE DOMINIOS INSTITUCIONALES
      */
-    private String detectarRolPorDominio(String email) {
+    private void validarCorreoInstitucional(String email) {
+        if (email == null || !email.contains("@")) {
+            throw new ReglaNegocioException("Formato de correo inválido.");
+        }
         String dominio = email.substring(email.lastIndexOf("@")).toLowerCase();
 
+        // Compara contra las propiedades configuradas
+        if (!dominio.equals(dominioAlumno) && !dominio.equals(dominioDocente) && !dominio.equals(dominioManual)) {
+            throw new ReglaNegocioException("Solo se permiten correos de la institución.");
+        }
+    }
+
+    private String detectarRolPorDominio(String email) {
+        String dominio = email.substring(email.lastIndexOf("@")).toLowerCase();
         if (dominio.equals(dominioAlumno)) return "ALUMNO";
         if (dominio.equals(dominioDocente)) return "DOCENTE";
         if (dominio.equals(dominioManual)) {
-            throw new ReglaNegocioException("Correos " + dominioManual + " requieren registro manual por un Coordinador.");
+            throw new ReglaNegocioException("Correos " + dominioManual + " requieren registro manual.");
         }
-
         throw new ReglaNegocioException("Dominio no institucional.");
     }
 
-    /**
-     *Solo se permiten los roles ALUMNO y DOCENTE en el auto-registro.
-     * Los usuarios con rol COORDINADOR o DIRECTOR deben registrarse de forma manual SIEMPRE. */
+    // RENOVACIÓN DE TOKEN
+    @Transactional
+    public AutenticacionResponseDTO refrescarToken(TokenRefreshRequestDTO solicitud) {
+        return refreshTokenRepository.findByToken(solicitud.getRefreshToken())
+                .map(refreshTokenService::verificarExpiracion)
+                .map(RefreshToken::getUsuario)
+                .map(usuario -> {
+                    String token = jwtUtilidades.generarToken(usuario);
+                    var nuevoRefreshToken = refreshTokenService.crearRefreshToken(usuario.getId());
+                    return AutenticacionResponseDTO.builder()
+                            .token(token)
+                            .refreshToken(nuevoRefreshToken.getToken())
+                            .email(usuario.getEmail())
+                            .roles(usuario.getRoles().stream().map(Rol::getNombre).collect(Collectors.toSet()))
+                            .debeCambiarPassword(usuario.isDebeCambiarPassword())
+                            .build();
+                })
+                .orElseThrow(() -> new ReglaNegocioException("Token de refresco inválido o expirado"));
+    }
 
+    // CAMBIO DE CLAVE
+    public void cambiarPassword(CambioPasswordRequestDTO solicitud) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
 
-     // Validación estricta de dominios permitidos.
-    private void validarCorreoInstitucional(String email) {
-        String dominio = email.substring(email.lastIndexOf("@")).toLowerCase();
-        if (!dominio.equals("@duocuc.cl") && !dominio.equals("@profesor.duoc.cl") && !dominio.equals("@duoc.cl")) {
-            throw new ReglaNegocioException("Solo se permiten correos de la institución.");
+        if (!passwordEncoder.matches(solicitud.getPasswordActual(), usuario.getPassword())) {
+            throw new ReglaNegocioException("La contraseña actual es incorrecta");
         }
+
+        usuario.setPassword(passwordEncoder.encode(solicitud.getNuevaPassword()));
+        usuario.setDebeCambiarPassword(false);
+        usuarioRepository.save(usuario);
     }
 }

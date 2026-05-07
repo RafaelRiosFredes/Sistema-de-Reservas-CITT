@@ -32,20 +32,15 @@ public class Usuario implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    // Un usuario puede tener varios roles y un rol muchos usuarios.
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "usuarios_roles", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "rol_id"))
+    @Builder.Default
     private Set<Rol> roles = new HashSet<>();
 
-    // para forzar al usuario a cambiar su clave en el primer ingreso
     @Column(nullable = false)
+    @Builder.Default
     private boolean debeCambiarPassword = true;
 
-
-    /**
-     * Convierte las entidades 'Rol' en objetos que Spring Security entiende ('GrantedAuthority').
-     * y se grega el prefijo "ROLE_".
-     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
@@ -53,31 +48,11 @@ public class Usuario implements UserDetails {
                 .collect(Collectors.toList());
     }
 
-    // Identificador (email)
     @Override
-    public String getUsername() {
-        return email;
-    }
+    public String getUsername() { return email; }
 
-    // --- Métodos de Control de Cuenta ---
-    // Retornan 'true' para indicar que la cuenta está activa y válida.
-    @Override
-    public boolean isAccountNonExpired() {
-        return true; // La cuenta no ha expirado
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true; // La cuenta no está bloqueada
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true; // Las credenciales (password) no han expirado
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true; // El usuario está habilitado
-    }
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return true; }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return true; }
 }

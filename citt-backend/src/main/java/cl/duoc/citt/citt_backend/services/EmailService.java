@@ -30,7 +30,12 @@ public class EmailService {
             mailSender.send(mensaje);
             log.info("Correo provisorio enviado exitosamente a {}", destinatario);
         } catch (Exception e) {
-            log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
+            log.error("Error crítico al enviar correo a {}: {}", destinatario, e.getMessage());
+
+            // Lanza una excepción para que el registro se detenga si el mail falla
+            throw new cl.duoc.citt.citt_backend.exception.ReglaNegocioException(
+                    "No se pudo enviar el correo con tu clave. Por favor, intenta más tarde o contacta a soporte."
+            );
         }
     }
 
@@ -49,7 +54,12 @@ public class EmailService {
             mailSender.send(mensaje);
             log.info("Correo de recuperación enviado exitosamente a {}", destinatario);
         } catch (Exception e) {
-            log.error("Error al enviar correo de recuperación a {}: {}", destinatario, e.getMessage());
+            log.error("Error al enviar recuperación a {}: {}", destinatario, e.getMessage());
+
+            // Lanza una excepción para informar del fallo técnico
+            throw new cl.duoc.citt.citt_backend.exception.ReglaNegocioException(
+                    "Error: No se pudo enviar el correo de recuperación."
+            );
         }
     }
 }
