@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class passwordRecuperarToken {
+public class RecuperarPasswordToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

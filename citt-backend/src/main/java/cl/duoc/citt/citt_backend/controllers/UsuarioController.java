@@ -37,7 +37,7 @@ public class UsuarioController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<UsuarioResponseDTO> actualizar(@PathVariable Long id,
-            @RequestBody UsuarioUpdateDTO solicitud) {
+         @jakarta.validation.Valid @RequestBody UsuarioUpdateDTO solicitud) {
         return ResponseEntity.ok(usuarioService.actualizar(id, solicitud));
     }
 

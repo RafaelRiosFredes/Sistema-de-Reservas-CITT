@@ -11,10 +11,16 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class EmailService {
 
+
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
+    private String remitente;
+
     private final JavaMailSender mailSender;
 
+    // ENVIO DE CONTRASEÑA PROVISORIA (INGRESO PRIMERA VEZ)
     public void enviarPasswordProvisoria(String destinatario, String password) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(remitente);
         mensaje.setTo(destinatario);
         mensaje.setSubject("Tu cuenta CITT ha sido creada - Contraseña Provisoria");
         mensaje.setText("Hola,\n\nTu cuenta ha sido creada exitosamente. Tu contraseña provisoria es: " + password +
@@ -28,8 +34,10 @@ public class EmailService {
         }
     }
 
+    // RECUPERACION DE CONTRASEÑA (ENVIA CONTRASEÑA PROVISORA)
     public void enviarPasswordRecuperacion(String destinatario, String passwordTemporal) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(remitente);
         mensaje.setTo(destinatario);
         mensaje.setSubject("Recuperación de Contraseña - CITT");
         mensaje.setText("Hola,\n\nHas solicitado restablecer tu contraseña.\n\n" +

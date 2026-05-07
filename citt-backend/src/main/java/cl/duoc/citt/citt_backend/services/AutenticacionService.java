@@ -1,5 +1,6 @@
 package cl.duoc.citt.citt_backend.services;
 
+
 import cl.duoc.citt.citt_backend.dto.*;
 import cl.duoc.citt.citt_backend.model.RefreshToken;
 import cl.duoc.citt.citt_backend.model.Rol;
@@ -9,9 +10,10 @@ import cl.duoc.citt.citt_backend.repositories.UsuarioRepository;
 import cl.duoc.citt.citt_backend.security.JwtUtilidades;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.repositories.RefreshTokenRepository;
-import cl.duoc.citt.citt_backend.model.passwordRecuperarToken;
-import cl.duoc.citt.citt_backend.repositories.passwordRecuperarRepository;
+import cl.duoc.citt.citt_backend.model.RecuperarPasswordToken;
+import cl.duoc.citt.citt_backend.repositories.RecuperarPasswordRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,15 +27,20 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Servicio central de Autenticación.
- * Gestiona el ciclo de vida del usuario: Registro, Login, Seguridad y Recuperación.
- * Implementa un sistema de 3 capas de tokens para máxima seguridad.
+ * Logica central de autenticacion.
+ *
+ * Gestiona el ciclo de vida del usuario:
+ *      Registro
+ *      Login
+ *      Seguridad
+ *      Recuperación
+ *
+ * Se implementa un sistema de 3 capas de tokens para máxima seguridad.
  */
 @Service
 @RequiredArgsConstructor
 public class AutenticacionService {
 
-    // Repositorios y utilidades inyectados vía Lombok (@RequiredArgsConstructor)
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
@@ -42,11 +49,18 @@ public class AutenticacionService {
     private final EmailService emailService;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final passwordRecuperarRepository passwordRecuperarRepository;
+    private final RecuperarPasswordRepository passwordRecuperarRepository;
+
+    @Value("${app.dominios.alumno:@duocuc.cl}")
+    private String dominioAlumno;
+    @Value("${app.dominios.docente:@profesor.duoc.cl}")
+    private String dominioDocente;
+    @Value("${app.dominios.manual:@duoc.cl}")
+    private String dominioManual;
+
 
     /**
-     * Registro Manual: Un administrador crea a otro usuario.
-     * Genera una clave aleatoria inicial y obliga al cambio en el primer login.
+     * REGISTRO MANUAL: Un administrador crea a otro usuario.
      */
     public RegistroResponseDTO registrar(RegistroRequestDTO solicitud) {
         // Validar que los campos básicos no vengan nulos
@@ -58,7 +72,7 @@ public class AutenticacionService {
         validarCorreoInstitucional(solicitud.getEmail());
 
         // El email debe ser único en la BD
-        if(usuarioRepository.findByEmail(solicitud.getEmail()).isPresent()) {
+        if (usuarioRepository.findByEmail(solicitud.getEmail()).isPresent()) {
             throw new ReglaNegocioException("El correo electrónico ya se encuentra registrado");
         }
 
@@ -91,7 +105,9 @@ public class AutenticacionService {
     }
 
     /**
-     * Auto-Registro: Permite a alumnos y docentes crear su propia cuenta.
+     * AUTO-REGISTRO:
+     * <p>
+     * Permite a alumnos y docentes crear su propia cuenta.
      * El sistema asigna el rol automáticamente según el dominio del correo.
      */
     public RegistroResponseDTO autoRegistrar(AutoRegistroRequestDTO solicitud) {
@@ -103,7 +119,7 @@ public class AutenticacionService {
             throw new ReglaNegocioException("El correo electrónico ya se encuentra registrado");
         }
 
-        // Detectar si es ALUMNO o DOCENTE mirando el @dominio
+        // Detectar si es ALUMNO o DOCENTE mirando el dominio
         String rolDetectado = detectarRolPorDominio(solicitud.getEmail());
 
         Rol rol = rolRepository.findByNombre(rolDetectado)
@@ -129,7 +145,7 @@ public class AutenticacionService {
     }
 
     /**
-     * Login: Valida credenciales y entrega los tokens de sesión.
+     * LOGIN: Valida credenciales y entrega los tokens de sesión.
      * Entrega un Access Token (JWT corto) y un Refresh Token (largo y persistente).
      */
     public AutenticacionResponseDTO iniciarSesion(InicioSesionRequestDTO solicitud) {
@@ -155,7 +171,7 @@ public class AutenticacionService {
     }
 
     /**
-     * Renovación de sesión: Usa un Refresh Token para obtener un nuevo Access Token.
+     * RENOVACION DE SESION: Usa un Refresh Token para obtener un nuevo Access Token.
      */
     @Transactional
     public AutenticacionResponseDTO refrescarToken(TokenRefreshRequestDTO solicitud) {
@@ -178,7 +194,7 @@ public class AutenticacionService {
     }
 
     /**
-     * Logout: Elimina el Refresh Token de la BD para que nadie más pueda renovar sesión.
+     * LOGOUT: Elimina el Refresh Token de la BD.
      */
     public void cerrarSesion(String authHeader) {
         String email = null;
@@ -202,7 +218,7 @@ public class AutenticacionService {
     }
 
     /**
-     * Cambio de Clave: El usuario cambia su clave sabiendo la actual.
+     * CAMBIO DE CLAVE: El usuario cambia su clave.
      */
     public void cambiarPassword(CambioPasswordRequestDTO solicitud) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -231,9 +247,9 @@ public class AutenticacionService {
         // Limpiar intentos de recuperación anteriores
         passwordRecuperarRepository.deleteByUsuario(usuario);
 
-        // Generar un UUID (código largo y seguro) y ponerle 30 min de vida
+        // Generar un UUID (código largo y seguro) y tiene 30 min de vida
         String token = UUID.randomUUID().toString();
-        passwordRecuperarToken resetToken = passwordRecuperarToken.builder()
+        RecuperarPasswordToken resetToken = RecuperarPasswordToken.builder()
                 .token(token)
                 .usuario(usuario)
                 .fechaExpiracion(LocalDateTime.now().plusMinutes(30))
@@ -241,7 +257,7 @@ public class AutenticacionService {
 
         passwordRecuperarRepository.save(resetToken);
 
-        // Enviar este código por email
+        // Envia el codigo por email
         emailService.enviarPasswordRecuperacion(usuario.getEmail(), token);
     }
 
@@ -252,7 +268,7 @@ public class AutenticacionService {
     @Transactional
     public void resetearPassword(RecuperarPasswordRequestDTO solicitud) {
         // Buscar el token enviado en la tabla de recuperación
-        passwordRecuperarToken resetToken = passwordRecuperarRepository.findByToken(solicitud.getCodigoRecuperacion())
+        RecuperarPasswordToken resetToken = passwordRecuperarRepository.findByToken(solicitud.getCodigoRecuperacion())
                 .orElseThrow(() -> new ReglaNegocioException("El código de recuperación es inválido o no existe"));
 
         // Validar que el token no haya pasado los 30 minutos
@@ -274,22 +290,26 @@ public class AutenticacionService {
     }
 
     /**
-     * Utilidad: Lógica para asignar roles automáticamente según el dominio de email.
+     * Lógica para asignar roles automáticamente según el dominio de email.
      */
     private String detectarRolPorDominio(String email) {
         String dominio = email.substring(email.lastIndexOf("@")).toLowerCase();
 
-        return switch (dominio) {
-            case "@duocuc.cl" -> "ALUMNO";
-            case "@profesor.duoc.cl" -> "DOCENTE";
-            case "@duoc.cl" -> throw new ReglaNegocioException("Correos @duoc.cl requieren registro manual por un Coordinador.");
-            default -> throw new ReglaNegocioException("Dominio no institucional.");
-        };
+        if (dominio.equals(dominioAlumno)) return "ALUMNO";
+        if (dominio.equals(dominioDocente)) return "DOCENTE";
+        if (dominio.equals(dominioManual)) {
+            throw new ReglaNegocioException("Correos " + dominioManual + " requieren registro manual por un Coordinador.");
+        }
+
+        throw new ReglaNegocioException("Dominio no institucional.");
     }
 
     /**
-     * Utilidad: Validación estricta de dominios permitidos.
-     */
+     *Solo se permiten los roles ALUMNO y DOCENTE en el auto-registro.
+     * Los usuarios con rol COORDINADOR o DIRECTOR deben registrarse de forma manual SIEMPRE. */
+
+
+     // Validación estricta de dominios permitidos.
     private void validarCorreoInstitucional(String email) {
         String dominio = email.substring(email.lastIndexOf("@")).toLowerCase();
         if (!dominio.equals("@duocuc.cl") && !dominio.equals("@profesor.duoc.cl") && !dominio.equals("@duoc.cl")) {
