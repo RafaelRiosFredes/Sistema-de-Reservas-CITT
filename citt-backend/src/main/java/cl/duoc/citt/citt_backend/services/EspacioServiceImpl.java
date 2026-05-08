@@ -43,13 +43,20 @@ public class EspacioServiceImpl implements EspacioService {
 
 
     @Override
-    public List<EspacioResponseDTO>listar(){
-        return repository.findAll()
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public List<EspacioResponseDTO> listar(String estadoNombre) {
+        List<Espacio> lista;
 
+        // Si el frontend envía un estado (ej: ?estado=DAÑADO), filtramos en la lista
+        if (estadoNombre != null && !estadoNombre.isEmpty()) {
+            lista = repository.findAll().stream()
+                    .filter(e -> e.getEstado().getNombre().equalsIgnoreCase(estadoNombre))
+                    .collect(Collectors.toList());
+        } else {
+            // Si no envía nada, listamos todo como antes
+            lista = repository.findAll();
+        }
 
+        return lista.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
    @Override
@@ -61,17 +68,25 @@ public class EspacioServiceImpl implements EspacioService {
 
     @Override
     public EspacioResponseDTO actualizar(Long id, EspacioUpdateDTO dto) {
-
         Espacio espacio = repository.findById(id)
                 .orElseThrow(() -> new ReglaNegocioException("Espacio no encontrado"));
 
-        espacio.setNombre(dto.getNombre());
-        espacio.setComentarios(dto.getComentarios());
-
+        // --- NUEVA REGLA DE NEGOCIO PARA COMENTARIOS ---
         if (dto.getEstado() != null) {
-            EstadoEspacio estado = estadoRepository.findAll()
-                    .stream()
-                    // Usamos equalsIgnoreCase para ser más flexibles con mayúsculas/minúsculas
+            String nuevoEstado = dto.getEstado().toUpperCase();
+
+            // Lista de estados que requieren explicación obligatoria
+            List<String> estadosCriticos = List.of("DAÑADO", "EXCLUSIVO", "MANTENCION");
+
+            if (estadosCriticos.contains(nuevoEstado)) {
+                if (dto.getComentarios() == null || dto.getComentarios().trim().isEmpty()) {
+                    throw new ReglaNegocioException("Para el estado " + nuevoEstado +
+                            ", debe ingresar obligatoriamente un comentario explicando la razón.");
+                }
+            }
+
+            // Buscar y asignar el nuevo estado
+            EstadoEspacio estado = estadoRepository.findAll().stream()
                     .filter(e -> e.getNombre().equalsIgnoreCase(dto.getEstado()))
                     .findFirst()
                     .orElseThrow(() -> new ReglaNegocioException("Estado no válido: " + dto.getEstado()));
@@ -79,9 +94,11 @@ public class EspacioServiceImpl implements EspacioService {
             espacio.setEstado(estado);
         }
 
+        espacio.setNombre(dto.getNombre());
+        espacio.setComentarios(dto.getComentarios());
+
         return mapToDTO(repository.save(espacio));
     }
-
     @Override
     public void eliminar(Long id) {
 
@@ -96,10 +113,16 @@ public class EspacioServiceImpl implements EspacioService {
                 .id(espacio.getId())
                 .nombre(espacio.getNombre())
                 .comentarios(espacio.getComentarios())
-                .estado(espacio.getEstado().getNombre())
+                // Forzar mayúsculas ayuda a evitar errores en el === del frontend
+                .estado(espacio.getEstado().getNombre().toUpperCase())
                 .build();
     }
 
+    // Este método servirá para que el Service de Solicitud valide antes de guardar
+    public boolean verificarBloqueoExclusivo() {
+        return repository.findAll().stream()
+                .anyMatch(e -> e.getEstado().getNombre().equalsIgnoreCase("EXCLUSIVO"));
+    }
 
 
 }

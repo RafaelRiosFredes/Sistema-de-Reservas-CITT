@@ -26,8 +26,8 @@ public class EspacioController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EspacioResponseDTO>> listar() {
-        return ResponseEntity.ok(service.listar());
+    public ResponseEntity<List<EspacioResponseDTO>> listar(@RequestParam(required = false) String estado) {
+        return ResponseEntity.ok(service.listar(estado));
     }
 
     @GetMapping("/{id}")
@@ -37,7 +37,7 @@ public class EspacioController {
 
     @PutMapping("/{id}")
     public ResponseEntity<EspacioResponseDTO> actualizar(@PathVariable Long id,
-                                                         @RequestBody EspacioUpdateDTO dto) {
+                                                         @Valid@RequestBody EspacioUpdateDTO dto) {
         return ResponseEntity.ok(service.actualizar(id, dto));
     }
 

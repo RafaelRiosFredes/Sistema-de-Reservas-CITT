@@ -23,6 +23,20 @@ public class DataSeedConfig {
                 repository.save(EstadoEspacio.builder()
                         .nombre("OCUPADO")
                         .build());
+
+                repository.save(EstadoEspacio.builder()
+                        .nombre("EXCLUSIVO")
+                        .build());
+
+
+                repository.save(EstadoEspacio.builder()
+                        .nombre("DAÑADO")
+                        .build());
+
+
+                repository.save(EstadoEspacio.builder()
+                        .nombre("MANTENCION")
+                        .build());
                 System.out.println("Estados de espacio inicializados con éxito.");
 
             }
