@@ -15,11 +15,11 @@ public class DataSeedConfig {
         return args -> {
             if(repository.count() == 0){
                 repository.saveAll(List.of(
-                        new EstadoArticulo(null,"Disponible"),
-                        new EstadoArticulo(null,"Prestado"),
-                        new EstadoArticulo(null,"Pendiente"),
-                        new EstadoArticulo(null,"Atrasado"),
-                        new EstadoArticulo(null,"Dañado")
+                        new EstadoArticulo(null,"DISPONIBLE"),
+                        new EstadoArticulo(null,"PRESTADO"),
+                        new EstadoArticulo(null,"PENDIENTE"),
+                        new EstadoArticulo(null,"ATRASADO"),
+                        new EstadoArticulo(null,"DAÑADO")
                 ));
                 System.out.println("Estados de artículo inicializados con éxito.");
             }

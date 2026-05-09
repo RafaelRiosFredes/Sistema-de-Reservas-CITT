@@ -27,7 +27,19 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.listarCategorias());
     }
 
-    @Operation(summary = "Obtener un artículo", description = "Busca un artículo específico por su ID.")
+    @Operation(summary = "Listar categorías tecnológicas", description = "Obtiene solo las categorías marcadas como tecnológicas para la vista de alumnos.")
+    @GetMapping("/tecnologicas")
+    public ResponseEntity<List<CategoriaResponseDTO>> listarCategoriasTecnologicas(){
+        return ResponseEntity.ok(categoriaService.listarCategoriasTecnologicas());
+    }
+
+    @Operation(summary = "Catálogo Alumnos", description = "Categorías tecnológicas agrupadas con desglose por marcas.")
+    @GetMapping("/catalogo-alumnos")
+    public ResponseEntity<List<CategoriaAgrupadaDTO>> obtenerCatalogoAlumnos() {
+        return ResponseEntity.ok(categoriaService.listarVistaAlumnos());
+    }
+
+    @Operation(summary = "Obtener una categoria", description = "Busca una categoria específica por su ID.")
     @GetMapping("/{id}")
     public ResponseEntity<CategoriaResponseDTO> obtenerCategoria(@PathVariable Long id){
         return ResponseEntity.ok(categoriaService.obtenerCategoriaPorId(id));

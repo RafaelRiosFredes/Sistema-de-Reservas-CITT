@@ -4,11 +4,37 @@ import cl.duoc.citt.citt_backend.model.Articulo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
     @Query(value = "SELECT COUNT(*) FROM articulo WHERE LOWER(codigo_duoc) = LOWER(:codigoDuoc)", nativeQuery = true)
     int contarPorCodigoDuocIgnorandoFiltros(@Param("codigoDuoc") String codigoDuoc);
 
     @Query(value = "SELECT COUNT(*) FROM articulo WHERE id_categoria = :idCategoria", nativeQuery = true)
-    int contarPorCategoriaIdIgnorandoEliminados(@Param("idCategoria") Long idCategoria);
+    int contarHistoricoPorCategoriaId(@Param("idCategoria") Long idCategoria);
+
+    // countQuery para que Spring sepa cuántas páginas totales hay cuando usamos JOIN FETCH
+    @Query(value = "SELECT a FROM Articulo a JOIN FETCH a.categoria JOIN FETCH a.estadoArticulo WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria) ORDER BY a.nombreArticulo ASC",
+            countQuery = "SELECT COUNT(a) FROM Articulo a WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria)")
+    Page<Articulo> findAllPaginadoFiltrado(@Param("idCategoria") Long idCategoria, Pageable pageable);
+
+    @Query(value = "SELECT c.id_categoria, c.nombre_categoria, a.marca, COUNT(a.id_articulo) AS total " +
+            "FROM articulo a " +
+            "JOIN categoria c ON a.id_categoria = c.id_categoria " +
+            "JOIN estado_articulo e ON a.id_estado_articulo = e.id_estado_articulo " +
+            "WHERE c.eliminado = false AND a.eliminado = false AND c.es_tecnologico = true AND e.nombre_estado = 'DISPONIBLE' " +
+            "GROUP BY c.id_categoria, c.nombre_categoria, a.marca " +
+            "ORDER BY c.nombre_categoria, a.marca", nativeQuery = true)
+    List<Object[]> contarDisponiblesAgrupadosNativo();
+
+    // Busca artículos tecnológicos filtrados por su estado exacto, con paginación
+    @Query(value = "SELECT a FROM Articulo a JOIN FETCH a.categoria c JOIN FETCH a.estadoArticulo e " +
+            "WHERE c.esTecnologico = true AND e.nombreEstado = :estado " +
+            "ORDER BY a.nombreArticulo ASC",
+            countQuery = "SELECT COUNT(a) FROM Articulo a JOIN a.categoria c JOIN a.estadoArticulo e " +
+                    "WHERE c.esTecnologico = true AND e.nombreEstado = :estado")
+    Page<Articulo> findTecnologicosPorEstadoPaginado(@Param("estado") String estado, Pageable pageable);
 }

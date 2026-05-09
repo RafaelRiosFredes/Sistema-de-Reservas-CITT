@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,10 +25,20 @@ import java.util.Map;
 public class ArticuloController {
     private final ArticuloService articuloService;
 
-    @Operation(summary = "Listar todos los artículos",description = "Obtiene una lista de todos los artículos tecnológicos activos en el inventario.")
+    @Operation(summary = "Listar artículos (Admin)", description = "Lista paginada y filtrable por categoría.")
     @GetMapping
-    public ResponseEntity<List<ArticuloResponseDTO>> listarArticulos(){
-        return ResponseEntity.ok(articuloService.listarArticulos());
+    public ResponseEntity<Page<ArticuloResponseDTO>> listarArticulos(
+            @RequestParam(required = false) Long idCategoria,
+            Pageable pageable) {
+        return ResponseEntity.ok(articuloService.listarArticulosAdmin(idCategoria, pageable));
+    }
+
+    @Operation(summary = "Listar tecnológicos por estado (Admin)", description = "Obtiene una lista paginada de artículos tecnológicos filtrados por su estado (DISPONIBLE, PRESTADO, ATRASADO, DAÑADO).")
+    @GetMapping("/tecnologicos/estado/{estado}")
+    public ResponseEntity<Page<ArticuloResponseDTO>> listarTecnologicosPorEstado(
+            @PathVariable String estado,
+            Pageable pageable) {
+        return ResponseEntity.ok(articuloService.listarTecnologicosPorEstado(estado, pageable));
     }
 
     @Operation(summary = "Obtener un artículo", description = "Busca un artículo específico por su ID.")

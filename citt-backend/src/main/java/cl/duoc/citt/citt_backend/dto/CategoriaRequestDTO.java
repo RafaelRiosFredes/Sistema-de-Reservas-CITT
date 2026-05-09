@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoriaRequestDTO {
-    @NotBlank
+    @NotBlank(message = "El nombre de la categoría no puede estar vacío")
     private String nombreCategoria;
 
     @NotNull(message = "Debe especificar si la categoría es de tipo tecnológico")

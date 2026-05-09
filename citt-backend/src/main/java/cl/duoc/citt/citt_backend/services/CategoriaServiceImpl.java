@@ -1,8 +1,6 @@
 package cl.duoc.citt.citt_backend.services;
 
-import cl.duoc.citt.citt_backend.dto.CategoriaRequestDTO;
-import cl.duoc.citt.citt_backend.dto.CategoriaResponseDTO;
-import cl.duoc.citt.citt_backend.dto.CategoriaUpdateDTO;
+import cl.duoc.citt.citt_backend.dto.*;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.Categoria;
 import cl.duoc.citt.citt_backend.repositories.ArticuloRepository;
@@ -11,14 +9,22 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class CategoriaServiceImpl implements CategoriaService{
     private final CategoriaRepository categoriaRepository;
     private final ArticuloRepository articuloRepository;
+
+    private void estandarizarTextos(CategoriaRequestDTO dto){
+        if(dto.getNombreCategoria() != null) dto.setNombreCategoria(dto.getNombreCategoria().trim().toUpperCase());
+    }
+
+    private void estandarizarTextos(CategoriaUpdateDTO dto){
+        if(dto.getNombreCategoria() != null) dto.setNombreCategoria(dto.getNombreCategoria().trim().toUpperCase());
+    }
 
     private Categoria fromCreate(CategoriaRequestDTO d){
         Categoria cat = new Categoria();
@@ -41,8 +47,9 @@ public class CategoriaServiceImpl implements CategoriaService{
     }
 
     @Override
+    @Transactional
     public CategoriaResponseDTO crearCategoria(CategoriaRequestDTO dto) {
-        dto.setNombreCategoria(dto.getNombreCategoria().trim());
+        estandarizarTextos(dto);
         if(categoriaRepository.contarPorNombreIgnorandoFiltros(dto.getNombreCategoria()) > 0){
             throw new ReglaNegocioException("No se puede crear: Ya existe una categoria con el nombre " + dto.getNombreCategoria() + " (activa o eliminada).");
         }
@@ -58,8 +65,9 @@ public class CategoriaServiceImpl implements CategoriaService{
     }
 
     @Override
+    @Transactional
     public CategoriaResponseDTO actualizarCategoria(Long id, CategoriaUpdateDTO dto) {
-        dto.setNombreCategoria(dto.getNombreCategoria().trim());
+        estandarizarTextos(dto);
         Categoria c = categoriaRepository.findById(id).orElseThrow(()-> new ReglaNegocioException("Categoria " + id + " no existe"));
 
         // Si el usuario está intentando cambiar el nombre por uno distinto...
@@ -84,12 +92,44 @@ public class CategoriaServiceImpl implements CategoriaService{
     }
 
     @Override
+    public List<CategoriaResponseDTO> listarCategoriasTecnologicas() {
+        return categoriaRepository.findByEsTecnologicoTrue()
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    @Override
+    public List<CategoriaAgrupadaDTO> listarVistaAlumnos() {
+        List<Object[]> resultados = articuloRepository.contarDisponiblesAgrupadosNativo();
+        List<CategoriaAgrupadaDTO> response = new ArrayList<>();
+        Map<Long, CategoriaAgrupadaDTO> mapaCategorias = new HashMap<>();
+
+        for (Object[] row : resultados) {
+            Long catId = ((Number) row[0]).longValue();
+            String catNombre = (String) row[1];
+            String marca = (String) row[2];
+            Integer cantidad = ((Number) row[3]).intValue();
+
+            CategoriaAgrupadaDTO categoria = mapaCategorias.computeIfAbsent(catId,
+                    id -> new CategoriaAgrupadaDTO(id, catNombre, 0, new ArrayList<>()));
+
+            categoria.getDesgloseMarcas().add(new MarcaDesgloseDTO(marca, cantidad));
+            categoria.setTotalCategoria(categoria.getTotalCategoria() + cantidad);
+        }
+        response.addAll(mapaCategorias.values());
+        response.sort(Comparator.comparing(CategoriaAgrupadaDTO::getNombreCategoria));
+        return response;
+    }
+
+    @Override
+    @Transactional
     public void eliminarCategoria(Long id) {
         if(!categoriaRepository.existsById(id)){
             throw new ReglaNegocioException("La categoria no existe.");
         }
 
-        if(articuloRepository.contarPorCategoriaIdIgnorandoEliminados(id) > 0) {
+        if(articuloRepository.contarHistoricoPorCategoriaId(id) > 0) {
             throw new ReglaNegocioException("No se puede eliminar la categoría porque aún tiene artículos registrados. Reasígnelos o elimínelos primero.");
         }
 

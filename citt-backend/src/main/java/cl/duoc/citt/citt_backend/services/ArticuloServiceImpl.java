@@ -11,6 +11,8 @@ import cl.duoc.citt.citt_backend.repositories.ArticuloRepository;
 import cl.duoc.citt.citt_backend.repositories.CategoriaRepository;
 import cl.duoc.citt.citt_backend.repositories.EstadoArticuloRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +20,46 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class ArticuloServiceImpl implements ArticuloService{
     private final ArticuloRepository articuloRepository;
 
     private final CategoriaRepository categoriaRepository;
     private final EstadoArticuloRepository estadoArticuloRepository;
+
+    private void estandarizarTextos(ArticuloRequestDTO dto) {
+        if (dto.getNombreArticulo() != null) dto.setNombreArticulo(dto.getNombreArticulo().trim().toUpperCase());
+        if (dto.getMarca() == null || dto.getMarca().isBlank()) {
+            dto.setMarca("GENERICO");
+        } else {
+            dto.setMarca(dto.getMarca().trim().toUpperCase());
+        }
+        if (dto.getComentarios() != null) dto.setComentarios(dto.getComentarios().trim().toUpperCase());
+        if (dto.getSfai() != null) dto.setSfai(dto.getSfai().trim().toUpperCase());
+        if (dto.getColliers() != null) dto.setColliers(dto.getColliers().trim().toUpperCase());
+        if (dto.getNumeroSerie() != null) dto.setNumeroSerie(dto.getNumeroSerie().trim().toUpperCase());
+        if (dto.getEtiqueta() != null) dto.setEtiqueta(dto.getEtiqueta().trim().toUpperCase());
+
+        if (dto.getCodigoDuoc() != null && !dto.getCodigoDuoc().isBlank()) {
+            dto.setCodigoDuoc(dto.getCodigoDuoc().trim().toUpperCase());
+        } else {
+            dto.setCodigoDuoc(null);
+        }
+    }
+
+    private void estandarizarTextosUpdate(ArticuloUpdateDTO dto) {
+        if (dto.getNombreArticulo() != null) dto.setNombreArticulo(dto.getNombreArticulo().trim().toUpperCase());
+        if (dto.getMarca() == null || dto.getMarca().isBlank()) {
+            dto.setMarca("GENERICO");
+        } else {
+            dto.setMarca(dto.getMarca().trim().toUpperCase());
+        }
+        if (dto.getComentarios() != null) dto.setComentarios(dto.getComentarios().trim().toUpperCase());
+        if (dto.getSfai() != null) dto.setSfai(dto.getSfai().trim().toUpperCase());
+        if (dto.getColliers() != null) dto.setColliers(dto.getColliers().trim().toUpperCase());
+        if (dto.getNumeroSerie() != null) dto.setNumeroSerie(dto.getNumeroSerie().trim().toUpperCase());
+        if (dto.getEtiqueta() != null) dto.setEtiqueta(dto.getEtiqueta().trim().toUpperCase());
+    }
 
     private Articulo fromCreate(ArticuloRequestDTO d){
         Articulo art = new Articulo();
@@ -57,6 +93,7 @@ public class ArticuloServiceImpl implements ArticuloService{
         return ArticuloResponseDTO.builder()
                 .idArticulo(a.getIdArticulo())
                 .nombreArticulo(a.getNombreArticulo())
+                .marca(a.getMarca())
                 .comentarios(a.getComentarios())
                 .sfai(a.getSfai())
                 .colliers(a.getColliers())
@@ -96,17 +133,14 @@ public class ArticuloServiceImpl implements ArticuloService{
 
 
     @Override
+    @Transactional
     public ArticuloResponseDTO registrarArticulo(ArticuloRequestDTO dto) {
-        dto.setNombreArticulo(dto.getNombreArticulo().trim());
-        dto.setMarca(dto.getMarca().trim().toUpperCase());
-        if (dto.getCodigoDuoc() != null && !dto.getCodigoDuoc().isBlank()) {
-            dto.setCodigoDuoc(dto.getCodigoDuoc().trim().toUpperCase());
+        estandarizarTextos(dto);
 
+        if (dto.getCodigoDuoc() != null) {
             if(articuloRepository.contarPorCodigoDuocIgnorandoFiltros(dto.getCodigoDuoc()) > 0){
-                throw new ReglaNegocioException("No se puede registrar: El código DUOC '" + dto.getCodigoDuoc() + "' ya fue utilizado por un artículo (activo o dado de baja).");
+                throw new ReglaNegocioException("No se puede registrar: El código DUOC '" + dto.getCodigoDuoc() + "' ya fue utilizado.");
             }
-        } else {
-            dto.setCodigoDuoc(null);
         }
 
         Articulo saved = articuloRepository.save(fromCreate(dto));
@@ -121,9 +155,9 @@ public class ArticuloServiceImpl implements ArticuloService{
     }
 
     @Override
+    @Transactional
     public ArticuloResponseDTO actualizarArticulo(Long id, ArticuloUpdateDTO dto) {
-        dto.setNombreArticulo(dto.getNombreArticulo().trim());
-        dto.setMarca(dto.getMarca().trim().toUpperCase());
+        estandarizarTextosUpdate(dto);
 
         Articulo a = articuloRepository.findById(id).orElseThrow(() -> new ReglaNegocioException("Articulo " + id + " no existe"));
         aplicarUpdate(a,dto);
@@ -132,14 +166,19 @@ public class ArticuloServiceImpl implements ArticuloService{
     }
 
     @Override
-    public List<ArticuloResponseDTO> listarArticulos() {
-        return articuloRepository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .toList();
+    public Page<ArticuloResponseDTO> listarArticulosAdmin(Long idCategoria, Pageable pageable) {
+        return articuloRepository.findAllPaginadoFiltrado(idCategoria, pageable)
+                .map(this::toDTO);
     }
 
     @Override
+    public Page<ArticuloResponseDTO> listarTecnologicosPorEstado(String estado, Pageable pageable) {
+        return articuloRepository.findTecnologicosPorEstadoPaginado(estado.trim().toUpperCase(), pageable)
+                .map(this::toDTO);
+    }
+
+    @Override
+    @Transactional
     public void eliminarArticulo(Long id) {
         if(!articuloRepository.existsById(id)){
             throw new ReglaNegocioException("El articulo no existe");
