@@ -51,6 +51,15 @@ public class CategoriaController {
         return new ResponseEntity<>(categoriaService.crearCategoria(dto), HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Restaurar una categoría", description = "Revierte el borrado lógico de una categoría.")
+    @PatchMapping("/{id}/restaurar")
+    public ResponseEntity<Map<String, String>> restaurarCategoria(@PathVariable Long id){
+        categoriaService.restaurarCategoria(id);
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "La categoría con ID " + id + " fue restaurada correctamente.");
+        return ResponseEntity.ok(respuesta);
+    }
+
     @Operation(summary = "Actualizar una categoria",description = "Modifica los datos de una categoria por su ID.")
     @PutMapping("/{id}")
     public ResponseEntity<CategoriaResponseDTO> actualizarCategoria(@PathVariable Long id, @Valid @RequestBody CategoriaUpdateDTO dto){

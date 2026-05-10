@@ -2,6 +2,7 @@ package cl.duoc.citt.citt_backend.repositories;
 
 import cl.duoc.citt.citt_backend.model.Articulo;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
@@ -17,9 +18,14 @@ public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
     int contarHistoricoPorCategoriaId(@Param("idCategoria") Long idCategoria);
 
     // countQuery para que Spring sepa cuántas páginas totales hay cuando usamos JOIN FETCH
-    @Query(value = "SELECT a FROM Articulo a JOIN FETCH a.categoria JOIN FETCH a.estadoArticulo WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria) ORDER BY a.nombreArticulo ASC",
-            countQuery = "SELECT COUNT(a) FROM Articulo a WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria)")
-    Page<Articulo> findAllPaginadoFiltrado(@Param("idCategoria") Long idCategoria, Pageable pageable);
+    @Query(value = "SELECT a FROM Articulo a JOIN FETCH a.categoria JOIN FETCH a.estadoArticulo " +
+            "WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria) " +
+            "AND (:nombre IS NULL OR LOWER(a.nombreArticulo) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
+            "ORDER BY a.nombreArticulo ASC",
+            countQuery = "SELECT COUNT(a) FROM Articulo a " +
+                    "WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria) " +
+                    "AND (:nombre IS NULL OR LOWER(a.nombreArticulo) LIKE LOWER(CONCAT('%', :nombre, '%')))")
+    Page<Articulo> findAllPaginadoFiltrado(@Param("idCategoria") Long idCategoria, @Param("nombre") String nombre, Pageable pageable);
 
     @Query(value = "SELECT c.id_categoria, c.nombre_categoria, a.marca, COUNT(a.id_articulo) AS total " +
             "FROM articulo a " +
@@ -37,4 +43,17 @@ public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
             countQuery = "SELECT COUNT(a) FROM Articulo a JOIN a.categoria c JOIN a.estadoArticulo e " +
                     "WHERE c.esTecnologico = true AND e.nombreEstado = :estado")
     Page<Articulo> findTecnologicosPorEstadoPaginado(@Param("estado") String estado, Pageable pageable);
+
+    @Query("SELECT COUNT(a) FROM Articulo a WHERE a.categoria.esTecnologico = true")
+    long contarArticulosTecnologicos();
+
+    @Query("SELECT COUNT(a) FROM Articulo a WHERE a.categoria.esTecnologico = false")
+    long contarInmobiliario();
+
+    @Query("SELECT COUNT(a) FROM Articulo a JOIN a.estadoArticulo e WHERE e.nombreEstado = :estado")
+    long contarPorEstadoFisico(@Param("estado") String estado);
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = "UPDATE articulo SET eliminado = false WHERE id_articulo = :id", nativeQuery = true)
+    int restaurarArticuloNativo(@Param("id") Long id);
 }

@@ -21,4 +21,6 @@ public interface CategoriaService {
     List<CategoriaAgrupadaDTO> listarVistaAlumnos();
 
     void eliminarCategoria(Long id);
+
+    CategoriaResponseDTO restaurarCategoria(Long id);
 }

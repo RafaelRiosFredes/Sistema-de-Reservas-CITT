@@ -26,8 +26,7 @@ public class ArticuloRequestDTO {
     @PastOrPresent(message = "La fecha de compra no puede ser en el futuro")
     private LocalDate fechaCompra;
 
-    @Pattern(regexp = "^\\S+$", message = "El código no debe contener espacios")
-    @Size(min = 13, max = 13, message = "El código DUOC debe tener exactamente 13 caracteres")
+    @Pattern(regexp = "^(\\S{13}|)$", message = "El código DUOC debe tener exactamente 13 caracteres sin espacios, o dejarse en blanco")
     private String codigoDuoc;
 
     @NotNull(message = "El ID de la categoría es obligatorio")

@@ -17,9 +17,8 @@ public class DataSeedConfig {
                 repository.saveAll(List.of(
                         new EstadoArticulo(null,"DISPONIBLE"),
                         new EstadoArticulo(null,"PRESTADO"),
-                        new EstadoArticulo(null,"PENDIENTE"),
-                        new EstadoArticulo(null,"ATRASADO"),
-                        new EstadoArticulo(null,"DAÑADO")
+                        new EstadoArticulo(null,"DAÑADO"),
+                        new EstadoArticulo(null,"MANTENCION")
                 ));
                 System.out.println("Estados de artículo inicializados con éxito.");
             }

@@ -3,6 +3,7 @@ package cl.duoc.citt.citt_backend.services;
 import cl.duoc.citt.citt_backend.dto.ArticuloRequestDTO;
 import cl.duoc.citt.citt_backend.dto.ArticuloResponseDTO;
 import cl.duoc.citt.citt_backend.dto.ArticuloUpdateDTO;
+import cl.duoc.citt.citt_backend.dto.EstadisticasInventarioDTO;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.Articulo;
 import cl.duoc.citt.citt_backend.model.Categoria;
@@ -166,8 +167,8 @@ public class ArticuloServiceImpl implements ArticuloService{
     }
 
     @Override
-    public Page<ArticuloResponseDTO> listarArticulosAdmin(Long idCategoria, Pageable pageable) {
-        return articuloRepository.findAllPaginadoFiltrado(idCategoria, pageable)
+    public Page<ArticuloResponseDTO> listarArticulosAdmin(Long idCategoria, String nombre, Pageable pageable) {
+        return articuloRepository.findAllPaginadoFiltrado(idCategoria, nombre, pageable)
                 .map(this::toDTO);
     }
 
@@ -186,5 +187,25 @@ public class ArticuloServiceImpl implements ArticuloService{
 
         // Spring intentará hacer un DELETE, pero @SQLDelete lo convertirá en un UPDATE.
         articuloRepository.deleteById(id);
+    }
+
+    @Override
+    public EstadisticasInventarioDTO obtenerEstadisticasDashboard() {
+        return EstadisticasInventarioDTO.builder()
+                .totalArticulosTecnologicos(articuloRepository.contarArticulosTecnologicos())
+                .totalInmobiliario(articuloRepository.contarInmobiliario())
+                .totalPrestados(articuloRepository.contarPorEstadoFisico("PRESTADO"))
+                .totalDanados(articuloRepository.contarPorEstadoFisico("DAÑADO"))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public ArticuloResponseDTO restaurarArticulo(Long id) {
+        int actualizados = articuloRepository.restaurarArticuloNativo(id);
+        if (actualizados == 0) {
+            throw new ReglaNegocioException("El artículo no existe.");
+        }
+        return obtenerArticuloPorId(id);
     }
 }

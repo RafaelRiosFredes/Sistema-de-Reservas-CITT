@@ -135,4 +135,14 @@ public class CategoriaServiceImpl implements CategoriaService{
 
         categoriaRepository.deleteById(id);
     }
+
+    @Override
+    public CategoriaResponseDTO restaurarCategoria(Long id) {
+        int actualizados = categoriaRepository.restaurarCategoriaNativo(id);
+        if (actualizados == 0) {
+            throw new ReglaNegocioException("La categoría no existe.");
+        }
+        // Como ya revivió, podemos buscarla y devolverla con el método normal
+        return obtenerCategoriaPorId(id);
+    }
 }
