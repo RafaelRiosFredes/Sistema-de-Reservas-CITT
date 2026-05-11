@@ -1,97 +1,202 @@
-@import "tailwindcss";
+/*
+  ================================================
+  ESTILOS MAESTROS CITT - DUOC UC
+  SISTEMA DE RESERVAS (ESTÁNDAR OFICIAL)
+  ================================================
+*/
 
-/* 1. CONFIGURACIÓN DEL TEMA (Variables de tu Mockup) */
-@theme {
-  --color-primary: #307FE2;
-  --color-secondary: #8BB8E8;
-  --color-dark: #1A1A1A;
-  --color-gray-light: #F4F7F9;
-  --color-gray-border: #E1E8ED;
-  --color-success: #28A745;
-  --color-error: #DC3545;
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
 
-  --font-lato: "Lato", sans-serif;
-  
-  --shadow-auth: 0 10px 30px rgba(0, 0, 0, 0.1);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+:root {
+    /* Paleta Oficial Institucional */
+    --primary: #307FE2;      /* Azul Duoc Informática */
+    --secondary: #8BB8E8;    /* Celeste de apoyo */
+    --dark: #1A1A1A;         /* Texto principal / Sidebar */
+    --white: #FFFFFF;        /* Fondos */
+    --gray-light: #F4F7F9;   /* Fondo de la App */
+    --gray-border: #E1E8ED;  /* Bordes */
+
+    /* Estados de Alerta */
+    --success: #065F46;      /* Verde oscuro para texto */
+    --success-bg: #D1FAE5;   /* Verde claro para fondo */
+    --error: #991B1B;        /* Rojo oscuro para texto */
+    --error-bg: #FEE2E2;     /* Rojo claro para fondo */
+    --warning: #9A3412;      /* Naranja oscuro para texto */
+    --warning-bg: #FFEDD5;   /* Naranja claro para fondo */
 }
 
-/* 2. IMPORTAR FUENTE LATO */
-@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
-
-/* 3. ESTILOS BASE (Reseteo y Tipografía) */
-@layer base {
-  body {
-    @apply bg-gray-light text-dark font-lato leading-relaxed;
-    margin: 0;
-  }
-  
-  h1 { @apply text-[2.6875rem] font-bold mb-6; }
-  h2 { @apply text-[2.1rem] font-bold mb-5; }
-  h3 { @apply text-[1.5rem] font-bold mb-4; }
-  h4 { @apply text-[1.25rem] font-normal; }
-  p { @apply text-base font-normal; }
-  small { @apply text-[0.8125rem] font-normal; }
+/* 1. RESET Y BASE */
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
 }
 
-/* 4. COMPONENTES DEL MOCKUP (Clases listas para usar) */
-@layer components {
-  
-  /* Contenedor General */
-  .container-main {
-    @apply max-w-[1200px] mx-auto p-8;
-  }
-
-  /* Botones Reutilizables */
-  .btn {
-    @apply inline-block px-8 py-3 rounded-md font-bold cursor-pointer transition-all border-none text-base text-center no-underline;
-  }
-  .btn-primary { @apply bg-primary text-white hover:bg-[#2565b3] hover:-translate-y-0.5 active:scale-95; }
-  .btn-secondary { @apply bg-secondary text-white hover:opacity-90; }
-  .btn-block { @apply w-full flex justify-center; }
-
-  /* Inputs y Formularios */
-  .form-group { @apply mb-6 text-left; }
-  .form-label { @apply block mb-2 font-bold text-dark; }
-  .form-input {
-    @apply w-full px-4 py-3 border border-gray-border rounded-md font-lato text-base transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary;
-  }
-
-  /* Tarjetas (Cards) */
-  .card-booking {
-    @apply bg-white p-8 rounded-xl border border-gray-border shadow-sm transition-transform hover:-translate-y-1;
-  }
-
-  /* Badges de Estado */
-  .status-badge {
-    @apply inline-block px-3 py-1 rounded-full text-xs font-bold uppercase;
-  }
-  .status-available { @apply bg-[#E6FFFA] text-[#319795]; }
-  .status-reserved { @apply bg-[#FFF5F5] text-[#C53030]; }
-
-  /* Estructura del Dashboard */
-  .layout-dashboard {
-    @apply grid min-h-screen;
-    grid-template-columns: 280px 1fr;
-  }
-  
-  .sidebar-main {
-    @apply bg-dark text-white p-8 flex flex-col gap-8;
-  }
-
-  .nav-link-custom {
-    @apply flex items-center gap-4 p-3 rounded-lg text-[#A0AEC0] no-underline transition-all hover:bg-primary/10 hover:text-primary;
-  }
-  
-  .nav-link-active {
-    @apply bg-primary/10 text-primary;
-  }
-
-  /* Calendario Mockup */
-  .calendar-container {
-    @apply grid grid-cols-7 gap-px bg-gray-border border border-gray-border rounded-lg overflow-hidden;
-  }
-  .calendar-day-box {
-    @apply bg-white min-h-[100px] p-2;
-  }
+body {
+    font-family: 'Lato', sans-serif;
+    background-color: var(--gray-light);
+    color: var(--dark);
+    line-height: 1.5;
 }
+
+/* 2. COMPONENTES: BOTONES (boton.html) */
+.boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1.8rem;
+    border-radius: 8px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    gap: 0.5rem;
+}
+
+.boton-primario {
+    background-color: var(--primary);
+    color: var(--white);
+    box-shadow: 0 4px 6px rgba(48, 127, 226, 0.2);
+}
+
+.boton-primario:hover {
+    background-color: #2565b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(48, 127, 226, 0.3);
+}
+
+.boton-secundario {
+    background-color: var(--secondary);
+    color: var(--white);
+}
+
+.boton-secundario:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+}
+
+.boton-bloque { width: 100%; display: flex; }
+
+/* 3. COMPONENTES: TARJETAS (tarjeta-recurso.html) */
+.tarjeta-recurso {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--gray-border);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.tarjeta-recurso:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.contenedor-recursos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+/* 4. COMPONENTES: ETIQUETAS DE ESTADO (etiqueta-estado.html) */
+.etiqueta-estado {
+    padding: 0.4rem 0.9rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-flex;
+    letter-spacing: 0.5px;
+}
+
+.estado-disponible { background-color: var(--success-bg); color: var(--success); }
+.estado-ocupado { background-color: var(--error-bg); color: var(--error); }
+.estado-mantenimiento { background-color: var(--warning-bg); color: var(--warning); }
+
+/* 5. COMPONENTES: FORMULARIOS (grupo-formulario.html) */
+.grupo-formulario { margin-bottom: 1.5rem; }
+.etiqueta-formulario {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+.entrada-formulario {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+    outline: none;
+    font-family: 'Lato', sans-serif;
+    transition: all 0.2s;
+}
+.entrada-formulario:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(48, 127, 226, 0.1);
+}
+
+/* 6. COMPONENTES: CALENDARIO (celda-calendario.html) */
+.celda-calendario {
+    background-color: var(--white);
+    border: 1px solid var(--gray-border);
+    aspect-ratio: 1 / 1;
+    position: relative;
+    padding: 0.6rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    transition: all 0.2s;
+}
+.celda-calendario:hover {
+    border-color: var(--primary);
+    background-color: var(--gray-light);
+}
+.numero-dia {
+    position: absolute; top: 8px; left: 8px;
+    font-weight: 700; font-size: 0.85rem; color: var(--secondary);
+}
+
+/* 7. COMPONENTES: NAVEGACIÓN Y SIDEBAR */
+.sidebar {
+    background-color: var(--dark);
+    color: var(--white);
+    height: 100vh;
+    padding: 2rem;
+}
+.nav-link {
+    color: #A0AEC0;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+.nav-link.active, .nav-link:hover {
+    background-color: rgba(48, 127, 226, 0.1);
+    color: var(--primary);
+}
+
+/* 8. COMPONENTES: MODAL Y SELECCIÓN DE ROL */
+.opcion-rol {
+    padding: 2rem 1.5rem;
+    border: 2px solid var(--gray-border);
+    border-radius: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.opcion-rol.seleccionado {
+    border-color: var(--primary);
+    background: rgba(48, 127, 226, 0.08);
+}
+.opcion-rol i { font-size: 2.5rem; color: var(--secondary); }
+.opcion-rol.seleccionado i { color: var(--primary); }
