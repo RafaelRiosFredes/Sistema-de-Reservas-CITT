@@ -20,14 +20,6 @@ public class DataSeedConfig {
                         .nombre("DISPONIBLE")
                         .build());
 
-                repository.save(EstadoEspacio.builder()
-                        .nombre("OCUPADO")
-                        .build());
-
-                repository.save(EstadoEspacio.builder()
-                        .nombre("EXCLUSIVO")
-                        .build());
-
 
                 repository.save(EstadoEspacio.builder()
                         .nombre("DAÑADO")

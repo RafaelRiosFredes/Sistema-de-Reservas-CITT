@@ -35,6 +35,7 @@ public class EspacioServiceImpl implements EspacioService {
         Espacio espacio = Espacio.builder()
                 .nombre(dto.getNombre())
                 .comentarios(dto.getComentarios())
+                .capacidad(dto.getCapacidad())
                 .estado(disponible)
                 .build();
 
@@ -76,7 +77,7 @@ public class EspacioServiceImpl implements EspacioService {
             String nuevoEstado = dto.getEstado().toUpperCase();
 
             // Lista de estados que requieren explicación obligatoria
-            List<String> estadosCriticos = List.of("DAÑADO", "EXCLUSIVO", "MANTENCION");
+            List<String> estadosCriticos = List.of("DAÑADO", "MANTENCION");
 
             if (estadosCriticos.contains(nuevoEstado)) {
                 if (dto.getComentarios() == null || dto.getComentarios().trim().isEmpty()) {
@@ -95,6 +96,7 @@ public class EspacioServiceImpl implements EspacioService {
         }
 
         espacio.setNombre(dto.getNombre());
+        espacio.setCapacidad(dto.getCapacidad());
         espacio.setComentarios(dto.getComentarios());
 
         return mapToDTO(repository.save(espacio));
@@ -113,16 +115,12 @@ public class EspacioServiceImpl implements EspacioService {
                 .id(espacio.getId())
                 .nombre(espacio.getNombre())
                 .comentarios(espacio.getComentarios())
+                .capacidad(espacio.getCapacidad())
                 // Forzar mayúsculas ayuda a evitar errores en el === del frontend
                 .estado(espacio.getEstado().getNombre().toUpperCase())
                 .build();
     }
 
-    // Este método servirá para que el Service de Solicitud valide antes de guardar
-    public boolean verificarBloqueoExclusivo() {
-        return repository.findAll().stream()
-                .anyMatch(e -> e.getEstado().getNombre().equalsIgnoreCase("EXCLUSIVO"));
-    }
 
 
 }

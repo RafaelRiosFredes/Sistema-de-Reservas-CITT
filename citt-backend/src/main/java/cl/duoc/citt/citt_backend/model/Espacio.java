@@ -20,6 +20,7 @@ public class Espacio {
 
     private String nombre;
     private String comentarios;
+    private Integer capacidad;
 
 
     @ManyToOne(fetch = FetchType.EAGER)
