@@ -1,5 +1,5 @@
 import React from "react";
-import { Monitor, Box, CheckSquare } from "lucide-react"; // Opcional, para inyectar iconos si quieres
+import { Monitor, Box, CheckSquare } from "lucide-react"; // Opcional, para inyectar iconos
 
 interface FiltroBotonProps {
   label: string;

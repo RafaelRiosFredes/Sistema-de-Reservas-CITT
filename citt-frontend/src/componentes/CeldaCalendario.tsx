@@ -24,7 +24,7 @@ const CeldaCalendario: React.FC<CeldaCalendarioProps> = ({
       {/* Indicador de eventos */}
       <div className="flex flex-col gap-1 w-full h-full">
         {eventos.map((evento) => {
-          // Lógica de colores según el mockup del calendario
+          // Lógica de colores
           const colorClass =
             evento.tipo === "Clase"
               ? "bg-[#FFF5F5] text-error border-l-4 border-error"

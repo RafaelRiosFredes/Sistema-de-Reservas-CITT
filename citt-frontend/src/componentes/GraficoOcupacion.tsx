@@ -24,7 +24,6 @@ const GraficoOcupacion: React.FC<GraficoOcupacionProps> = ({
   datos,
   porcentajePromedio,
 }) => {
-  // Función para imitar el diseño de tu mockup:
   // Si el porcentaje es muy bajo, lo pintamos gris. Si es medio, amarillo. Si es alto, azul oscuro.
   const obtenerColorBarra = (porcentaje: number) => {
     if (porcentaje < 30) return "#E1E8ED"; // Gris claro
