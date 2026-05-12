@@ -24,7 +24,6 @@ public class RefreshTokenService {
 
 
      // Crea o actualiza un Refresh Token para un usuario.
-
     @Transactional
     public RefreshToken crearRefreshToken(Long usuarioId) {
         var usuario = usuarioRepository.findById(usuarioId)

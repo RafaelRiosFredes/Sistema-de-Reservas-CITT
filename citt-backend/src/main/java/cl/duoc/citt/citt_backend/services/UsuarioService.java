@@ -22,7 +22,6 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
 
-
      // Obtiene la lista completa de usuarios de la base de datos y los transforma a DTO.
     public List<UsuarioResponseDTO> obtenerTodos() {
         return usuarioRepository.findAll().stream()

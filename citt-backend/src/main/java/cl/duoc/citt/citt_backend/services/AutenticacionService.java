@@ -194,7 +194,7 @@ public class AutenticacionService {
         Usuario usuario = usuarioOpt.get();
         passwordRecuperarRepository.deleteByUsuario(usuario);
 
-        String token = UUID.randomUUID().toString();
+        String token = UUID.randomUUID().toString().substring(0, 8);
         RecuperarPasswordToken resetToken = RecuperarPasswordToken.builder()
                 .token(token)
                 .usuario(usuario)
