@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from "react";
 
 interface BadgeEstadoProps {
@@ -33,3 +34,47 @@ const BadgeEstado: React.FC<BadgeEstadoProps> = ({ estado, texto }) => {
 };
 
 export default BadgeEstado;
+=======
+import React from 'react';
+
+/**
+*
+* USO: Se utiliza en las tarjetas de inventario y listas del CITT
+*      para indicar visualmente la disponibilidad de los equipos.
+*/
+
+type EstadoEquipo = 'disponible' | 'ocupado' | 'mantenimiento';
+
+interface BadgeEstadoProps {
+estado: EstadoEquipo;
+}
+
+const BadgeEstado: React.FC<BadgeEstadoProps> = ({ estado }) => {
+
+
+  const configuracion = {
+  disponible: {
+  clase: 'estado-disponible',
+  texto: 'Disponible'
+  },
+  ocupado: {
+  clase: 'estado-ocupado',
+  texto: 'En Uso'
+  },
+  mantenimiento: {
+  clase: 'estado-mantenimiento',
+  texto: 'Mantenimiento'
+  }
+  };
+
+  const { clase, texto } = configuracion[estado];
+
+  return (
+  <span className={`etiqueta-estado ${clase}`}>
+      {texto}
+    </span>
+  );
+  };
+
+  export default BadgeEstado;
+>>>>>>> 828e6c260f77f2e9440140c4e8e15ef8adf22871
