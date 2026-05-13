@@ -1,0 +1,56 @@
+package cl.duoc.citt.citt_backend.controllers;
+
+import cl.duoc.citt.citt_backend.dto.SolicitudRequestDTO;
+import cl.duoc.citt.citt_backend.dto.SolicitudResponseDTO;
+import cl.duoc.citt.citt_backend.services.SolicitudService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/solicitudes")
+@RequiredArgsConstructor
+@Tag(name = "Solicitudes", description = "Operaciones para gestión de reservas de espacios y préstamos de artículos")
+public class SolicitudController {
+
+    private final SolicitudService solicitudService;
+
+    @Operation(summary = "Crear nueva solicitud", description = "El alumno o docente crea una reserva para espacio, artículos o ambos.")
+    @PostMapping
+    public ResponseEntity<SolicitudResponseDTO> crearSolicitud(@Valid @RequestBody SolicitudRequestDTO dto) {
+        // Obtenemos el correo del usuario logueado usando el JWT
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return new ResponseEntity<>(solicitudService.crearSolicitud(dto, email), HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Ver mis solicitudes", description = "Devuelve el historial de solicitudes del usuario autenticado.")
+    @GetMapping("/mis-solicitudes")
+    public ResponseEntity<List<SolicitudResponseDTO>> misSolicitudes() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(solicitudService.obtenerMisSolicitudes(email));
+    }
+
+    @Operation(summary = "Listar todas las solicitudes (Admin)", description = "Permite a los administradores ver todas las reservas.")
+    @GetMapping
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<List<SolicitudResponseDTO>> obtenerTodas() {
+        return ResponseEntity.ok(solicitudService.obtenerTodas());
+    }
+
+    @Operation(summary = "Cambiar estado de solicitud (Admin)", description = "Aprueba, rechaza o finaliza una solicitud.")
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<SolicitudResponseDTO> cambiarEstado(
+            @PathVariable Long id,
+            @RequestParam String nuevoEstado) {
+        return ResponseEntity.ok(solicitudService.cambiarEstado(id, nuevoEstado));
+    }
+}
