@@ -56,4 +56,8 @@ public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
     @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE articulo SET eliminado = false WHERE id_articulo = :id", nativeQuery = true)
     int restaurarArticuloNativo(@Param("id") Long id);
+
+    @Query("SELECT COUNT(a) FROM Articulo a WHERE a.categoria.idCategoria = :idCategoria " +
+            "AND a.marca = :marca AND a.estadoArticulo.nombreEstado = 'DISPONIBLE' AND a.eliminado = false")
+    int contarDisponiblesPorCategoriaYMarca(@Param("idCategoria") Long idCategoria, @Param("marca") String marca);
 }

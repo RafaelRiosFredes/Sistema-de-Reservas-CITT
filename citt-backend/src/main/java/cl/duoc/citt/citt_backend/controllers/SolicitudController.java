@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -50,7 +51,27 @@ public class SolicitudController {
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<SolicitudResponseDTO> cambiarEstado(
             @PathVariable Long id,
-            @RequestParam String nuevoEstado) {
-        return ResponseEntity.ok(solicitudService.cambiarEstado(id, nuevoEstado));
+            @RequestParam Long idEstadoSolicitud) {
+        return ResponseEntity.ok(solicitudService.cambiarEstado(id, idEstadoSolicitud));
+    }
+
+    @Operation(summary = "Entregar recursos físicos", description = "Asigna los IDs físicos exactos y pasa la solicitud a EN PROCESO.")
+    @PatchMapping("/{id}/entregar")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<SolicitudResponseDTO> entregarRecursos(
+            @PathVariable Long id,
+            @RequestBody List<Long> idsArticulosFisicos) {
+        return ResponseEntity.ok(solicitudService.entregarArticulos(id, idsArticulosFisicos));
+    }
+
+    @Operation(summary = "Devolver recursos", description = "Recibe los artículos, permite marcar cuáles se dañaron y pasa la solicitud a FINALIZADA.")
+    @PatchMapping("/{id}/devolver")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<SolicitudResponseDTO> devolverRecursos(
+            @PathVariable Long id,
+            @RequestBody(required = false) List<Long> idsArticulosDanados) {
+        // Si no mandan nada en el body, asumimos que ninguno se dañó
+        if(idsArticulosDanados == null) idsArticulosDanados = new ArrayList<>();
+        return ResponseEntity.ok(solicitudService.devolverArticulos(id, idsArticulosDanados));
     }
 }

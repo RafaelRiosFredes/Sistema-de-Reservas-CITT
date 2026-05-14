@@ -33,12 +33,12 @@ public class SolicitudRequestDTO {
     @Schema(example = "1")
     private Long idEspacio;
 
-    @Schema(example = "[1, 2]")
-    private List<Long> idsArticulos;
-
     @Schema(example = "2")
     private Integer cantidadIntegrantes;
 
     @Schema(example = "false")
     private Boolean exclusividad = false;
+
+    @Schema(description = "Lista de artículos solicitados por categoría y marca")
+    private List<RequerimientoDTO> requerimientos;
 }

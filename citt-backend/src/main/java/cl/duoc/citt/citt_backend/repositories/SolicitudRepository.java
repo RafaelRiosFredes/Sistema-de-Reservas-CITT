@@ -19,7 +19,7 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
     // Consulta para verificar si un espacio ya está reservado en un horario específico
     @Query("SELECT COUNT(s) FROM Solicitud s WHERE s.espacio.id = :idEspacio " +
             "AND s.fecha = :fecha " +
-            "AND s.estado IN ('PENDIENTE', 'APROBADA') " +
+            "AND s.estadoSolicitud.nombre IN ('PENDIENTE', 'APROBADA') " + // <-- MODIFICADO AQUÍ
             "AND (s.horaInicio < :horaFin AND s.horaFin > :horaInicio)")
     int contarChoquesDeHorario(
             @Param("idEspacio") Long idEspacio,

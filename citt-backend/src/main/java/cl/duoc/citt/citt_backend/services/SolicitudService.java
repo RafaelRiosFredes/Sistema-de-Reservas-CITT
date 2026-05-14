@@ -9,5 +9,7 @@ public interface SolicitudService {
     SolicitudResponseDTO crearSolicitud(SolicitudRequestDTO dto, String emailUsuario);
     List<SolicitudResponseDTO> obtenerMisSolicitudes(String emailUsuario);
     List<SolicitudResponseDTO> obtenerTodas();
-    SolicitudResponseDTO cambiarEstado(Long idSolicitud, String nuevoEstado);
+    SolicitudResponseDTO cambiarEstado(Long idSolicitud, Long idEstadoSolicitud);
+    SolicitudResponseDTO entregarArticulos(Long idSolicitud, List<Long> idsArticulosEntregados);
+    SolicitudResponseDTO devolverArticulos(Long idSolicitud, List<Long> idsArticulosDanados);
 }

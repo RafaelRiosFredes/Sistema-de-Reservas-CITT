@@ -42,11 +42,13 @@ public class Solicitud {
     @Column(length = 500)
     private String proposito;
 
-    // Estados sugeridos: PENDIENTE, APROBADA, RECHAZADA, FINALIZADA
-    @Column(nullable = false)
-    private String estado;
+
 
     // --- RELACIONES ---
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_estado_solicitud", nullable = false)
+    private EstadoSolicitud estadoSolicitud;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario", nullable = false)
@@ -66,4 +68,8 @@ public class Solicitud {
     )
     @Builder.Default
     private List<Articulo> articulos = new ArrayList<>();
+
+    @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<RequerimientoArticulo> requerimientos = new ArrayList<>();
 }
