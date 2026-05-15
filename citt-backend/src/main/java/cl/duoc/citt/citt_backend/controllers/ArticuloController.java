@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ public class ArticuloController {
 
     @Operation(summary = "Listar artículos (Admin)", description = "Lista paginada y filtrable por categoría y nombre.")
     @GetMapping
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<Page<ArticuloResponseDTO>> listarArticulos(
             @RequestParam(required = false) Long idCategoria,
             @RequestParam(required = false) String nombre,
@@ -37,12 +39,14 @@ public class ArticuloController {
 
     @Operation(summary = "Listar tecnológicos por estado (Admin)", description = "Obtiene una lista paginada de artículos tecnológicos filtrados por su estado (DISPONIBLE, PRESTADO, DAÑADO, MANTENCION).")
     @GetMapping("/tecnologicos/estado/{estado}")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<Page<ArticuloResponseDTO>> listarTecnologicosPorEstado(
             @PathVariable String estado,
             Pageable pageable) {
         return ResponseEntity.ok(articuloService.listarTecnologicosPorEstado(estado, pageable));
     }
 
+    // Cualquier usuario autenticado puede ver la información
     @Operation(summary = "Obtener un artículo", description = "Busca un artículo específico por su ID.")
     @GetMapping("/{id}")
     public ResponseEntity<ArticuloResponseDTO> obtenerArticulo(@PathVariable Long id){
@@ -51,18 +55,21 @@ public class ArticuloController {
 
     @Operation(summary = "Registrar un nuevo artículo",description = "Crea un artículo validando que el código Duoc no exista previamente.")
     @PostMapping
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ArticuloResponseDTO> registrarArticulo(@Valid @RequestBody ArticuloRequestDTO dto){
         return new ResponseEntity<>(articuloService.registrarArticulo(dto), HttpStatus.CREATED);
     }
 
     @Operation(summary = "Actualizar un artículo",description = "Modifica los datos de un artículo existente por su ID.")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<ArticuloResponseDTO> actualizarArticulo(@PathVariable Long id, @Valid @RequestBody ArticuloUpdateDTO dto){
         return ResponseEntity.ok(articuloService.actualizarArticulo(id,dto));
     }
 
     @Operation(summary = "Eliminar un artículo",description = "Realiza un borrado lógico (soft delete) del artículo.")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<Map<String, String>> eliminarArticulo(@PathVariable Long id){
         articuloService.eliminarArticulo(id);
         Map<String, String> respuesta = new HashMap<>();
@@ -72,12 +79,14 @@ public class ArticuloController {
 
     @Operation(summary = "Obtener estadísticas del inventario", description = "Devuelve los conteos globales para las tarjetas del dashboard de administración.")
     @GetMapping("/estadisticas")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<EstadisticasInventarioDTO> obtenerEstadisticas() {
         return ResponseEntity.ok(articuloService.obtenerEstadisticasDashboard());
     }
 
     @Operation(summary = "Restaurar un artículo", description = "Revierte el borrado lógico de un artículo.")
     @PatchMapping("/{id}/restaurar")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<Map<String, String>> restaurarArticulo(@PathVariable Long id){
         articuloService.restaurarArticulo(id);
         Map<String, String> respuesta = new HashMap<>();
