@@ -11,5 +11,5 @@ public interface SolicitudService {
     List<SolicitudResponseDTO> obtenerTodas();
     SolicitudResponseDTO cambiarEstado(Long idSolicitud, Long idEstadoSolicitud);
     SolicitudResponseDTO entregarArticulos(Long idSolicitud, List<Long> idsArticulosEntregados);
-    SolicitudResponseDTO devolverArticulos(Long idSolicitud, List<Long> idsArticulosDanados);
+    SolicitudResponseDTO devolverArticulos(Long idSolicitud, cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto);
 }

@@ -64,14 +64,19 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.entregarArticulos(id, idsArticulosFisicos));
     }
 
-    @Operation(summary = "Devolver recursos", description = "Recibe los artículos, permite marcar cuáles se dañaron y pasa la solicitud a FINALIZADA.")
+    @Operation(summary = "Devolver recursos", description = "Recibe los artículos, permite marcar cuáles se dañaron con su justificación y pasa la solicitud a FINALIZADA.")
     @PatchMapping("/{id}/devolver")
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<SolicitudResponseDTO> devolverRecursos(
             @PathVariable Long id,
-            @RequestBody(required = false) List<Long> idsArticulosDanados) {
-        // Si no mandan nada en el body, asumimos que ninguno se dañó
-        if(idsArticulosDanados == null) idsArticulosDanados = new ArrayList<>();
-        return ResponseEntity.ok(solicitudService.devolverArticulos(id, idsArticulosDanados));
+            @RequestBody(required = false) cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto) {
+
+        // Si el admin no envía body (todo volvió en perfecto estado)
+        if(dto == null) {
+            dto = new cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO();
+        }
+        return ResponseEntity.ok(solicitudService.devolverArticulos(id, dto));
     }
+
+
 }

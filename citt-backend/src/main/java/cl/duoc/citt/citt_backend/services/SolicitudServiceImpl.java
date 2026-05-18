@@ -193,36 +193,61 @@ public class SolicitudServiceImpl implements SolicitudService {
 
     @Override
     @Transactional
-    public SolicitudResponseDTO devolverArticulos(Long idSolicitud, List<Long> idsArticulosDanados) {
+    public SolicitudResponseDTO devolverArticulos(Long idSolicitud, cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto) {
         Solicitud solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
 
-        EstadoArticulo disponible = estadoArticuloRepository.findAll().stream()
+        EstadoArticulo disponibleArt = estadoArticuloRepository.findAll().stream()
                 .filter(e -> e.getNombreEstado().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
-        EstadoArticulo danado = estadoArticuloRepository.findAll().stream()
+        EstadoArticulo danadoArt = estadoArticuloRepository.findAll().stream()
                 .filter(e -> e.getNombreEstado().equalsIgnoreCase("DAÑADO")).findFirst().get();
 
-        // Liberación de artículos
-        if(solicitud.getArticulos() != null) {
+        // 1. REVISIÓN DE ARTÍCULOS
+        if (solicitud.getArticulos() != null && !solicitud.getArticulos().isEmpty()) {
             for (Articulo art : solicitud.getArticulos()) {
-                if (idsArticulosDanados != null && idsArticulosDanados.contains(art.getIdArticulo())) {
-                    art.setEstadoArticulo(danado);
+
+                // Buscamos si este artículo en específico viene reportado como dañado
+                cl.duoc.citt.citt_backend.dto.ArticuloDanadoDTO reporteDano = dto.getArticulosDanados().stream()
+                        .filter(a -> a.getIdArticulo().equals(art.getIdArticulo()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (reporteDano != null) {
+                    // VALIDACIÓN OBLIGATORIA DEL COMENTARIO
+                    if (reporteDano.getComentario() == null || reporteDano.getComentario().trim().isEmpty()) {
+                        throw new ReglaNegocioException("Debe ingresar un comentario obligatorio explicando el daño del artículo: " + art.getNombreArticulo());
+                    }
+                    art.setEstadoArticulo(danadoArt);
+                    // Sobrescribimos el comentario del artículo para que quede el historial
+                    art.setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + reporteDano.getComentario().trim().toUpperCase());
                 } else {
-                    art.setEstadoArticulo(disponible);
+                    art.setEstadoArticulo(disponibleArt);
                 }
             }
             articuloRepository.saveAll(solicitud.getArticulos());
         }
 
-        // Liberación de espacio
+        // 2. REVISIÓN DE ESPACIO
         if (solicitud.getEspacio() != null) {
-            EstadoEspacio disponibleEspacio = estadoEspacioRepository.findAll().stream()
-                    .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
-            solicitud.getEspacio().setEstado(disponibleEspacio);
+            if (Boolean.TRUE.equals(dto.getEspacioDanado())) {
+                // VALIDACIÓN OBLIGATORIA DEL COMENTARIO DEL ESPACIO
+                if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
+                    throw new ReglaNegocioException("Debe ingresar un comentario obligatorio indicando qué daños sufrió el espacio.");
+                }
+                EstadoEspacio danadoEspacio = estadoEspacioRepository.findAll().stream()
+                        .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst().get();
+
+                solicitud.getEspacio().setEstado(danadoEspacio);
+                solicitud.getEspacio().setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + dto.getComentarioEspacio().trim().toUpperCase());
+            } else {
+                EstadoEspacio disponibleEspacio = estadoEspacioRepository.findAll().stream()
+                        .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
+                solicitud.getEspacio().setEstado(disponibleEspacio);
+            }
             espacioRepository.save(solicitud.getEspacio());
         }
 
-        // Estado a FINALIZADA
+        // 3. FINALIZAR SOLICITUD
         EstadoSolicitud finalizada = estadoSolicitudRepository.findByNombreIgnoreCase("FINALIZADA").get();
         solicitud.setEstadoSolicitud(finalizada);
 

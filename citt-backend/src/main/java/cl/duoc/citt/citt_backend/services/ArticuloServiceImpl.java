@@ -159,9 +159,22 @@ public class ArticuloServiceImpl implements ArticuloService{
     @Transactional
     public ArticuloResponseDTO actualizarArticulo(Long id, ArticuloUpdateDTO dto) {
         estandarizarTextosUpdate(dto);
+        Articulo a = articuloRepository.findById(id)
+                .orElseThrow(() -> new ReglaNegocioException("Articulo " + id + " no existe"));
 
-        Articulo a = articuloRepository.findById(id).orElseThrow(() -> new ReglaNegocioException("Articulo " + id + " no existe"));
-        aplicarUpdate(a,dto);
+        // --- NUEVA VALIDACIÓN DE COMENTARIOS ---
+        EstadoArticulo nuevoEstado = estadoArticuloRepository.findById(dto.getIdEstadoArticulo())
+                .orElseThrow(() -> new ReglaNegocioException("El estado con ID " + dto.getIdEstadoArticulo() + " no existe."));
+
+        List<String> estadosCriticos = List.of("DAÑADO", "MANTENCION");
+        if (estadosCriticos.contains(nuevoEstado.getNombreEstado().toUpperCase())) {
+            if (dto.getComentarios() == null || dto.getComentarios().trim().isEmpty()) {
+                throw new ReglaNegocioException("Para marcar el artículo como " + nuevoEstado.getNombreEstado() + ", debe ingresar obligatoriamente un comentario explicando la razón.");
+            }
+        }
+        // ----------------------------------------
+
+        aplicarUpdate(a, dto);
         Articulo saved = articuloRepository.save(a);
         return toDTO(saved);
     }
