@@ -84,21 +84,26 @@ public class SolicitudServiceImpl implements SolicitudService {
         // 2. NUEVA VALIDACIÓN: REQUERIMIENTOS DE ARTÍCULOS (Lo que el alumno pide en abstracto)
         if (dto.getRequerimientos() != null && !dto.getRequerimientos().isEmpty()) {
             for (RequerimientoDTO req : dto.getRequerimientos()) {
+
+                // 👇 NUEVO: Estandarizamos la marca (quitamos espacios extra y pasamos a mayúsculas)
+                String marcaNormalizada = req.getMarca() != null ? req.getMarca().trim().toUpperCase() : "GENERICO";
+
                 Categoria cat = categoriaRepository.findById(req.getIdCategoria())
                         .orElseThrow(() -> new ReglaNegocioException("La categoría " + req.getIdCategoria() + " no existe."));
 
-                // Verificar stock real en la base de datos
-                int stockDisponible = articuloRepository.contarDisponiblesPorCategoriaYMarca(req.getIdCategoria(), req.getMarca());
+                // Verificar stock real en la base de datos usando la marcaNormalizada
+                int stockDisponible = articuloRepository.contarDisponiblesPorCategoriaYMarca(req.getIdCategoria(), marcaNormalizada);
+
                 if (stockDisponible < req.getCantidad()) {
-                    throw new ReglaNegocioException("No hay stock suficiente para " + cat.getNombreCategoria() + " marca " + req.getMarca() +
+                    throw new ReglaNegocioException("No hay stock suficiente para " + cat.getNombreCategoria() + " marca " + marcaNormalizada +
                             ". Solicitados: " + req.getCantidad() + ", Disponibles: " + stockDisponible);
                 }
 
-                // Generar la intención
+                // Generar la intención guardando la marca normalizada
                 RequerimientoArticulo requerimiento = RequerimientoArticulo.builder()
                         .solicitud(solicitud)
                         .categoria(cat)
-                        .marca(req.getMarca())
+                        .marca(marcaNormalizada) // <-- Guardamos la marca en mayúsculas
                         .cantidad(req.getCantidad())
                         .build();
 
