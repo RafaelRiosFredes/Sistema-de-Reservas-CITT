@@ -42,6 +42,9 @@ public class Solicitud {
     @Column(length = 500)
     private String proposito;
 
+    @Column(name = "motivo_rechazo", length = 500)
+    private String motivoRechazo;
+
 
 
     // --- RELACIONES ---

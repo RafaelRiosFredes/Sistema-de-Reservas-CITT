@@ -44,6 +44,7 @@ public class ArticuloController {
             @PathVariable String estado,
             Pageable pageable) {
         return ResponseEntity.ok(articuloService.listarTecnologicosPorEstado(estado, pageable));
+
     }
 
     // Cualquier usuario autenticado puede ver la información

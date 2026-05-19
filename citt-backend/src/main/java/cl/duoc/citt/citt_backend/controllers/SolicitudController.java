@@ -1,5 +1,6 @@
 package cl.duoc.citt.citt_backend.controllers;
 
+import cl.duoc.citt.citt_backend.dto.ActualizarEstadoSolicitudRequestDTO;
 import cl.duoc.citt.citt_backend.dto.SolicitudRequestDTO;
 import cl.duoc.citt.citt_backend.dto.SolicitudResponseDTO;
 import cl.duoc.citt.citt_backend.services.SolicitudService;
@@ -51,8 +52,8 @@ public class SolicitudController {
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<SolicitudResponseDTO> cambiarEstado(
             @PathVariable Long id,
-            @RequestParam Long idEstadoSolicitud) {
-        return ResponseEntity.ok(solicitudService.cambiarEstado(id, idEstadoSolicitud));
+            @Valid @RequestBody ActualizarEstadoSolicitudRequestDTO dto) {
+        return ResponseEntity.ok(solicitudService.cambiarEstado(id, dto));
     }
 
     @Operation(summary = "Entregar recursos físicos", description = "Asigna los IDs físicos exactos y pasa la solicitud a EN PROCESO.")

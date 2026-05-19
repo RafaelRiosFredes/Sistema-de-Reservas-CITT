@@ -6,6 +6,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -16,6 +19,57 @@ public class EmailService {
     private String remitente;
 
     private final JavaMailSender mailSender;
+
+
+    //  Notificación de aprobación de reserva
+    public void enviarCorreoAprobacion(String destinatario, Long idSolicitud, String nombreEspacio, LocalDate fecha, LocalTime horaInicio) {
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(remitente);
+        mensaje.setTo(destinatario);
+        mensaje.setSubject("¡Tu Reserva #" + idSolicitud + " ha sido Aprobada! - CITT");
+
+        String cuerpo = "Estimado/a Usuario,\n\n" +
+                "Nos alegra informarte que tu solicitud de reserva #" + idSolicitud + " ha sido APROBADA por la administración.\n\n" +
+                "Detalles de la reserva:\n" +
+                "- Espacio: " + (nombreEspacio != null ? nombreEspacio : "Artículos/Equipos solicitados") + "\n" +
+                "- Fecha: " + fecha + "\n" +
+                "- Horario: " + horaInicio + "\n\n" +
+                "Recuerda asistir puntualmente. Si solicitaste equipos físicos, acércate al encargado en el horario indicado para su entrega.\n\n" +
+                "Atentamente,\nEquipo de Gestión CITT";
+
+        mensaje.setText(cuerpo);
+
+        try {
+            mailSender.send(mensaje);
+            log.info("Notificación de aprobación enviada con éxito a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Fallo al despachar correo de aprobación a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    //  Notificación de rechazo de reserva
+    public void enviarCorreoRechazo(String destinatario, Long idSolicitud, String motivoRechazo) {
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(remitente);
+        mensaje.setTo(destinatario);
+        mensaje.setSubject("Actualización de tu Reserva #" + idSolicitud + " - CITT");
+
+        String cuerpo = "Estimado/a Usuario,\n\n" +
+                "Te informamos que tu solicitud de reserva #" + idSolicitud + " ha sido RECHAZADA o CANCELADA por la administración.\n\n" +
+                "Motivo de la resolución:\n" +
+                "\"" + (motivoRechazo != null ? motivoRechazo : "No especificado por el administrador.") + "\"\n\n" +
+                "Si tienes dudas o requieres reagendar, por favor acércate a la coordinación del CITT.\n\n" +
+                "Atentamente,\nEquipo de Gestión CITT";
+
+        mensaje.setText(cuerpo);
+
+        try {
+            mailSender.send(mensaje);
+            log.info("Notificación de rechazo enviada con éxito a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Fallo al despachar correo de rechazo a {}: {}", destinatario, e.getMessage());
+        }
+    }
 
     // ENVIO DE CONTRASEÑA PROVISORIA (INGRESO PRIMERA VEZ)
     public void enviarPasswordProvisoria(String destinatario, String password) {

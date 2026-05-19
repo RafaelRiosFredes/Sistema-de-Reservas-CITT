@@ -27,4 +27,25 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
             @Param("horaInicio") LocalTime horaInicio,
             @Param("horaFin") LocalTime horaFin
     );
+
+    //  Solicitud de Exclusividad: Verifica que TODO el CITT esté libre
+    @Query("SELECT COUNT(s) FROM Solicitud s WHERE s.fecha = :fecha " +
+            "AND s.estadoSolicitud.nombre IN ('PENDIENTE', 'APROBADA', 'EN PROCESO') " +
+            "AND (s.horaInicio < :horaFin AND s.horaFin > :horaInicio)")
+    int contarCualquierReservaEnHorario(
+            @Param("fecha") LocalDate fecha,
+            @Param("horaInicio") LocalTime horaInicio,
+            @Param("horaFin") LocalTime horaFin
+    );
+
+    // Solicitud Común: Bloquea reservas si ya hay una exclusividad activa
+    @Query("SELECT COUNT(s) FROM Solicitud s WHERE s.fecha = :fecha " +
+            "AND s.exclusividad = true " +
+            "AND s.estadoSolicitud.nombre IN ('PENDIENTE', 'APROBADA', 'EN PROCESO') " +
+            "AND (s.horaInicio < :horaFin AND s.horaFin > :horaInicio)")
+    int contarExclusividadesActivas(
+            @Param("fecha") LocalDate fecha,
+            @Param("horaInicio") LocalTime horaInicio,
+            @Param("horaFin") LocalTime horaFin
+    );
 }

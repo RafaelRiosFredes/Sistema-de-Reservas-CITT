@@ -3,6 +3,7 @@ package cl.duoc.citt.citt_backend.services;
 import cl.duoc.citt.citt_backend.dto.RequerimientoDTO;
 import cl.duoc.citt.citt_backend.dto.SolicitudRequestDTO;
 import cl.duoc.citt.citt_backend.dto.SolicitudResponseDTO;
+import cl.duoc.citt.citt_backend.dto.ActualizarEstadoSolicitudRequestDTO;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.*;
 import cl.duoc.citt.citt_backend.repositories.*;
@@ -27,9 +28,8 @@ public class SolicitudServiceImpl implements SolicitudService {
     private final EstadoSolicitudRepository estadoSolicitudRepository;
     private final EstadoEspacioRepository estadoEspacioRepository;
     private final EstadoArticuloRepository estadoArticuloRepository;
-
-    // 👇 NUEVO: Inyectamos el repositorio de categorías para validar los requerimientos
     private final CategoriaRepository categoriaRepository;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -59,10 +59,16 @@ public class SolicitudServiceImpl implements SolicitudService {
                 .cantidadIntegrantes(dto.getCantidadIntegrantes() != null ? dto.getCantidadIntegrantes() : 1)
                 .exclusividad(dto.getExclusividad() != null ? dto.getExclusividad() : false)
                 .articulos(new ArrayList<>())
-                .requerimientos(new ArrayList<>()) // Inicializamos la lista de intenciones
+                .requerimientos(new ArrayList<>())
                 .build();
 
-        // 1. VALIDACIÓN ESPACIOS
+        Boolean pideExclusividad = dto.getExclusividad() != null ? dto.getExclusividad() : false;
+
+        int exclusividadesExistentes = solicitudRepository.contarExclusividadesActivas(dto.getFecha(), dto.getHoraInicio(), dto.getHoraFin());
+        if (exclusividadesExistentes > 0) {
+            throw new ReglaNegocioException("El CITT se encuentra reservado por completo con exclusividad institucional en el horario seleccionado.");
+        }
+
         if (dto.getIdEspacio() != null) {
             Espacio espacio = espacioRepository.findById(dto.getIdEspacio())
                     .orElseThrow(() -> new ReglaNegocioException("El espacio solicitado no existe"));
@@ -71,27 +77,31 @@ public class SolicitudServiceImpl implements SolicitudService {
                 throw new ReglaNegocioException("La cantidad de integrantes supera la capacidad del espacio.");
             }
 
-            int choques = solicitudRepository.contarChoquesDeHorario(espacio.getId(), dto.getFecha(), dto.getHoraInicio(), dto.getHoraFin());
-
-            if (choques > 0 && solicitud.getExclusividad()) {
-                throw new ReglaNegocioException("No puedes reservar este espacio con exclusividad; ya existen reservas en ese horario.");
-            } else if (choques > 0) {
-                throw new ReglaNegocioException("El espacio ya tiene reservas en el horario seleccionado.");
+            if (pideExclusividad) {
+                int reservasActivas = solicitudRepository.contarCualquierReservaEnHorario(dto.getFecha(), dto.getHoraInicio(), dto.getHoraFin());
+                if (reservasActivas > 0) {
+                    throw new ReglaNegocioException("No se puede solicitar la exclusividad del CITT; existen otras reservas comunes agendadas en este bloque horario.");
+                }
+            } else {
+                int choquesSala = solicitudRepository.contarChoquesDeHorario(espacio.getId(), dto.getFecha(), dto.getHoraInicio(), dto.getHoraFin());
+                if (choquesSala > 0) {
+                    throw new ReglaNegocioException("El espacio seleccionado ya tiene reservas en el horario seleccionado.");
+                }
             }
             solicitud.setEspacio(espacio);
+
+        } else if (pideExclusividad) {
+            throw new ReglaNegocioException("Para solicitar la exclusividad del CITT debe seleccionar un espacio físico principal.");
         }
 
-        // 2. NUEVA VALIDACIÓN: REQUERIMIENTOS DE ARTÍCULOS (Lo que el alumno pide en abstracto)
         if (dto.getRequerimientos() != null && !dto.getRequerimientos().isEmpty()) {
             for (RequerimientoDTO req : dto.getRequerimientos()) {
 
-                // 👇 NUEVO: Estandarizamos la marca (quitamos espacios extra y pasamos a mayúsculas)
                 String marcaNormalizada = req.getMarca() != null ? req.getMarca().trim().toUpperCase() : "GENERICO";
 
                 Categoria cat = categoriaRepository.findById(req.getIdCategoria())
                         .orElseThrow(() -> new ReglaNegocioException("La categoría " + req.getIdCategoria() + " no existe."));
 
-                // Verificar stock real en la base de datos usando la marcaNormalizada
                 int stockDisponible = articuloRepository.contarDisponiblesPorCategoriaYMarca(req.getIdCategoria(), marcaNormalizada);
 
                 if (stockDisponible < req.getCantidad()) {
@@ -99,11 +109,10 @@ public class SolicitudServiceImpl implements SolicitudService {
                             ". Solicitados: " + req.getCantidad() + ", Disponibles: " + stockDisponible);
                 }
 
-                // Generar la intención guardando la marca normalizada
                 RequerimientoArticulo requerimiento = RequerimientoArticulo.builder()
                         .solicitud(solicitud)
                         .categoria(cat)
-                        .marca(marcaNormalizada) // <-- Guardamos la marca en mayúsculas
+                        .marca(marcaNormalizada)
                         .cantidad(req.getCantidad())
                         .build();
 
@@ -117,7 +126,6 @@ public class SolicitudServiceImpl implements SolicitudService {
 
         return mapToDTO(solicitudRepository.save(solicitud));
     }
-
 
     @Override
     public List<SolicitudResponseDTO> obtenerMisSolicitudes(String emailUsuario) {
@@ -136,28 +144,50 @@ public class SolicitudServiceImpl implements SolicitudService {
                 .collect(Collectors.toList());
     }
 
-
-    // 👇 AHORA ESTE MÉTODO ES SOLO PARA APROBAR O RECHAZAR
     @Override
     @Transactional
-    public SolicitudResponseDTO cambiarEstado(Long idSolicitud, Long idEstadoSolicitud) {
+    public SolicitudResponseDTO cambiarEstado(Long idSolicitud, ActualizarEstadoSolicitudRequestDTO dto) {
         Solicitud solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
 
-        EstadoSolicitud estadoDb = estadoSolicitudRepository.findById(idEstadoSolicitud)
-                .orElseThrow(() -> new ReglaNegocioException("El estado con ID '" + idEstadoSolicitud + "' no existe en el sistema."));
+        EstadoSolicitud estadoDb = estadoSolicitudRepository.findById(dto.getIdEstadoSolicitud())
+                .orElseThrow(() -> new ReglaNegocioException("El estado con ID '" + dto.getIdEstadoSolicitud() + "' no existe en el sistema."));
 
         String nombreEstado = estadoDb.getNombre().toUpperCase();
 
-        // Evitamos que el administrador se salte el flujo lógico usando el método genérico
         if (nombreEstado.equals("EN PROCESO") || nombreEstado.equals("FINALIZADA")) {
             throw new ReglaNegocioException("Para pasar a EN PROCESO o FINALIZADA, utilice las opciones de entregar o devolver equipos.");
         }
 
-        solicitud.setEstadoSolicitud(estadoDb);
-        return mapToDTO(solicitudRepository.save(solicitud));
-    }
+        if (nombreEstado.equals("RECHAZADA")) {
+            if (dto.getMotivo() == null || dto.getMotivo().isBlank()) {
+                throw new ReglaNegocioException("Para rechazar o cancelar una solicitud, debe especificar obligatoriamente un motivo explicativo.");
+            }
+            solicitud.setMotivoRechazo(dto.getMotivo().trim().toUpperCase());
+        }
 
+        solicitud.setEstadoSolicitud(estadoDb);
+        Solicitud guardada = solicitudRepository.save(solicitud);
+
+        // 📧 GATILLAR CORREOS AUTOMÁTICOS CONECTADOS A TU EMAILSERVICE REAL
+        if (nombreEstado.equals("RECHAZADA")) {
+            emailService.enviarCorreoRechazo(
+                    guardada.getUsuario().getEmail(),
+                    guardada.getIdSolicitud(),
+                    guardada.getMotivoRechazo()
+            );
+        } else if (nombreEstado.equals("APROBADA")) {
+            emailService.enviarCorreoAprobacion(
+                    guardada.getUsuario().getEmail(),
+                    guardada.getIdSolicitud(),
+                    guardada.getEspacio() != null ? guardada.getEspacio().getNombre() : null,
+                    guardada.getFecha(),
+                    guardada.getHoraInicio()
+            );
+        }
+
+        return mapToDTO(guardada);
+    }
 
     @Override
     @Transactional
@@ -169,7 +199,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new ReglaNegocioException("Solo puedes entregar equipos el día programado: " + solicitud.getFecha());
         }
 
-        // Bloqueo Físico de Artículos
         if (idsArticulosEntregados != null && !idsArticulosEntregados.isEmpty()) {
             List<Articulo> articulosFisicos = articuloRepository.findAllById(idsArticulosEntregados);
             EstadoArticulo prestado = estadoArticuloRepository.findAll().stream()
@@ -180,7 +209,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setArticulos(articulosFisicos);
         }
 
-        // Ocupar Espacio
         if (solicitud.getEspacio() != null) {
             EstadoEspacio ocupado = estadoEspacioRepository.findAll().stream()
                     .filter(e -> e.getNombre().equalsIgnoreCase("OCUPADO")).findFirst().get();
@@ -188,13 +216,11 @@ public class SolicitudServiceImpl implements SolicitudService {
             espacioRepository.save(solicitud.getEspacio());
         }
 
-        // Estado a EN PROCESO
         EstadoSolicitud enProceso = estadoSolicitudRepository.findByNombreIgnoreCase("EN PROCESO").get();
         solicitud.setEstadoSolicitud(enProceso);
 
         return mapToDTO(solicitudRepository.save(solicitud));
     }
-
 
     @Override
     @Transactional
@@ -207,23 +233,19 @@ public class SolicitudServiceImpl implements SolicitudService {
         EstadoArticulo danadoArt = estadoArticuloRepository.findAll().stream()
                 .filter(e -> e.getNombreEstado().equalsIgnoreCase("DAÑADO")).findFirst().get();
 
-        // 1. REVISIÓN DE ARTÍCULOS
         if (solicitud.getArticulos() != null && !solicitud.getArticulos().isEmpty()) {
             for (Articulo art : solicitud.getArticulos()) {
 
-                // Buscamos si este artículo en específico viene reportado como dañado
                 cl.duoc.citt.citt_backend.dto.ArticuloDanadoDTO reporteDano = dto.getArticulosDanados().stream()
                         .filter(a -> a.getIdArticulo().equals(art.getIdArticulo()))
                         .findFirst()
                         .orElse(null);
 
                 if (reporteDano != null) {
-                    // VALIDACIÓN OBLIGATORIA DEL COMENTARIO
                     if (reporteDano.getComentario() == null || reporteDano.getComentario().trim().isEmpty()) {
                         throw new ReglaNegocioException("Debe ingresar un comentario obligatorio explicando el daño del artículo: " + art.getNombreArticulo());
                     }
                     art.setEstadoArticulo(danadoArt);
-                    // Sobrescribimos el comentario del artículo para que quede el historial
                     art.setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + reporteDano.getComentario().trim().toUpperCase());
                 } else {
                     art.setEstadoArticulo(disponibleArt);
@@ -232,10 +254,8 @@ public class SolicitudServiceImpl implements SolicitudService {
             articuloRepository.saveAll(solicitud.getArticulos());
         }
 
-        // 2. REVISIÓN DE ESPACIO
         if (solicitud.getEspacio() != null) {
             if (Boolean.TRUE.equals(dto.getEspacioDanado())) {
-                // VALIDACIÓN OBLIGATORIA DEL COMENTARIO DEL ESPACIO
                 if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
                     throw new ReglaNegocioException("Debe ingresar un comentario obligatorio indicando qué daños sufrió el espacio.");
                 }
@@ -252,13 +272,11 @@ public class SolicitudServiceImpl implements SolicitudService {
             espacioRepository.save(solicitud.getEspacio());
         }
 
-        // 3. FINALIZAR SOLICITUD
         EstadoSolicitud finalizada = estadoSolicitudRepository.findByNombreIgnoreCase("FINALIZADA").get();
         solicitud.setEstadoSolicitud(finalizada);
 
         return mapToDTO(solicitudRepository.save(solicitud));
     }
-
 
     private SolicitudResponseDTO mapToDTO(Solicitud s) {
         return SolicitudResponseDTO.builder()
