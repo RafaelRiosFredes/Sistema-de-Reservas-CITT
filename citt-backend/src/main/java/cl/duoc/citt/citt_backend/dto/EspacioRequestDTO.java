@@ -18,8 +18,4 @@ public class EspacioRequestDTO {
     @Min(value = 1, message = "La capacidad debe ser de al menos 1 persona")
     @Max(value = 20, message = "La capacidad máxima permitida es de 20 personas")
     private Integer capacidad;
-
-    @Schema(description = "Comentarios opcionales", required = false, example = "Proposito de la actividad")
-    @Pattern(regexp = "^(?!\\d+$).+$", message = "El comentario no puede contener solo números")
-    private String comentarios;
 }

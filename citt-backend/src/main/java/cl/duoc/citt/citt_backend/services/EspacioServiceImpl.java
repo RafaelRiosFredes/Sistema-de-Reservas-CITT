@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -25,6 +26,10 @@ public class EspacioServiceImpl implements EspacioService {
 
     @Override
     public EspacioResponseDTO crear(EspacioRequestDTO dto){
+        // REGLA DE NEGOCIO: Nombre único
+        if (repository.existsByNombreIgnoreCase(dto.getNombre().trim())) {
+            throw new ReglaNegocioException("Ya existe un espacio registrado con el nombre: " + dto.getNombre());
+        }
 
         EstadoEspacio disponible = estadoRepository.findAll()
                 .stream()
@@ -33,8 +38,8 @@ public class EspacioServiceImpl implements EspacioService {
                 .orElseThrow(() -> new ReglaNegocioException("Estado DISPONIBLE no existe"));
 
         Espacio espacio = Espacio.builder()
-                .nombre(dto.getNombre())
-                .comentarios(dto.getComentarios())
+                .nombre(dto.getNombre().trim())
+                .comentarios(null) // Nace sin comentarios
                 .capacidad(dto.getCapacidad())
                 .estado(disponible)
                 .build();
@@ -72,32 +77,28 @@ public class EspacioServiceImpl implements EspacioService {
         Espacio espacio = repository.findById(id)
                 .orElseThrow(() -> new ReglaNegocioException("Espacio no encontrado"));
 
-        // --- NUEVA REGLA DE NEGOCIO PARA COMENTARIOS ---
+        // REGLA DE NEGOCIO: Evitar nombres duplicados en otros IDs
+        Optional<Espacio> duplicado = repository.findByNombreIgnoreCase(dto.getNombre().trim());
+        if (duplicado.isPresent() && !duplicado.get().getId().equals(id)) {
+            throw new ReglaNegocioException("Ya existe otro espacio ocupando el nombre: " + dto.getNombre());
+        }
+
         if (dto.getEstado() != null) {
-            String nuevoEstado = dto.getEstado().toUpperCase();
-
-            // Lista de estados que requieren explicación obligatoria
-            List<String> estadosCriticos = List.of("DAÑADO", "MANTENCION");
-
-            if (estadosCriticos.contains(nuevoEstado)) {
-                if (dto.getComentarios() == null || dto.getComentarios().trim().isEmpty()) {
-                    throw new ReglaNegocioException("Para el estado " + nuevoEstado +
-                            ", debe ingresar obligatoriamente un comentario explicando la razón.");
-                }
-            }
-
-            // Buscar y asignar el nuevo estado
             EstadoEspacio estado = estadoRepository.findAll().stream()
                     .filter(e -> e.getNombre().equalsIgnoreCase(dto.getEstado()))
                     .findFirst()
                     .orElseThrow(() -> new ReglaNegocioException("Estado no válido: " + dto.getEstado()));
 
             espacio.setEstado(estado);
+
+            // AUTO-LIMPIEZA: Si el coordinador repara el espacio y lo vuelve DISPONIBLE, borramos el comentario de daño.
+            if (estado.getNombre().equalsIgnoreCase("DISPONIBLE")) {
+                espacio.setComentarios(null);
+            }
         }
 
-        espacio.setNombre(dto.getNombre());
+        espacio.setNombre(dto.getNombre().trim());
         espacio.setCapacidad(dto.getCapacidad());
-        espacio.setComentarios(dto.getComentarios());
 
         return mapToDTO(repository.save(espacio));
     }

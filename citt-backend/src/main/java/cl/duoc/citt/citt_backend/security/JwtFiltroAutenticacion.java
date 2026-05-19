@@ -52,6 +52,30 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
 
                 // Valida si el token no ha expirado y pertenece al usuario
                 if (jwtUtilidades.esTokenValido(jwt, userDetails)) {
+                    if (userDetails instanceof cl.duoc.citt.citt_backend.model.Usuario) {
+                        cl.duoc.citt.citt_backend.model.Usuario usuario = (cl.duoc.citt.citt_backend.model.Usuario) userDetails;
+
+                        if (usuario.isDebeCambiarPassword()) {
+                            String rutaPeticion = request.getServletPath();
+
+                            // Lista blanca de rutas permitidas para el usuario bloqueado
+                            boolean esRutaPermitida = rutaPeticion.equals("/api/auth/cambiar-contrasena") ||
+                                    rutaPeticion.equals("/api/auth/login") ||
+                                    rutaPeticion.equals("/api/auth/logout") ||
+                                    rutaPeticion.equals("/api/auth/cambiar-password") ||
+                                    rutaPeticion.contains("/swagger-ui") ||
+                                    rutaPeticion.contains("/v3/api-docs");
+
+                            if (!esRutaPermitida) {
+                                // BLOQUEO ABSOLUTO: Respondemos 403 Forbidden antes de que llegue a cualquier Controller
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                response.setContentType("application/json");
+                                response.setCharacterEncoding("UTF-8");
+                                response.getWriter().write("{\"error\": \"ACCESO_DENEGADO\", \"message\": \"Debe cambiar su contraseña predeterminada para acceder a esta función.\"}");
+                                return;
+                            }
+                        }
+                    }
                     // Crea el objeto de autenticación con los datos del usuario y sus permisos
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,

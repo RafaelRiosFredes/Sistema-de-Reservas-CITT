@@ -195,15 +195,56 @@ public class SolicitudServiceImpl implements SolicitudService {
         Solicitud solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
 
-        if (!solicitud.getFecha().equals(LocalDate.now())) {
-            throw new ReglaNegocioException("Solo puedes entregar equipos el día programado: " + solicitud.getFecha());
+        // 1. CONTROL DE FLUJO SOBERANO: Candado de estados
+        if (!solicitud.getEstadoSolicitud().getNombre().equalsIgnoreCase("APROBADA")) {
+            throw new ReglaNegocioException("Operación rechazada: Solo se pueden entregar recursos para solicitudes que estén estrictamente en estado APROBADA.");
         }
 
+        if (!solicitud.getFecha().equals(LocalDate.now())) {
+            throw new ReglaNegocioException("Restricción de tiempo: Solo se pueden retirar los equipos el día agendado para la reserva: " + solicitud.getFecha());
+        }
+
+        List<Articulo> articulosFisicos = new ArrayList<>();
         if (idsArticulosEntregados != null && !idsArticulosEntregados.isEmpty()) {
-            List<Articulo> articulosFisicos = articuloRepository.findAllById(idsArticulosEntregados);
+            articulosFisicos = articuloRepository.findAllById(idsArticulosEntregados);
+
+            if (articulosFisicos.size() != idsArticulosEntregados.size()) {
+                throw new ReglaNegocioException("Error de consistencia: Uno o más IDs de artículos escaneados no existen en el inventario.");
+            }
+
+            // Validar disponibilidad física de cada unidad antes de ser asignada
+            for (Articulo art : articulosFisicos) {
+                if (!art.getEstadoArticulo().getNombreEstado().equalsIgnoreCase("DISPONIBLE")) {
+                    throw new ReglaNegocioException("Conflicto de inventario: El artículo con código " + art.getCodigoDuoc() + " ya se encuentra " + art.getEstadoArticulo().getNombreEstado());
+                }
+            }
+        }
+
+        // 2. CORRESPONDENCIA EXACTA (La Balanza Logística de Requerimientos)
+        // Agrupar cantidades solicitadas por la combinación "idCategoria_MARCA"
+        java.util.Map<String, Integer> mapaRequeridos = solicitud.getRequerimientos().stream()
+                .collect(Collectors.toMap(
+                        r -> r.getCategoria().getIdCategoria() + "_" + r.getMarca().trim().toUpperCase(),
+                        RequerimientoArticulo::getCantidad,
+                        Integer::sum
+                ));
+
+        // Agrupar cantidades físicas que el ayudante intenta entregar por la misma combinación
+        java.util.Map<String, Integer> mapaEntregados = new java.util.HashMap<>();
+        for (Articulo art : articulosFisicos) {
+            String clave = art.getCategoria().getIdCategoria() + "_" + art.getMarca().trim().toUpperCase();
+            mapaEntregados.put(clave, mapaEntregados.getOrDefault(clave, 0) + 1);
+        }
+
+        // Comparar mapas de forma simétrica. Si difieren en marcas, categorías o cantidades, frena el flujo.
+        if (!mapaRequeridos.equals(mapaEntregados)) {
+            throw new ReglaNegocioException("Discrepancia en recursos: Los artículos físicos escaneados no coinciden en categoría, marca o cantidad exacta con lo especificado en la solicitud original.");
+        }
+
+        // 3. CAMBIO DE ESTADOS ATÓMICO
+        if (!articulosFisicos.isEmpty()) {
             EstadoArticulo prestado = estadoArticuloRepository.findAll().stream()
                     .filter(e -> e.getNombreEstado().equalsIgnoreCase("PRESTADO")).findFirst().get();
-
             articulosFisicos.forEach(art -> art.setEstadoArticulo(prestado));
             articuloRepository.saveAll(articulosFisicos);
             solicitud.setArticulos(articulosFisicos);
@@ -228,11 +269,17 @@ public class SolicitudServiceImpl implements SolicitudService {
         Solicitud solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
 
+        // 1. CONTROL DE FLUJO SOBERANO: Evita re-procesar una solicitud finalizada o inactiva
+        if (!solicitud.getEstadoSolicitud().getNombre().equalsIgnoreCase("EN PROCESO")) {
+            throw new ReglaNegocioException("Operación rechazada: Solo se pueden devolver los recursos de una solicitud que esté actualmente EN PROCESO.");
+        }
+
         EstadoArticulo disponibleArt = estadoArticuloRepository.findAll().stream()
                 .filter(e -> e.getNombreEstado().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
         EstadoArticulo danadoArt = estadoArticuloRepository.findAll().stream()
                 .filter(e -> e.getNombreEstado().equalsIgnoreCase("DAÑADO")).findFirst().get();
 
+        // 2. PROCESAMIENTO DE ARTÍCULOS
         if (solicitud.getArticulos() != null && !solicitud.getArticulos().isEmpty()) {
             for (Articulo art : solicitud.getArticulos()) {
 
@@ -243,7 +290,7 @@ public class SolicitudServiceImpl implements SolicitudService {
 
                 if (reporteDano != null) {
                     if (reporteDano.getComentario() == null || reporteDano.getComentario().trim().isEmpty()) {
-                        throw new ReglaNegocioException("Debe ingresar un comentario obligatorio explicando el daño del artículo: " + art.getNombreArticulo());
+                        throw new ReglaNegocioException("Justificación obligatoria: Debe ingresar una explicación sobre el daño detectado en el artículo: " + art.getNombreArticulo());
                     }
                     art.setEstadoArticulo(danadoArt);
                     art.setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + reporteDano.getComentario().trim().toUpperCase());
@@ -254,15 +301,17 @@ public class SolicitudServiceImpl implements SolicitudService {
             articuloRepository.saveAll(solicitud.getArticulos());
         }
 
+        // 3. PROCESAMIENTO DEL ESPACIO FÍSICO (Comentarios exclusivos por daño en devolución)
         if (solicitud.getEspacio() != null) {
             if (Boolean.TRUE.equals(dto.getEspacioDanado())) {
                 if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
-                    throw new ReglaNegocioException("Debe ingresar un comentario obligatorio indicando qué daños sufrió el espacio.");
+                    throw new ReglaNegocioException("Justificación obligatoria: Debe ingresar una explicación detallada indicando qué daños sufrió el espacio físico.");
                 }
                 EstadoEspacio danadoEspacio = estadoEspacioRepository.findAll().stream()
                         .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst().get();
 
                 solicitud.getEspacio().setEstado(danadoEspacio);
+                // Aquí es el único punto donde se genera el comentario de daño del espacio
                 solicitud.getEspacio().setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + dto.getComentarioEspacio().trim().toUpperCase());
             } else {
                 EstadoEspacio disponibleEspacio = estadoEspacioRepository.findAll().stream()
