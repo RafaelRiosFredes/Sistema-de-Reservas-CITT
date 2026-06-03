@@ -1,10 +1,11 @@
-import TestPage from "./pages/Testpage";
+import { BrowserRouter } from 'react-router-dom';
+import LoginPage from "./pages/LoginPage";
 
 function App() {
   return (
-    <>
-      <TestPage />
-    </>
+    <BrowserRouter>
+      <LoginPage />
+    </BrowserRouter>
   );
 }
 

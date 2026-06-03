@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+
 /*
   ================================================
   ESTILOS  CITT
@@ -18,13 +20,10 @@
   --color-error: #DC3545;
 
   --font-lato: "Lato", sans-serif;
-  
+
   --shadow-auth: 0 10px 30px rgba(0, 0, 0, 0.1);
   --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
-
-/* 2. IMPORTAR FUENTE LATO */
-@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 /* 3. ESTILOS BASE (Reseteo y Tipografía) */
 @layer base {
@@ -42,29 +41,23 @@
 
 /* 4. COMPONENTES (Clases listas para usar) */
 @layer components {
-  /* Contenedor General */
   .container-main { @apply max-w-[1200px] mx-auto p-8; }
 
-  /* Botones Reutilizables */
   .btn { @apply inline-block px-8 py-3 rounded-md font-bold cursor-pointer transition-all border-none text-base text-center no-underline; }
   .btn-primary { @apply bg-primary text-white hover:bg-[#2565b3] hover:-translate-y-0.5 active:scale-95; }
   .btn-secondary { @apply bg-secondary text-white hover:opacity-90; }
   .btn-block { @apply w-full flex justify-center; }
 
-  /* Inputs y Formularios */
   .form-group { @apply mb-6 text-left; }
   .form-label { @apply block mb-2 font-bold text-dark; }
   .form-input { @apply w-full px-4 py-3 border border-gray-border rounded-md font-lato text-base transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary; }
 
-  /* Tarjetas (Cards) */
   .card-booking { @apply bg-white p-8 rounded-xl border border-gray-border shadow-sm transition-transform hover:-translate-y-1; }
 
-  /* Badges de Estado */
   .status-badge { @apply inline-block px-3 py-1 rounded-full text-xs font-bold uppercase; }
   .status-available { @apply bg-[#E6FFFA] text-[#319795]; }
   .status-reserved { @apply bg-[#FFF5F5] text-[#C53030]; }
 
-  /* Estructura del Dashboard */
   .layout-dashboard {
     @apply grid min-h-screen;
     grid-template-columns: 280px 1fr;
@@ -73,7 +66,6 @@
   .nav-link-custom { @apply flex items-center gap-4 p-3 rounded-lg text-[#A0AEC0] no-underline transition-all hover:bg-primary/10 hover:text-primary; }
   .nav-link-active { @apply bg-primary/10 text-primary; }
 
-  /* Calendario Mockup */
   .calendar-container { @apply grid grid-cols-7 gap-px bg-gray-border border border-gray-border rounded-lg overflow-hidden; }
   .calendar-day-box { @apply bg-white min-h-[100px] p-2; }
 }
