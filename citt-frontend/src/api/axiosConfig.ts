@@ -2,44 +2,31 @@ import axios from 'axios';
 
 /**
  * Configuración centralizada de Axios.
- * Se encarga de la URL base y de inyectar el token JWT en las cabeceras.
+ * El backend usa arquitectura de Doble Cookie:
+ * - auth_token (1 hora): cookie HttpOnly para el access token
+ * - refresh_token (7 días): cookie HttpOnly para renovar la sesión
+ * Por eso usamos withCredentials: true para que el navegador
+ * envíe las cookies automáticamente en cada petición.
  */
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // ← CLAVE: envía las cookies en cada petición
 });
 
 /**
- * Interceptor de solicitudes:
- * Antes de enviar cualquier petición, verifica si existe un token en el localStorage.
- * Si existe, lo añade a la cabecera Authorization.
- */
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-/**
  * Interceptor de respuestas:
- * Permite manejar errores globales, como el error 401 (No autorizado).
+ * Maneja errores globales.
+ * - 401: sesión expirada o no autorizado
+ * - 403: debe cambiar contraseña provisional
  */
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Si el token es inválido o ha expirado, podemos limpiar el almacenamiento
+    if (error.response?.status === 401) {
       console.warn('Sesión no autorizada o expirada.');
-      localStorage.removeItem('token');
     }
     return Promise.reject(error);
   }

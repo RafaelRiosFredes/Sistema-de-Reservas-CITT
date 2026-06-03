@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  User, Mail, Shield, KeyRound,
+  Cpu, User, Mail, Shield, LogOut, KeyRound,
   ChevronRight, Lock, CheckCircle, AlertCircle
 } from 'lucide-react';
+import Boton from '../componentes/Boton';
 import InputForm from '../componentes/InputForm';
 import api from '../api/axiosConfig';
 
@@ -23,13 +24,13 @@ const PerfilPage = () => {
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    // Obtenemos los datos del perfil directamente desde el Backend
+    // Obtenemos los datos del perfil directamente desde el Backend mediante la Cookie
     const fetchPerfil = async () => {
       try {
         const response = await api.get('/auth/perfil');
         setUserData(response.data);
       } catch (error) {
-        navigate('/');
+        navigate('/'); // Si la cookie no es válida, redirige al login
       }
     };
     fetchPerfil();
@@ -39,7 +40,6 @@ const PerfilPage = () => {
     e.preventDefault();
     if (!passwordActual || !passwordNueva) {
       setErrorMsg('Por favor completa ambos campos.');
-      setTimeout(() => setErrorMsg(''), 4000);
       return;
     }
     setErrorMsg('');
@@ -53,25 +53,21 @@ const PerfilPage = () => {
       setSuccessMsg('¡Contraseña actualizada exitosamente!');
       setPasswordActual('');
       setPasswordNueva('');
+      setTimeout(() => setShowChangePassword(false), 2000);
+    } catch (error: any) {
+      setErrorMsg(error.response?.data?.mensaje || 'Error al actualizar contraseña.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // Desaparece el formulario y limpia el mensaje de éxito a los 2 segundos
-          setTimeout(() => {
-            setShowChangePassword(false);
-            setSuccessMsg('');
-          }, 2000);
-
-        } catch (error: any) {
-          setErrorMsg(error.response?.data?.mensaje || 'Error al actualizar contraseña.');
-
-          // El mensaje de error desaparecera en 4 segundos
-          setTimeout(() => {
-            setErrorMsg('');
-          }, 4000);
-
-        } finally {
-          setIsLoading(false);
-        }
-      };
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      navigate('/');
+    }
+  };
 
   if (!userData) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -80,7 +76,29 @@ const PerfilPage = () => {
   );
 
   return (
-      <div className="max-w-4xl mx-auto px-6 pb-12">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">
+      {/* HEADER PREMIUM */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm sticky top-0 z-50 transition-all duration-300">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+            <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-200">
+              <Cpu size={24} />
+            </div>
+            <span className="text-2xl font-black text-slate-800 tracking-tight">
+              CITT <span className="text-blue-600">DuocUC</span>
+            </span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-xl text-slate-600 font-medium flex items-center gap-2 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+          >
+            <LogOut size={18} /> Salir
+          </button>
+        </div>
+      </header>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="max-w-4xl mx-auto px-6 py-12">
 
         {/* ANIMATED HERO CARD */}
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden mb-8 transform hover:-translate-y-1 transition-all duration-300">
@@ -207,23 +225,13 @@ const PerfilPage = () => {
 
                     <div className="mt-6 flex gap-3">
                       <div className="flex-1">
-                        <button
+                        <Boton
                           type="submit"
                           disabled={isLoading}
-                          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-slate-800 to-blue-700 hover:from-slate-900 hover:to-blue-800 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-blue-900/20 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                          className="w-full bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200"
                         >
-                          {isLoading ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white"></div>
-                              <span>Actualizando...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle size={18} className="text-blue-200" />
-                              <span>Guardar Cambios</span>
-                            </>
-                          )}
-                        </button>
+                          {isLoading ? 'Actualizando...' : 'Guardar Cambios'}
+                        </Boton>
                       </div>
                       <button
                         type="button"
@@ -234,7 +242,7 @@ const PerfilPage = () => {
                           setPasswordActual('');
                           setPasswordNueva('');
                         }}
-                        className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all duration-200 shadow-sm"
+                        className="px-6 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors"
                       >
                         Cancelar
                       </button>
@@ -246,7 +254,8 @@ const PerfilPage = () => {
           </div>
 
         </div>
-      </div>
+      </main>
+    </div>
   );
 };
 
