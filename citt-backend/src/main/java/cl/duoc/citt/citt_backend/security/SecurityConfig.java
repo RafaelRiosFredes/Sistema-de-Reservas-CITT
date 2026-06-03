@@ -14,13 +14,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@EnableMethodSecurity // Permite usar @PreAuthorize en los controladores
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtFiltroAutenticacion jwtAuthFilter;
@@ -29,57 +28,46 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Habilitamos CORS usando nuestra configuración personalizada (De códigos 1 y 2)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 2. Desactivamos CSRF ya que usamos JWT (Stateless) y no Cookies
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // 3. Reglas de autorización de las rutas
                 .authorizeHttpRequests(auth -> auth
-                        // --- RUTAS PÚBLICAS ---
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/auto-registro",
                                 "/api/auth/refrescar-token",
                                 "/api/auth/olvido-password",
                                 "/api/auth/restablecer-password",
-                                "/h2-console/**",      // Consola de base de datos
-                                "/swagger-ui/**",      // Documentación visual API
-                                "/swagger-ui.html",    // HTML de Swagger
-                                "/v3/api-docs/**"      // Metadatos OpenAPI
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
                         ).permitAll()
-
-                        // --- RUTAS PROTEGIDAS ---
-                        // El Logout es privado para asegurar que solo un usuario real pueda cerrar sesión
-                        .requestMatchers("/api/auth/logout").authenticated()
-
-                        // Cualquier otra petición que no esté en la lista de arriba requiere login
                         .anyRequest().authenticated()
                 )
-
-                // 4. El servidor no guarda sesiones; cada petición debe traer su propio JWT
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 5. Proveedor de autenticación personalizado
                 .authenticationProvider(authenticationProvider)
-
-                // 6. Se agrega el FILTRO JWT ANTES del filtro estándar de usuario/password
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-                // 7. Configuración extra para la consola H2 (Permite verla en el navegador)
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Le decimos explícitamente a Spring a quién dejar pasar (CORS)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*")); // Permite cualquier frontend temporalmente
+
+        // CORRECCIÓN: Agregamos el puerto 5174 y 5175 que Vite usa cuando el 5173 está ocupado
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://localhost:5175",
+                "http://localhost:5182",
+                "http://localhost:5183"
+        ));
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+
+        // CORRECCIÓN: Quitamos el "*" y ponemos las cabeceras explícitas necesarias para trabajar con cookies fijas
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+
+        // Mantenemos tu configuración vital para las cookies
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

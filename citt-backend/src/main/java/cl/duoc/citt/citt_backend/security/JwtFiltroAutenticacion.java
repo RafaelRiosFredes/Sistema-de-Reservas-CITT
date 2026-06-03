@@ -2,6 +2,7 @@ package cl.duoc.citt.citt_backend.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +14,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 
-// Asegura que este filtro se ejecute exactamente una vez por cada petición HTTP.
 @Component
 @RequiredArgsConstructor
 public class JwtFiltroAutenticacion extends OncePerRequestFilter {
@@ -30,73 +29,71 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
 
-        // Si no hay encabezado o no empieza con "Bearer ", se ignora y se sigue con el siguiente filtro
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Extrae el token (quitando la palabra "Bearer " que son 7 caracteres)
-        jwt = authHeader.substring(7);
-
-        try {
-            userEmail = jwtUtilidades.extraerUsername(jwt);
-
-            // Si hay un email y el usuario aún no ha sido autenticado
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
-                // Valida si el token no ha expirado y pertenece al usuario
-                if (jwtUtilidades.esTokenValido(jwt, userDetails)) {
-                    if (userDetails instanceof cl.duoc.citt.citt_backend.model.Usuario) {
-                        cl.duoc.citt.citt_backend.model.Usuario usuario = (cl.duoc.citt.citt_backend.model.Usuario) userDetails;
-
-                        if (usuario.isDebeCambiarPassword()) {
-                            String rutaPeticion = request.getServletPath();
-
-                            // Lista blanca de rutas permitidas para el usuario bloqueado
-                            boolean esRutaPermitida = rutaPeticion.equals("/api/auth/cambiar-contrasena") ||
-                                    rutaPeticion.equals("/api/auth/login") ||
-                                    rutaPeticion.equals("/api/auth/logout") ||
-                                    rutaPeticion.equals("/api/auth/cambiar-password") ||
-                                    rutaPeticion.contains("/swagger-ui") ||
-                                    rutaPeticion.contains("/v3/api-docs");
-
-                            if (!esRutaPermitida) {
-                                // BLOQUEO ABSOLUTO: Respondemos 403 Forbidden antes de que llegue a cualquier Controller
-                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                response.setContentType("application/json");
-                                response.setCharacterEncoding("UTF-8");
-                                response.getWriter().write("{\"error\": \"ACCESO_DENEGADO\", \"message\": \"Debe cambiar su contraseña predeterminada para acceder a esta función.\"}");
-                                return;
-                            }
-                        }
-                    }
-                    // Crea el objeto de autenticación con los datos del usuario y sus permisos
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    // Agrega detalles adicionales de la petición
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    // Guarda la autenticación
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    // DEBUG: ver qué usuario y roles se están procesando
-                    System.out.println(">>> JWT Auth: " + userEmail + " | Roles: " + userDetails.getAuthorities());
+        //  Extrae el token JWT desde la cookie  "auth_token"
+        String jwt = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("auth_token".equals(cookie.getName())) {
+                    jwt = cookie.getValue();
+                    break;
                 }
             }
-        } catch (Exception e) {
-            // Si el token es inválido o está expirado, simplemente no autenticamos
-            // pero dejamos que la petición continúe (necesario para el /refresh)
-            System.out.println(">>> JWT Auth Error: " + e.getMessage());
         }
 
-        // Continúa con el siguiente filtro
+        // Si se encontró el token, se procesa la autenticación
+        if (jwt != null) {
+            try {
+                String userEmail = jwtUtilidades.extraerUsername(jwt);
+
+                if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+                    if (jwtUtilidades.esTokenValido(jwt, userDetails)) {
+
+                        //  CAMBIO DE CONTRASEÑA PROVISIONAL
+                        if (userDetails instanceof cl.duoc.citt.citt_backend.model.Usuario) {
+                            cl.duoc.citt.citt_backend.model.Usuario usuario = (cl.duoc.citt.citt_backend.model.Usuario) userDetails;
+
+                            if (usuario.isDebeCambiarPassword()) {
+                                String rutaPeticion = request.getServletPath();
+
+                                // Lista blanca de endpoints que el usuario SÍ puede ingresar con la clave provisoria
+                                boolean esRutaPermitida = rutaPeticion.equals("/api/auth/cambiar-password") ||
+                                        rutaPeticion.equals("/api/auth/login") ||
+                                        rutaPeticion.equals("/api/auth/logout") ||
+                                        rutaPeticion.contains("/swagger-ui") ||
+                                        rutaPeticion.contains("/v3/api-docs");
+
+                                if (!esRutaPermitida) {
+                                    // Bloqueo absoluto
+                                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                    response.setContentType("application/json");
+                                    response.setCharacterEncoding("UTF-8");
+                                    response.getWriter().write("{\"error\": \"ACCESO_DENEGADO\", \"message\": \"Debe cambiar su contraseña predeterminada para acceder a esta función.\"}");
+                                    return;
+                                }
+                            }
+                        }
+
+                        // Si el usuario es válido y no está bloqueado, se establece en el contexto
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
+                }
+            } catch (Exception e) {
+                // Evita que el backend se caiga si el token expira
+                System.out.println(">>> Error en filtro JWT: " + e.getMessage());
+            }
+        }
+
         filterChain.doFilter(request, response);
     }
 }

@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.access.AccessDeniedException; // <-- IMPORTANTE
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -51,6 +53,32 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Captura errores de autenticación de Spring Security (ej: claves incorrectas, usuario inexistente).
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponseDTO> manejarAutenticacion(AuthenticationException ex) {
+        ErrorResponseDTO error = ErrorResponseDTO.builder()
+                .mensaje("Credenciales inválidas. Verifica tu correo y contraseña.")
+                .status(HttpStatus.UNAUTHORIZED.value()) // Código 401
+                .fecha(LocalDateTime.now())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * captura cuando un usuario está autenticado pero NO tiene el rol requerido (ej: Alumno entrando a zona de Director).
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> manejarAccesoDenegado(AccessDeniedException ex) {
+        ErrorResponseDTO error = ErrorResponseDTO.builder()
+                .mensaje("No tienes los privilegios o roles necesarios para acceder a este recurso.")
+                .status(HttpStatus.FORBIDDEN.value()) // Código 403 Forbidden
+                .fecha(LocalDateTime.now())
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    /**
      * Captura errores en el formato de los datos enviados en el Body.
      * (ej: enviar letras en un campo numérico del JSON).
      */
@@ -78,12 +106,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * "Plan B". Captura cualquier otro error no previsto (Errores 500).
+     * Captura cualquier otro error no previsto (Errores 500).
      * Guarda el error real en la consola y al usuario le muestra un mensaje genérico.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> manejarExcepcionGlobal(Exception ex) {
-        // El error real queda en los logs del servidor para los desarrolladores
+        // El error real queda en el servidor para los desarrolladores
         log.error("Error no controlado capturado: {}", ex.getMessage(), ex);
 
         // Al cliente solo le llega el mensaje de soporte

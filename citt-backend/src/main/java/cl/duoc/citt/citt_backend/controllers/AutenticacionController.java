@@ -2,8 +2,10 @@ package cl.duoc.citt.citt_backend.controllers;
 
 import cl.duoc.citt.citt_backend.dto.*;
 import cl.duoc.citt.citt_backend.services.AutenticacionService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -11,65 +13,132 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AutenticacionController {
 
     private final AutenticacionService autenticacionService;
 
-    // Solo los usuarios con rol COORDINADOR Y DIRECTOR pueden crear nuevos usuario
     @PostMapping("/registro")
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<RegistroResponseDTO> registrar(@Valid @RequestBody RegistroRequestDTO solicitud) {
-        // Ejecuta la logica de registro y devuelve estado con resultado
         return ResponseEntity.ok(autenticacionService.registrar(solicitud));
     }
 
-    //Endpoint publico, cualquier usuario pueda crear su propia cuenta.
-    //Solo necesita ingresar su correo. El rol se detecta automáticamente.
     @PostMapping("/auto-registro")
     public ResponseEntity<RegistroResponseDTO> autoRegistro(@Valid @RequestBody AutoRegistroRequestDTO solicitud) {
         return ResponseEntity.ok(autenticacionService.autoRegistrar(solicitud));
     }
 
-    //Endpoint publico.
-    // POST
     @PostMapping("/login")
-    public ResponseEntity<AutenticacionResponseDTO> iniciarSesion(@Valid @RequestBody InicioSesionRequestDTO solicitud) {
-        return ResponseEntity.ok(autenticacionService.iniciarSesion(solicitud));
+    public ResponseEntity<String> iniciarSesion(@Valid @RequestBody InicioSesionRequestDTO solicitud, HttpServletResponse response) {
+        AutenticacionResponseDTO authData = autenticacionService.iniciarSesion(solicitud);
+
+        // Crea una cookie para el ACCESS TOKEN (1 hora)
+        ResponseCookie tokenCookie = ResponseCookie.from("auth_token", authData.getToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(3600)
+                .sameSite("Strict")
+                .build();
+
+        // Crea una cookie para el REFRESH TOKEN (7 días)
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", authData.getRefreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/api/auth/refrescar-token")
+                .maxAge(604800)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", tokenCookie.toString());
+        response.addHeader("Set-Cookie", refreshCookie.toString());
+
+        return ResponseEntity.ok("Login exitoso. Tokens configurados en cookies seguras.");
     }
 
-    //Lo usamos cuando el usuario entra con la clave provisoria enviada por email.
     @PutMapping("/cambiar-password")
     public ResponseEntity<String> cambiarPassword(@Valid @RequestBody CambioPasswordRequestDTO solicitud) {
-        //Actualiza al booleano "debeCambiarPassword"
         autenticacionService.cambiarPassword(solicitud);
         return ResponseEntity.ok("Contraseña actualizada exitosamente");
     }
 
-    // Genera un nuevo Access Token usando el Refresh Token
     @PostMapping("/refrescar-token")
-    public ResponseEntity<AutenticacionResponseDTO> refrescarToken(@Valid @RequestBody TokenRefreshRequestDTO solicitud) {
-        return ResponseEntity.ok(autenticacionService.refrescarToken(solicitud));
+    public ResponseEntity<AutenticacionResponseDTO> refrescarToken(
+            @CookieValue(name = "refresh_token") String refreshToken, HttpServletResponse response) {
+
+        TokenRefreshRequestDTO solicitud = new TokenRefreshRequestDTO();
+        solicitud.setRefreshToken(refreshToken);
+
+        AutenticacionResponseDTO nuevoTokens = autenticacionService.refrescarToken(solicitud);
+
+        // Actualizar la cookie de acceso con el nuevo token
+        ResponseCookie tokenCookie = ResponseCookie.from("auth_token", nuevoTokens.getToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(3600)
+                .sameSite("Strict")
+                .build();
+
+        // Actualizar la cookie del Refresh Token
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", nuevoTokens.getRefreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/api/auth/refrescar-token")
+                .maxAge(604800)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", tokenCookie.toString());
+        response.addHeader("Set-Cookie", refreshCookie.toString());
+
+        return ResponseEntity.ok(nuevoTokens);
     }
 
-    // Solicita el código de recuperación de contraseña
     @PostMapping("/olvido-password")
     public ResponseEntity<String> solicitarRecuperacion(@Valid @RequestBody OlvidoPasswordRequestDTO solicitud) {
         autenticacionService.solicitarRecuperacionPassword(solicitud);
         return ResponseEntity.ok("Si el correo está registrado, recibirás un código en breve.");
     }
 
-    // Procesa el cambio de contraseña con el token
     @PostMapping("/restablecer-password")
     public ResponseEntity<String> resetearPassword(@Valid @RequestBody RecuperarPasswordRequestDTO solicitud) {
         autenticacionService.resetearPassword(solicitud);
         return ResponseEntity.ok("Contraseña restablecida exitosamente.");
     }
 
-    // Cierra la sesión eliminando el Refresh Token del servidor
     @PostMapping("/logout")
-    public ResponseEntity<Void> cerrarSesion(@RequestHeader(value = "Authorization", required = false) String token) {
-        autenticacionService.cerrarSesion(token);
+    public ResponseEntity<Void> cerrarSesion(
+            @CookieValue(name = "refresh_token", required = false) String refreshToken,
+            HttpServletResponse response) {
+
+        if (refreshToken != null) {
+            try {
+                autenticacionService.cerrarSesion(refreshToken);
+            } catch (Exception e) {
+
+            }
+        }
+
+        response.addHeader("Set-Cookie", "auth_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict; Secure");
+        response.addHeader("Set-Cookie", "refresh_token=; Max-Age=0; Path=/api/auth/refrescar-token; HttpOnly; SameSite=Strict; Secure");
+
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/perfil")
+    public ResponseEntity<?> obtenerPerfil() {
+        // Obtenemos las credenciales y roles  mapeados desde el filtro
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        java.util.List<String> roles = authentication.getAuthorities().stream()
+                .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .map(role -> role.replace("ROLE_", ""))
+                .collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(java.util.Map.of(
+                "email", email,
+                "roles", roles
+        ));
     }
 }

@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Sistema-de-Reservas-CITT-feature-usuario-backend.iml" filepath="$PROJECT_DIR$/.idea/Sistema-de-Reservas-CITT-feature-usuario-backend.iml" />
-      <module fileurl="file://$PROJECT_DIR$/citt-backend/citt-backend.iml" filepath="$PROJECT_DIR$/citt-backend/citt-backend.iml" />
     </modules>
   </component>
 </project>
