@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Boton from '../componentes/Boton';
 import InputForm from '../componentes/InputForm';
 import Modal from '../componentes/Modal';
 import OpcionRol from '../componentes/OpcionRol';
-import { Cpu, ArrowLeft, GraduationCap, BookOpen, ClipboardList, Crown, Wrench, Users } from 'lucide-react';
+import { Cpu, ArrowLeft, GraduationCap, BookOpen, ClipboardList, Crown, Wrench, Users, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '../api/axiosConfig';
 
 type ViewMode = 'login' | 'forgot_request' | 'forgot_reset' | 'register' | 'force_change_password';
@@ -36,6 +36,7 @@ const LoginPage = () => {
   // Estados para recuperación de contraseña
   const [forgotCode, setForgotCode] = useState('');
   const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
 
   // Estados para el modal de selección de rol
   const [showRolModal, setShowRolModal] = useState(false);
@@ -47,6 +48,19 @@ const LoginPage = () => {
     setErrorMsg('');
     setSuccessMsg('');
   };
+
+  // Auto-dismiss: los mensajes desaparecen solos a los 5 segundos
+  useEffect(() => {
+    if (!errorMsg) return;
+    const t = setTimeout(() => setErrorMsg(''), 5000);
+    return () => clearTimeout(t);
+  }, [errorMsg]);
+
+  useEffect(() => {
+    if (!successMsg) return;
+    const t = setTimeout(() => setSuccessMsg(''), 5000);
+    return () => clearTimeout(t);
+  }, [successMsg]);
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -99,6 +113,19 @@ const LoginPage = () => {
 
   const handleForzarCambioPassword = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Validar fuerza de contraseña en el cliente
+    if (!validaciones.largo || !validaciones.mayuscula || !validaciones.numero) {
+      setErrorMsg('La contraseña no cumple con los requisitos de seguridad.');
+      return;
+    }
+    
+    // NUENA VALIDACIÓN: Comprobar que las contraseñas coinciden
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setErrorMsg('Las contraseñas no coinciden. Por favor, verifica.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
@@ -155,6 +182,13 @@ const LoginPage = () => {
 
   const handleRestablecerPassword = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Validar fuerza de contraseña en el cliente
+    if (!validaciones.largo || !validaciones.mayuscula || !validaciones.numero) {
+      setErrorMsg('La contraseña no cumple con los requisitos de seguridad.');
+      return;
+    }
+
     setErrorMsg('');
     setSuccessMsg('');
     setIsLoading(true);
@@ -166,6 +200,7 @@ const LoginPage = () => {
       setSuccessMsg('¡Contraseña restablecida exitosamente! Redirigiéndote al inicio de sesión...');
       setForgotCode('');
       setForgotNewPassword('');
+      setForgotConfirmPassword('');
       setPassword('');
       setTimeout(() => changeView('login'), 3000);
     } catch (error: any) {
@@ -193,6 +228,32 @@ const LoginPage = () => {
       setIsLoading(false);
     }
   };
+
+  // Validaciones de fuerza de contraseña (compartidas entre force_change y forgot_reset)
+  const validaciones = {
+    largo: forgotNewPassword.length >= 8,
+    mayuscula: /[A-Z]/.test(forgotNewPassword),
+    numero: /[0-9]/.test(forgotNewPassword),
+  };
+
+  // Bloque JSX reutilizable del indicador de requisitos
+  const IndicadorPassword = () => forgotNewPassword.length > 0 ? (
+    <div className="mt-2 space-y-1.5 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Requisitos:</p>
+      <div className={`flex items-center gap-2 text-xs font-medium ${validaciones.largo ? 'text-green-600' : 'text-gray-400'}`}>
+        {validaciones.largo ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+        Mínimo 8 caracteres
+      </div>
+      <div className={`flex items-center gap-2 text-xs font-medium ${validaciones.mayuscula ? 'text-green-600' : 'text-gray-400'}`}>
+        {validaciones.mayuscula ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+        Al menos 1 letra mayúscula
+      </div>
+      <div className={`flex items-center gap-2 text-xs font-medium ${validaciones.numero ? 'text-green-600' : 'text-gray-400'}`}>
+        {validaciones.numero ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+        Al menos 1 número
+      </div>
+    </div>
+  ) : null;
 
   return (
     <>
@@ -244,13 +305,15 @@ const LoginPage = () => {
 
           {/* Mensajes de error y éxito */}
           {errorMsg && (
-            <div className="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6 text-sm text-center font-medium" role="alert">
-              <span className="block sm:inline">{errorMsg}</span>
+            <div className="w-full mb-6 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-sm flex items-center gap-3 shadow-sm" role="alert">
+              <AlertCircle size={20} className="shrink-0 text-red-500" />
+              <p className="font-semibold leading-snug">{errorMsg}</p>
             </div>
           )}
           {successMsg && (
-            <div className="w-full bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 text-sm text-center font-medium" role="alert">
-              <span className="block sm:inline">{successMsg}</span>
+            <div className="w-full mb-6 p-4 bg-green-50 border border-green-100 text-green-700 rounded-2xl text-sm flex items-center gap-3 shadow-sm" role="alert">
+              <CheckCircle size={20} className="shrink-0 text-green-500" />
+              <p className="font-semibold leading-snug">{successMsg}</p>
             </div>
           )}
 
@@ -300,9 +363,16 @@ const LoginPage = () => {
                 Por seguridad, debes cambiar tu clave provisoria antes de entrar al sistema por primera vez.
               </p>
               <form onSubmit={handleForzarCambioPassword} className="w-full">
-                <div className="mb-8">
+                <div className="mb-2">
                   <InputForm label="Tu Nueva Contraseña Personal" type="password" placeholder="Mínimo 8 caracteres"
                     value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)} required disabled={isLoading} />
+                </div>
+                <div className="mb-6">
+                  <IndicadorPassword />
+                </div>
+                <div className="mb-8">
+                  <InputForm label="Confirmar Nueva Contraseña" type="password" placeholder="Repite la contraseña"
+                    value={forgotConfirmPassword} onChange={(e) => setForgotConfirmPassword(e.target.value)} required disabled={isLoading} />
                 </div>
                 <div className="mb-8">
                   <Boton type="submit" variante="primario" bloque={true} disabled={isLoading}>
@@ -345,16 +415,19 @@ const LoginPage = () => {
             <>
               <h2 className="text-[1.8rem] font-bold text-dark mb-4 text-center">Restablecer Contraseña</h2>
               <p className="text-[15px] text-gray-700 mb-10 text-center leading-relaxed">
-                Hemos enviado un código a tu correo. Ingrésalo abajo junto con tu nueva contraseña.
+                Hemos enviado una <strong>clave temporal</strong> a tu correo. Ingrésala abajo junto con tu nueva contraseña.
               </p>
               <form onSubmit={handleRestablecerPassword} className="w-full">
                 <div className="mb-6">
-                  <InputForm label="Código de Recuperación" type="text" placeholder="Ej: A1B2C3"
+                  <InputForm label="Clave Temporal" type="text" placeholder="Ej: 54a5b0c4"
                     value={forgotCode} onChange={(e) => setForgotCode(e.target.value)} required disabled={isLoading} />
                 </div>
-                <div className="mb-8">
+                <div className="mb-2">
                   <InputForm label="Nueva Contraseña" type="password" placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número"
                     value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)} required disabled={isLoading} />
+                </div>
+                <div className="mb-8">
+                  <IndicadorPassword />
                 </div>
                 <div className="mb-8">
                   <Boton type="submit" variante="primario" bloque={true} disabled={isLoading}>
@@ -376,7 +449,7 @@ const LoginPage = () => {
             <>
               <h2 className="text-[1.8rem] font-bold text-dark mb-4 text-center">Crear Cuenta</h2>
               <p className="text-[15px] text-gray-700 mb-10 text-center leading-relaxed">
-                Ingresa tu correo institucional. Se detectará tu rol automáticamente (Alumno o Docente) y te enviaremos una clave provisoria.
+                Ingresa tu correo institucional y te enviaremos una clave provisoria.
               </p>
               <form onSubmit={handleAutoRegistro} className="w-full">
                 <div className="mb-8">

@@ -39,10 +39,6 @@ const UsuariosPage = () => {
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
 
-  // Estados del modal de eliminación
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [usuarioEliminando, setUsuarioEliminando] = useState<UsuarioData | null>(null);
-  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
 
   useEffect(() => {
     const fetchPerfilYUsuarios = async () => {
@@ -50,10 +46,19 @@ const UsuariosPage = () => {
         const response = await api.get('/auth/perfil');
         setUserData(response.data);
         
-         // SEGURIDAD: Solo permite entrar a la página si su ROL ACTIVO es Director o Coordinador
-        const activeRole = localStorage.getItem('activeRole') || (response.data.roles && response.data.roles[0]) || '';
+        // SEGURIDAD: Validar que el rol guardado en localStorage
+        // realmente pertenece a los roles que el SERVIDOR devolvió.
+        // Si alguien manipuló el localStorage, este check lo detecta.
+        const savedRole = localStorage.getItem('activeRole') || '';
+        const rolesDelServidor: string[] = response.data.roles || [];
+        const activeRole = rolesDelServidor.includes(savedRole)
+          ? savedRole
+          : (rolesDelServidor[0] || '');
+
+        // Sincronizar localStorage con el valor validado
+        localStorage.setItem('activeRole', activeRole);
         setRolActivoActual(activeRole);
-        
+
         if (activeRole !== 'DIRECTOR' && activeRole !== 'COORDINADOR') {
           setAccesoDenegado(true);
           return;
@@ -156,30 +161,6 @@ const UsuariosPage = () => {
     }
   };
 
-  const abrirModalEliminar = (usuario: UsuarioData) => {
-    setUsuarioEliminando(usuario);
-    setShowDeleteModal(true);
-  };
-
-  const confirmarEliminarUsuario = async () => {
-    if (!usuarioEliminando) return;
-    setIsDeleteLoading(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-    
-    try {
-      await api.delete(`/usuarios/${usuarioEliminando.id}`);
-      setSuccessMsg(`El usuario ${usuarioEliminando.email} ha sido eliminado permanentemente.`);
-      setShowDeleteModal(false);
-      cargarUsuarios();
-      setTimeout(() => setSuccessMsg(''), 5000);
-    } catch (error: any) {
-      setErrorMsg(error.response?.data?.mensaje || 'Error al eliminar el usuario.');
-      setShowDeleteModal(false);
-    } finally {
-      setIsDeleteLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -285,46 +266,6 @@ const UsuariosPage = () => {
         )}
       </Modal>
 
-      {/* Modal Confirmar Eliminación */}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => !isDeleteLoading && setShowDeleteModal(false)}
-        titulo="Eliminar Usuario"
-        icono={<Trash2 size={20} className="text-red-600" />}
-      >
-        {usuarioEliminando && (
-          <div>
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-center shadow-inner">
-              <AlertCircle size={36} className="mx-auto mb-3 text-red-600" />
-              <h4 className="text-lg font-black text-red-800 mb-2">¡Advertencia Irreversible!</h4>
-              <p className="text-sm text-red-700 leading-relaxed">
-                Estás a punto de eliminar de forma <strong>permanente</strong> al usuario <br/>
-                <span className="font-black text-base">{usuarioEliminando.email}</span>.
-              </p>
-              <p className="text-[11px] text-red-500 mt-4 font-bold uppercase tracking-wider bg-red-100 py-1.5 rounded-lg">
-                Esta acción no se puede deshacer
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={confirmarEliminarUsuario}
-                disabled={isDeleteLoading}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow-md shadow-red-200 disabled:opacity-50 active:scale-95"
-              >
-                {isDeleteLoading ? 'Eliminando...' : 'Sí, Eliminar'}
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                disabled={isDeleteLoading}
-                className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl hover:bg-slate-100 transition-colors active:scale-95"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* HEADER BÁSICO (Igual al de Perfil) */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm sticky top-0 z-50">
@@ -497,13 +438,6 @@ const UsuariosPage = () => {
                               title="Editar Roles"
                             >
                               <Edit size={18} />
-                            </button>
-                            <button 
-                              onClick={() => abrirModalEliminar(usuario)}
-                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex ml-1"
-                              title="Eliminar Usuario Permanentemente"
-                            >
-                              <Trash2 size={18} />
                             </button>
                           </td>
                         </tr>

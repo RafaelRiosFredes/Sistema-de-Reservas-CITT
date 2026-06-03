@@ -66,10 +66,22 @@ const PerfilPage = () => {
     fetchPerfil();
   }, [navigate]);
 
+  // Validaciones de fuerza de contraseña en el cliente
+  const validaciones = {
+    largo: passwordNueva.length >= 8,
+    mayuscula: /[A-Z]/.test(passwordNueva),
+    numero: /[0-9]/.test(passwordNueva),
+  };
+  const passwordValida = Object.values(validaciones).every(Boolean);
+
   const handleCambiarPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passwordActual || !passwordNueva) {
       setErrorMsg('Por favor completa ambos campos.');
+      return;
+    }
+    if (!passwordValida) {
+      setErrorMsg('La nueva contraseña no cumple con los requisitos de seguridad.');
       return;
     }
     setErrorMsg('');
@@ -310,8 +322,27 @@ const PerfilPage = () => {
                         placeholder="Ingresa tu contraseña actual"
                         value={passwordActual} onChange={(e) => setPasswordActual(e.target.value)} />
                       <InputForm type="password" label="Nueva Contraseña"
-                        placeholder="Crea una contraseña segura"
+                        placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número"
                         value={passwordNueva} onChange={(e) => setPasswordNueva(e.target.value)} />
+
+                      {/* Indicador visual de requisitos */}
+                      {passwordNueva.length > 0 && (
+                        <div className="mt-2 space-y-1.5 p-3 bg-slate-100 rounded-xl">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Requisitos:</p>
+                          <div className={`flex items-center gap-2 text-xs font-medium ${validaciones.largo ? 'text-green-600' : 'text-slate-400'}`}>
+                            {validaciones.largo ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+                            Mínimo 8 caracteres
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs font-medium ${validaciones.mayuscula ? 'text-green-600' : 'text-slate-400'}`}>
+                            {validaciones.mayuscula ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+                            Al menos 1 letra mayúscula
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs font-medium ${validaciones.numero ? 'text-green-600' : 'text-slate-400'}`}>
+                            {validaciones.numero ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+                            Al menos 1 número
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-6 flex gap-3">
