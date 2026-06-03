@@ -1,42 +1,60 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
+
 export const useSeguridad = (rolesPermitidos?: string[]) => {
-  const [isVerificando, setIsVerificando] = useState(true);
+  // 1. Lo iniciamos en FALSE para que no se quede la pantalla de carga
+  const [isVerificando, setIsVerificando] = useState(false); 
   const navigate = useNavigate();
-  // Convertimos el array a string para evitar bucles de renderizado en el useEffect
+  
   const rolesString = rolesPermitidos ? rolesPermitidos.join(",") : "";
+
   useEffect(() => {
+    // =========================================================
+    // MODO DESARROLLO LOCAL: Simulamos que estamos logueados
+    // =========================================================
+    // Forzamos las variables en el navegador para que el sistema crea que somos ADMIN
+    localStorage.setItem("userEmail", "admin@citt.cl");
+    localStorage.setItem("userRoles", JSON.stringify([{ authority: "ADMIN" }]));
+    
+    // Si necesitas ver la vista de alumno, cambia la línea de arriba por esta:
+    // localStorage.setItem("userRoles", JSON.stringify([{ authority: "ALUMNO" }]));
+
+    /* =========================================================
+    CÓDIGO REAL DEL BACKEND (COMENTADO TEMPORALMENTE)
+    =========================================================
     const verificarSesion = async () => {
       try {
         const response = await api.get("/auth/perfil");
-        const usuario = response.data; // Retorna: { email, roles }
-        // Sincronizamos el localStorage con los datos reales del servidor
+        const usuario = response.data;
+        
         localStorage.setItem("userEmail", usuario.email);
         localStorage.setItem("userRoles", JSON.stringify(usuario.roles));
-        // --- CAPA DE AUTORIZACIÓN ---
+        
         if (rolesPermitidos && rolesPermitidos.length > 0) {
-          // Verificamos si el usuario tiene al menos UNO de los roles requeridos
           const tieneRolPermitido = usuario.roles.some((rol: string) =>
             rolesPermitidos.includes(rol),
           );
           if (!tieneRolPermitido) {
-            // El usuario está autenticado, pero NO está autorizado para esta zona
-            navigate("/"); // Lo mandamos al home o login
-            return; // Cortamos la ejecución para no cambiar isVerificando a false
+            navigate("/"); 
+            return; 
           }
         }
-        setIsVerificando(false); // Solo se libera la interfaz si pasa el filtro de rol
+        setIsVerificando(false);
       } catch (error) {
         localStorage.clear();
         navigate("/");
       }
     };
     verificarSesion();
+    
     const intervaloLatido = setInterval(() => {
       api.get("/auth/perfil").catch(() => {});
-    }, 60000); // Latido cada 60s
+    }, 60000); 
+    
     return () => clearInterval(intervaloLatido);
+    */
   }, [navigate, rolesString]);
+
   return { isVerificando };
 };
