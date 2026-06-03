@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Cpu, User, Mail, Shield, LogOut, KeyRound,
-  ChevronRight, Lock, CheckCircle, AlertCircle
+  ChevronRight, Lock, CheckCircle, AlertCircle,
+  GraduationCap, BookOpen, ClipboardList, Crown, Wrench, Users, RefreshCw
 } from 'lucide-react';
 import Boton from '../componentes/Boton';
 import InputForm from '../componentes/InputForm';
+import SessionTimeout from '../componentes/sessionTimeout';
+import Modal from '../componentes/Modal';
+import OpcionRol from '../componentes/OpcionRol';
 import api from '../api/axiosConfig';
 
 interface UserData {
@@ -13,9 +17,22 @@ interface UserData {
   roles: string[];
 }
 
+const getIconoPorRol = (rol: string) => {
+  switch (rol) {
+    case 'ALUMNO':       return <GraduationCap size={32} />;
+    case 'DOCENTE':      return <BookOpen size={32} />;
+    case 'COORDINADOR':  return <ClipboardList size={32} />;
+    case 'DIRECTOR':     return <Crown size={32} />;
+    case 'AYUDANTE':     return <Wrench size={32} />;
+    default:             return <Users size={32} />;
+  }
+};
+
 const PerfilPage = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<UserData | null>(null);
+
+  // Estados Contraseña
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [passwordActual, setPasswordActual] = useState('');
   const [passwordNueva, setPasswordNueva] = useState('');
@@ -23,14 +40,27 @@ const PerfilPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Estados Rol
+  const [showRolModal, setShowRolModal] = useState(false);
+  const [rolActivo, setRolActivo] = useState('');
+  const [rolSeleccionado, setRolSeleccionado] = useState('');
+
   useEffect(() => {
-    // Obtenemos los datos del perfil directamente desde el Backend mediante la Cookie
     const fetchPerfil = async () => {
       try {
         const response = await api.get('/auth/perfil');
         setUserData(response.data);
+
+        const savedRole = localStorage.getItem('activeRole');
+        if (savedRole && response.data.roles.includes(savedRole)) {
+          setRolActivo(savedRole);
+          setRolSeleccionado(savedRole);
+        } else {
+          setRolActivo(response.data.roles[0] || '');
+          setRolSeleccionado(response.data.roles[0] || '');
+        }
       } catch (error) {
-        navigate('/'); // Si la cookie no es válida, redirige al login
+        navigate('/');
       }
     };
     fetchPerfil();
@@ -55,16 +85,27 @@ const PerfilPage = () => {
       setPasswordNueva('');
       setTimeout(() => setShowChangePassword(false), 2000);
     } catch (error: any) {
-      setErrorMsg(error.response?.data?.mensaje || 'Error al actualizar contraseña.');
+      let msg = error.response?.data?.mensaje || 'Error al actualizar contraseña.';
+      if (msg.includes('Error de validación')) {
+        msg = msg.replace(/Error de validación: /g, '').replace(/nuevaPassword: /g, '').replace(/passwordActual: /g, '');
+      }
+      setErrorMsg(msg);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleConfirmarCambioRol = () => {
+    localStorage.setItem('activeRole', rolSeleccionado);
+    setRolActivo(rolSeleccionado);
+    setShowRolModal(false);
   };
 
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout');
     } finally {
+      localStorage.removeItem('activeRole');
       navigate('/');
     }
   };
@@ -77,10 +118,46 @@ const PerfilPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">
-      {/* HEADER PREMIUM */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm sticky top-0 z-50 transition-all duration-300">
+      <SessionTimeout />
+
+      <Modal
+        isOpen={showRolModal}
+        onClose={() => setShowRolModal(false)}
+        titulo="Cambiar Rol Activo"
+        icono={<RefreshCw size={20} />}
+      >
+        <p className="text-gray-500 text-sm mb-6 text-center">
+          Selecciona el rol con el que deseas trabajar en esta sesión.
+          Actualmente estás usando: <span className="font-bold text-primary">{rolActivo}</span>
+        </p>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {userData.roles.map((rol) => (
+            <OpcionRol
+              key={rol}
+              nombreRol={rol}
+              icono={getIconoPorRol(rol)}
+              seleccionado={rolSeleccionado === rol}
+              onClick={() => setRolSeleccionado(rol)}
+            />
+          ))}
+        </div>
+        <div className="flex gap-3">
+          <Boton variante="primario" bloque onClick={handleConfirmarCambioRol} disabled={rolSeleccionado === rolActivo}>
+            Confirmar cambio
+          </Boton>
+          <button
+            onClick={() => { setShowRolModal(false); setRolSeleccionado(rolActivo); }}
+            className="px-6 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </Modal>
+
+      {/* HEADER */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-200">
               <Cpu size={24} />
             </div>
@@ -88,41 +165,59 @@ const PerfilPage = () => {
               CITT <span className="text-blue-600">DuocUC</span>
             </span>
           </div>
+
           <button
             onClick={handleLogout}
-            className="px-4 py-2 rounded-xl text-slate-600 font-medium flex items-center gap-2 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+            className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all duration-200 border border-transparent hover:border-red-100"
           >
-            <LogOut size={18} /> Salir
+            <LogOut size={18} />
+            <span className="hidden sm:inline">Cerrar Sesión</span>
           </button>
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-6 py-10">
 
-        {/* ANIMATED HERO CARD */}
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden mb-8 transform hover:-translate-y-1 transition-all duration-300">
-          <div className="h-40 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
-            {/* Elementos decorativos de fondo */}
+        {/* TARJETA DE PERFIL */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden mb-8">
+          <div className="relative h-32 bg-gradient-to-br from-slate-800 via-blue-900 to-blue-700">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mr-20 -mt-20"></div>
             <div className="absolute bottom-0 left-20 w-40 h-40 bg-blue-300 opacity-20 rounded-full blur-2xl -mb-10"></div>
           </div>
-          <div className="px-10 pb-10 -mt-16 relative">
-            <div className="w-32 h-32 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-5xl font-black border-4 border-white shadow-lg shadow-slate-300 mb-6 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+          <div className="px-10 pb-10 -mt-16 relative flex flex-col items-center text-center">
+            <div className="w-28 h-28 rounded-full bg-slate-800 text-white flex items-center justify-center text-5xl font-black border-4 border-white shadow-md mb-4 relative z-10">
               {userData.email.charAt(0).toUpperCase()}
             </div>
             <h1 className="text-3xl font-black text-slate-800 tracking-tight">{userData.email}</h1>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {userData.roles && userData.roles.length > 0 ? (
-                userData.roles.map(rol => (
-                  <span key={rol} className="px-4 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                    <Shield size={12} /> {rol}
+
+            {/* Roles del usuario y botón de cambio de rol (Centrados) */}
+            <div className="mt-5 flex flex-col items-center gap-4 w-full">
+              {/* Contenedor de las etiquetas de los roles */}
+              <div className="flex flex-wrap gap-2 items-center justify-center">
+                {userData.roles.map(rol => (
+                  <span
+                    key={rol}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm border ${
+                      rol === rolActivo
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                    }`}
+                  >
+                    <Shield size={12} />
+                    {rol}
+                    {rol === rolActivo && <span className="ml-1 opacity-80">(activo)</span>}
                   </span>
-                ))
-              ) : (
-                <span className="px-4 py-1.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  Sin Roles Asignados
-                </span>
+                ))}
+              </div>
+
+              {/* Botón para cambiar rol */}
+              {userData.roles.length > 1 && (
+                <button
+                  onClick={() => setShowRolModal(true)}
+                  className="px-6 py-2 rounded-full text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+                >
+                  <RefreshCw size={16} /> Cambiar Rol Activo
+                </button>
               )}
             </div>
           </div>
@@ -133,12 +228,11 @@ const PerfilPage = () => {
 
           {/* INFORMACIÓN DE CUENTA */}
           <div className="md:col-span-5 space-y-6">
-            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-shadow duration-300">
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-shadow duration-300">
               <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-3">
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><User size={20}/></div>
                 Información de Cuenta
               </h3>
-
               <div className="space-y-5">
                 <div className="flex items-start gap-4">
                   <div className="mt-1 text-slate-400"><Mail size={18} /></div>
@@ -147,13 +241,19 @@ const PerfilPage = () => {
                     <p className="font-medium text-slate-700 mt-0.5">{userData.email}</p>
                   </div>
                 </div>
-
                 <div className="flex items-start gap-4">
                   <div className="mt-1 text-slate-400"><Shield size={18} /></div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Roles</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Rol Activo</p>
+                    <p className="font-medium text-slate-700 mt-0.5">{rolActivo || 'Sin rol asignado'}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="mt-1 text-slate-400"><Users size={18} /></div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Todos los Roles</p>
                     <p className="font-medium text-slate-700 mt-0.5">
-                      {userData.roles && userData.roles.length > 0 ? userData.roles.join(', ') : 'Ninguno'}
+                      {userData.roles.length > 0 ? userData.roles.join(', ') : 'Ninguno'}
                     </p>
                   </div>
                 </div>
@@ -161,9 +261,9 @@ const PerfilPage = () => {
             </div>
           </div>
 
-          {/* ACCIONES Y FORMULARIOS */}
+          {/* SEGURIDAD */}
           <div className="md:col-span-7">
-            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/60 transition-shadow duration-300">
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-shadow duration-300">
               <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-3">
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><KeyRound size={20}/></div>
                 Seguridad de la Cuenta
@@ -193,57 +293,36 @@ const PerfilPage = () => {
                     </h4>
 
                     {errorMsg && (
-                      <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2">
-                        <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                        <p>{errorMsg}</p>
+                      <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl text-sm flex items-start gap-3 shadow-sm">
+                        <AlertCircle size={20} className="shrink-0 mt-0.5 text-red-500" />
+                        <p className="font-medium text-left leading-relaxed">{errorMsg}</p>
                       </div>
                     )}
-
                     {successMsg && (
-                      <div className="mb-4 p-3 bg-green-50 border border-green-100 text-green-700 rounded-xl text-sm flex items-start gap-2">
-                        <CheckCircle size={16} className="mt-0.5 shrink-0" />
-                        <p>{successMsg}</p>
+                      <div className="mb-6 p-4 bg-green-50 border border-green-100 text-green-700 rounded-2xl text-sm flex items-start gap-3 shadow-sm">
+                        <CheckCircle size={20} className="shrink-0 mt-0.5 text-green-500" />
+                        <p className="font-medium text-left leading-relaxed">{successMsg}</p>
                       </div>
                     )}
 
                     <div className="space-y-4">
-                      <InputForm
-                        type="password"
-                        label="Contraseña Actual"
+                      <InputForm type="password" label="Contraseña Actual"
                         placeholder="Ingresa tu contraseña actual"
-                        value={passwordActual}
-                        onChange={(e) => setPasswordActual(e.target.value)}
-                      />
-                      <InputForm
-                        type="password"
-                        label="Nueva Contraseña"
+                        value={passwordActual} onChange={(e) => setPasswordActual(e.target.value)} />
+                      <InputForm type="password" label="Nueva Contraseña"
                         placeholder="Crea una contraseña segura"
-                        value={passwordNueva}
-                        onChange={(e) => setPasswordNueva(e.target.value)}
-                      />
+                        value={passwordNueva} onChange={(e) => setPasswordNueva(e.target.value)} />
                     </div>
 
                     <div className="mt-6 flex gap-3">
                       <div className="flex-1">
-                        <Boton
-                          type="submit"
-                          disabled={isLoading}
-                          className="w-full bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200"
-                        >
+                        <Boton type="submit" variante="primario" bloque={true} disabled={isLoading}>
                           {isLoading ? 'Actualizando...' : 'Guardar Cambios'}
                         </Boton>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowChangePassword(false);
-                          setErrorMsg('');
-                          setSuccessMsg('');
-                          setPasswordActual('');
-                          setPasswordNueva('');
-                        }}
-                        className="px-6 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors"
-                      >
+                      <button type="button"
+                        onClick={() => { setShowChangePassword(false); setErrorMsg(''); setSuccessMsg(''); setPasswordActual(''); setPasswordNueva(''); }}
+                        className="px-6 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors">
                         Cancelar
                       </button>
                     </div>
