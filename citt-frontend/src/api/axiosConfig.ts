@@ -1,27 +1,47 @@
 import axios from 'axios';
 
-/**
- * Configuración centralizada de Axios.
- * Se encarga de la URL base y de inyectar el token JWT en las cabeceras.
- */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  baseURL: 'http://localhost:8080/api',
+  // ESTO ES OBLIGATORIO para enviar y recibir cookies (rama login-frontend)
+  withCredentials: true, 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-/**
- * Interceptor de solicitudes:
- * Antes de enviar cualquier petición, verifica si existe un token en el localStorage.
- * Si existe, lo añade a la cabecera Authorization.
- */
+// =================================================================
+// BANDERAS PARA LA COLA DE PETICIONES (Evita bucles infinitos)
+// =================================================================
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// =================================================================
+// 1. INTERCEPTOR DE PETICIONES (REQUEST) - TU LÓGICA
+// =================================================================
 api.interceptors.request.use(
   (config) => {
+    // RE-DIRECCIÓN DINÁMICA: Cambia /auth/perfil por el endpoint real del backend
+    if (config.url && config.url.includes('/auth/perfil')) {
+      config.url = config.url.replace('/auth/perfil', '/usuarios/mi-perfil');
+    }
+
+    // INYECCIÓN DE CREDENCIALES: Adjunta el token JWT automáticamente si existe
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
@@ -29,18 +49,84 @@ api.interceptors.request.use(
   }
 );
 
-/**
- * Interceptor de respuestas:
- * Permite manejar errores globales, como el error 401 (No autorizado).
- */
+// =================================================================
+// 2. INTERCEPTOR DE RESPUESTAS (RESPONSE) - LÓGICA COMBINADA
+// =================================================================
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Si el token es inválido o ha expirado, podemos limpiar el almacenamiento
-      console.warn('Sesión no autorizada o expirada.');
-      localStorage.removeItem('token');
+  (response) => {
+    // CAPTURA AUTOMÁTICA DEL LOGIN: Guarda el token y los roles devueltos por el backend
+    if (response.config.url?.includes('/auth/login') && response.status === 200) {
+      const data = response.data;
+      if (data && data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userEmail', data.email || '');
+        localStorage.setItem('userRoles', JSON.stringify(data.roles || []));
+        
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
+      }
     }
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Control de expiración o denegación de accesos (401 o 403)
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
+      
+      // Evitar interceptar las llamadas al login o al propio endpoint de refresco
+      if (originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refrescar-token')) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // Si ya hay un refresco en progreso, ponemos esta petición en cola
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        
+        // Llamada a la API para refrescar el token usando tu lógica de envío en el body
+        const refreshResponse = await axios.post('http://localhost:8080/api/auth/refrescar-token', {
+          refreshToken: storedRefreshToken
+        }, { withCredentials: true });
+        
+        // Actualizamos el token nuevo en el localStorage
+        if (refreshResponse.data && refreshResponse.data.token) {
+          localStorage.setItem('token', refreshResponse.data.token);
+        }
+
+        // Si funciona, procesamos la cola de peticiones que estaban esperando
+        processQueue(null);
+        
+        // Y reintentamos la petición original que falló
+        return api(originalRequest);
+        
+      } catch (refreshError) {
+        // Si el refresh token también falló (expiró o cerró sesión)
+        processQueue(refreshError, null);
+        localStorage.clear();
+        // Opcional: Redirigir al usuario al login forzosamente
+        window.location.href = '/';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     return Promise.reject(error);
   }
 );
