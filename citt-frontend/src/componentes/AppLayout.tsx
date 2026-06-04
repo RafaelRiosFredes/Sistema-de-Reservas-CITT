@@ -76,16 +76,18 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       { name: "Gestión Reservas", icon: CalendarCheck, path: "/reservas" },
       { name: "Inventario", icon: Box, path: "/articulos" },
       { name: "Gestión Préstamos", icon: Handshake, path: "/prestamos" },
-      { name: "Historial", icon: History, path: "/historial" },
+      { name: "Historial Préstamos", icon: History, path: "/historial" },
+      { name: "Historial Reservas", icon: History, path: "/historial-espacios" },
       ...(rolActivo.includes("ADMIN") || rolActivo.includes("DIRECTOR") ? [{ name: "Usuarios", icon: Users, path: "/usuarios" }] : []),
     ];
   } else {
     // Menú COMPARTIDO para Alumnos, Docentes y Ayudantes
     menuItems = [
       { name: "Inicio", icon: PieChart, path: "/dashboard" },
+      { name: "Catálogo Inventario", icon: Package, path: "/solicitar-prestamo" },
+      { name: "Mis Préstamos", icon: Handshake, path: "/prestamos" },
       { name: "Espacios CITT", icon: MonitorSmartphone, path: "/espacios" }, 
       { name: "Mis Reservas", icon: CalendarCheck, path: "/reservas" },
-      { name: "Catálogo Inventario", icon: Package, path: "/articulos" },
     ];
   }
 

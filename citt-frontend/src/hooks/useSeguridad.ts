@@ -14,12 +14,12 @@ export const useSeguridad = (rolesPermitidos?: string[]) => {
     // MODO DESARROLLO LOCAL: Simulamos que estamos logueados
     // =========================================================
     // Forzamos las variables en el navegador para que el sistema crea que somos ADMIN
-   localStorage.setItem("userEmail", "admin@duoc.cl");
-   localStorage.setItem("userRoles", JSON.stringify([{ authority: "ADMIN" }]));
+   //localStorage.setItem("userEmail", "admin@duoc.cl");
+   //localStorage.setItem("userRoles", JSON.stringify([{ authority: "ADMIN" }]));
     
     // Si necesitas ver la vista de alumno, cambia la línea de arriba por esta:
-    //localStorage.setItem("userEmail", "alumno@duocuc.cl");
-    //localStorage.setItem("userRoles", JSON.stringify([{ authority: "ALUMNO" }]));  
+    localStorage.setItem("userEmail", "alumno@duocuc.cl");
+    localStorage.setItem("userRoles", JSON.stringify([{ authority: "ALUMNO" }]));  
 
     //Si necesitas ver la lista de profesor 
      // Si necesitas ver la vista de alumno, cambia la línea de arriba por esta:

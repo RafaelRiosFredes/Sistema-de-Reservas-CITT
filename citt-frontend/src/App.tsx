@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "./componentes/AppLayout";
 import EspaciosPage from "./pages/EspaciosPage";
+import { ReservarEspacioPage } from "./pages/ReservarEspacioPage";
+import { FormularioReservaEspacioPage } from "./pages/FormularioReservaEspacioPage";
+import { ReservasPage } from "./pages/ReservasPage";
+import { HistorialEspaciosPage } from "./pages/HistorialEspacioPage";
 
 function App() {
   return (
@@ -12,6 +16,10 @@ function App() {
         {/* RUTAS PRIVADAS (Con el menú lateral) */}
         <Route element={<MainLayout />}>
           <Route path="/espacios" element={<EspaciosPage />} />
+          <Route path="/reservar-espacio" element={<ReservarEspacioPage />} />
+          <Route path="/formulario-reserva" element={<FormularioReservaEspacioPage />} />
+          <Route path="/reservas" element={<ReservasPage />} />
+          <Route path="/historial-espacios" element={<HistorialEspaciosPage />} />
         </Route>
 
         {/* COMODÍN */}
