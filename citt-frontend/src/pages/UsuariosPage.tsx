@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AppLayout } from '../componentes/AppLayout';
 import { Cpu, Users, UserPlus, LogOut, AlertCircle, CheckCircle, Edit, Trash2, Search, Shield } from 'lucide-react';
 import Boton from '../componentes/Boton';
 import InputForm from '../componentes/InputForm';
@@ -206,7 +207,7 @@ const UsuariosPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">
+    <AppLayout titulo="Gestión de Usuarios" breadcrumb="CITT DuocUC / Usuarios">
       <SessionTimeout />
 
       {/* Modal de Edición de Roles */}
@@ -267,29 +268,7 @@ const UsuariosPage = () => {
       </Modal>
 
 
-      {/* HEADER BÁSICO (Igual al de Perfil) */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-200">
-              <Cpu size={24} />
-            </div>
-            <span className="text-2xl font-black text-slate-800 tracking-tight cursor-pointer" onClick={() => navigate('/perfil')}>
-              CITT <span className="text-blue-600">DuocUC</span>
-            </span>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl font-semibold transition-all duration-200 border border-transparent hover:border-red-100 cursor-pointer"
-          >
-            <LogOut size={18} />
-            <span className="hidden sm:inline">Cerrar Sesión</span>
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-6 py-10">
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
@@ -457,8 +436,8 @@ const UsuariosPage = () => {
           </div>
 
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
