@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Modal from "../componentes/Modal";
+import Modal from "./Modal";
 import api from "../api/axiosConfig";
 
 interface ModalCrearEspacioProps {

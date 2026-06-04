@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "./componentes/AppLayout";
 import EspaciosPage from "./pages/EspaciosPage";
-import { ReservarEspacioPage } from "./pages/ReservarEspacioPage";
-import { FormularioReservaEspacioPage } from "./pages/FormularioReservaEspacioPage";
+import { ReservarEspacioPage } from "./pages/SolicitarReservaPage";
+import { FormularioReservaEspacioPage } from "./pages/FormularioSolicitudPage";
 import { ReservasPage } from "./pages/ReservasPage";
-import { HistorialEspaciosPage } from "./pages/HistorialEspacioPage";
+import { HistorialEspaciosPage } from "./pages/HistorialPage";
 
 function App() {
   return (

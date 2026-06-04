@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import { useSeguridad } from "../hooks/useSeguridad"; 
-import { Users, Info, DoorOpen, Briefcase, Plus, Trash2, Edit, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Edit, AlertTriangle } from "lucide-react";
 import api from "../api/axiosConfig";
 import TablaDatos from "../componentes/TablaDatos";
-import { ModalCrearEspacio } from "../componentes/ModalCrearEspacios";
+import { ModalCrearEspacio } from "../componentes/ModalCrearEspacio";
 import { ModalEditarEspacio } from "../componentes/ModalEditarEspacio";
 import { ModalConfirmarEliminar } from "../componentes/ModalConfirmarEliminar";
 import { ModalActualizarEstado } from "../componentes/ModalActualizarEstado"; 
-import EstadoActualEspacios from "../componentes/EstadoActualEspacios";
-import BarraOcupacion from "../componentes/BarraOcupacion";
 
 type RolUsuario = "ADMIN" | "PROFESOR" | "AYUDANTE" | "ALUMNO";
 
@@ -130,18 +129,26 @@ const EspaciosPage = () => {
 
   if (isVerificando) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-b-[#003b73]"></div>
-          <p className="text-sm font-medium text-gray-500">Cargando módulo de espacios...</p>
-        </div>
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#003b73]"></div>
       </div>
     );
   }
 
-  // --- ADMIN VIEW ---
-  if (rolAsignado === "ADMIN") {
-    return (
+  const rolActivo = localStorage.getItem("rolActivo") || "";
+  const isAdminArea = ["ADMIN", "DIRECTOR", "COORDINADOR"].includes(rolActivo);
+
+  if (!isAdminArea) {
+    return <Navigate to="/solicitar-reserva" replace />;
+  }
+
+  // --- ADMIN VIEW ONLY ---
+  return (
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Espacios (Admin)</h1>
+        <p className="text-sm text-gray-500">Inicio / Espacios (Admin)</p>
+      </div>
       <div className="flex flex-col gap-6">
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 flex justify-between items-center">
           <div>
@@ -182,109 +189,7 @@ const EspaciosPage = () => {
         <ModalConfirmarEliminar isOpen={!!espacioABorrar} onClose={() => setEspacioABorrar(null)} onConfirm={ejecutarEliminar} nombreEspacio={espacioABorrar?.nombre || ""} />
         <ModalActualizarEstado isOpen={!!espacioEstado} onClose={() => setEspacioEstado(null)} onSuccess={() => { fetchEspacios(); setEspacioEstado(null); }} espacio={espacioEstado} />
       </div>
-    );
-  }
-
-  // --- USER VIEW (ALUMNO, PROFESOR, AYUDANTE) ---
-  const titulosPorRol = {
-    PROFESOR: "Portal Docente - Espacios CITT",
-    AYUDANTE: "Portal Ayudante - Espacios CITT",
-    ALUMNO: "Espacios Disponibles CITT"
-  };
-
-  const subtitulosPorRol = {
-    PROFESOR: "Visualiza los laboratorios operativos y gestiona las solicitudes de reserva para tus clases o proyectos.",
-    AYUDANTE: "Revisa los laboratorios operativos y gestiona las solicitudes de reserva para tus ayudantías o talleres.",
-    ALUMNO: "Visualiza los laboratorios operativos de la sede y gestiona tus solicitudes de reserva."
-  };
-
-  const rolUser = rolAsignado;
-
-  return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500">
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[#021626] flex items-center gap-3">
-            <DoorOpen size={28} className="text-blue-600" />
-            {titulosPorRol[rolUser]}
-          </h2>
-          <p className="text-gray-500 text-sm mt-1">
-            {subtitulosPorRol[rolUser]}
-          </p>
-        </div>
-      </div>
-
-      {!isLoading && espacios.length > 0 && (
-        <div className="w-full mb-2">
-          <EstadoActualEspacios espacios={espacios} />
-        </div>
-      )}
-
-      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-2">
-        Detalle de Equipamiento
-      </h3>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#003b73]"></div>
-        </div>
-      ) : espacios.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center">
-          <Info size={44} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 font-medium text-lg">No hay espacios físicos registrados en este momento.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {espacios.map((espacio) => {
-            const esDisponible = espacio.estado?.toUpperCase() === "DISPONIBLE";
-            const porcentajeOcupacion = esDisponible ? 15 : 0; 
-            
-            return (
-              <div 
-                key={espacio.id} 
-                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
-              >
-                {!esDisponible && (
-                  <div className="absolute inset-0 bg-gray-50/40 z-0 pointer-events-none"></div>
-                )}
-
-                <div className="relative z-10 flex flex-col h-full">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Sala de Innovación
-                      </span>
-                      <h3 className="text-xl font-bold text-[#021626]">{espacio.nombre}</h3>
-                    </div>
-                    {renderEstadoLocal(espacio.estado)}
-                  </div>
-
-                  <div className="flex flex-col gap-3 mb-6 flex-grow mt-2">
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <Users size={18} className="text-blue-600" />
-                      <span className="text-sm">Capacidad: {espacio.capacidad} personas</span>
-                    </div>
-                    
-                    <div className="flex items-start gap-3 text-gray-600">
-                      <Briefcase size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm line-clamp-2">
-                        {espacio.comentarios || "Sin descripción de equipamiento."}
-                      </span>
-                    </div>
-                  </div>
-
-                  <BarraOcupacion 
-                    porcentaje={porcentajeOcupacion}
-                    esDisponible={esDisponible}
-                    onReservarClick={() => console.log("Reservando espacio", espacio.id)}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 
