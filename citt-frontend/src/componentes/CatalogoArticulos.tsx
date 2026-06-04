@@ -1,35 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { Search, PackageOpen } from "lucide-react";
+import { Search, PackageOpen, RefreshCw, ShoppingCart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 import CategoriaAccordion from "./CategoriaAccordion";
 import type { CategoriaCatalogo } from "./CategoriaAccordion";
 
 export const CatalogoArticulos: React.FC = () => {
+  const navigate = useNavigate();
   const [categorias, setCategorias] = useState<CategoriaCatalogo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
 
-  // Estado global para las selecciones de cantidad por categoría y marca
+  // Estructura: { [idCategoria]: { [marca]: cantidad } }
   const [seleccionesGlobales, setSeleccionesGlobales] = useState<
     Record<number, Record<string, number>>
   >({});
 
-  // Carga inicial del catálogo de artículos
+  const fetchCatalogo = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/categorias/catalogo-alumnos");
+      setCategorias(response.data);
+    } catch (error) {
+      console.error("Error cargando el catálogo de artículos:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Cargar el catálogo al montar el componente
   useEffect(() => {
-    const fetchCatalogo = async () => {
-      try {
-        const response = await api.get("/categorias/catalogo-alumnos");
-        setCategorias(response.data);
-      } catch (error) {
-        console.error("Error cargando el catálogo de artículos:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchCatalogo();
   }, []);
 
-  // Función para actualizar la cantidad seleccionada de una marca dentro de una categoría
+  // Función para inyectar al acordeón y centralizar el estado
   const actualizarSeleccion = (
     idCategoria: number,
     marca: string,
@@ -51,7 +55,19 @@ export const CatalogoArticulos: React.FC = () => {
     });
   };
 
-  if (isLoading) {
+  const calcularTotalSeleccionados = () => {
+    let total = 0;
+    Object.values(seleccionesGlobales).forEach((categoriaSeleccion) => {
+      Object.values(categoriaSeleccion).forEach((cantidad) => {
+        total += cantidad;
+      });
+    });
+    return total;
+  };
+
+  const totalItems = calcularTotalSeleccionados();
+
+  if (isLoading && categorias.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -65,7 +81,7 @@ export const CatalogoArticulos: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
       {/* BANNER SUPERIOR */}
       <div className="bg-gradient-to-r from-[#003B5C] to-[#007bff] rounded-xl p-6 text-white shadow-md flex items-center gap-4">
         <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
@@ -81,21 +97,32 @@ export const CatalogoArticulos: React.FC = () => {
         </div>
       </div>
 
-      {/* BARRA DE BÚSQUEDA */}
-      <div className="relative bg-white rounded-xl shadow-sm border border-slate-100 flex items-center p-2">
-        <div className="pl-4 text-slate-400">
-          <Search size={20} />
+      {/* BARRA DE BÚSQUEDA Y REFRESCO */}
+      <div className="flex gap-3 items-center">
+        <div className="relative flex-1 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center p-2">
+          <div className="pl-4 text-slate-400">
+            <Search size={20} />
+          </div>
+          <input
+            type="text"
+            placeholder="Todas las categorías..."
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+            className="w-full pl-4 pr-4 py-2 border-none outline-none font-medium text-slate-700 bg-transparent"
+          />
         </div>
-        <input
-          type="text"
-          placeholder="Todas las categorías..."
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
-          className="w-full pl-4 pr-4 py-2 border-none outline-none font-medium text-slate-700 bg-transparent"
-        />
+        <button
+          onClick={fetchCatalogo}
+          className="p-3 border border-slate-300 rounded-xl hover:text-blue-600 hover:border-blue-300 cursor-pointer bg-white transition-colors shadow-sm"
+          title="Actualizar catálogo"
+        >
+          <RefreshCw
+            className={`w-5 h-5 ${isLoading ? "animate-spin text-blue-600" : ""}`}
+          />
+        </button>
       </div>
 
-      {/* LISTADO DE ACORDEONES */}
+      {/* LISTADO DE CATEGORIAS */}
       <div className="flex flex-col">
         {categoriasFiltradas.length === 0 ? (
           <div className="bg-white p-12 text-center rounded-xl border border-slate-200 shadow-sm">
@@ -116,6 +143,32 @@ export const CatalogoArticulos: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* BARRA FLOTANTE DE SELECCIÓN */}
+      {totalItems > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 px-6 md:px-10 flex flex-col md:flex-row justify-between items-center gap-4 z-40 animate-in slide-in-from-bottom-full duration-300">
+          <div className="flex items-center gap-3 text-slate-700 font-bold">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+              <ShoppingCart size={20} />
+            </div>
+            <div>
+              <p className="m-0 text-lg leading-tight">
+                {totalItems} artículo{totalItems !== 1 ? "s" : ""} seleccionado
+                {totalItems !== 1 ? "s" : ""}
+              </p>
+              <p className="m-0 text-xs text-slate-500 font-medium">
+                Listos para solicitar préstamo
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/crear-solicitud")}
+            className="w-full md:w-auto px-8 py-3 bg-[#003B5C] hover:bg-blue-800 text-white rounded-xl font-bold transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
+          >
+            Solicitar Préstamo
+          </button>
+        </div>
+      )}
     </div>
   );
 };

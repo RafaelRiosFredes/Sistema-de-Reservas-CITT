@@ -16,6 +16,8 @@ import {
   Box,
   UserCog,
   MonitorSmartphone,
+  ClipboardList,
+  PackageOpen,
 } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useSeguridad } from "../hooks/useSeguridad";
@@ -36,6 +38,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const { isVerificando } = useSeguridad();
 
   const email = localStorage.getItem("userEmail") || "Usuario";
+  const rolActivo = localStorage.getItem("rolActivo") || "";
   const rolesRaw = localStorage.getItem("userRoles");
   const userRoles = rolesRaw ? JSON.parse(rolesRaw) : [];
 
@@ -43,15 +46,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     if (roles.includes("ADMIN")) return "Administrador";
     if (roles.includes("DIRECTOR")) return "Director";
     if (roles.includes("COORDINADOR")) return "Coordinador CITT";
+    if (roles.includes("DOCENTE")) return "Docente";
+    if (roles.includes("AYUDANTE")) return "Ayudante";
     if (roles.includes("ALUMNO")) return "Alumno";
     return "Usuario";
   };
 
-  const rolPrincipal = getRolPrincipal(userRoles);
-  const isAdminArea =
-    userRoles.includes("ADMIN") ||
-    userRoles.includes("DIRECTOR") ||
-    userRoles.includes("COORDINADOR");
+  const rolPrincipal = rolActivo
+    ? getRolPrincipal([rolActivo])
+    : getRolPrincipal(userRoles);
+
+  // Evaluadores de acceso basados en rolActivo
+  const isAdminArea = ["ADMIN", "DIRECTOR", "COORDINADOR"].includes(rolActivo);
+  const isStaff = ["AYUDANTE", "DOCENTE", "COORDINADOR", "DIRECTOR"].includes(
+    rolActivo,
+  );
+  const isAyudante = rolActivo === "AYUDANTE";
 
   const handleLogout = async () => {
     try {
@@ -73,14 +83,27 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   }
 
   const menuItems = [
+    // COMUNES A TODOS LOS ROLES
     { name: "Dashboard", icon: PieChart, path: "/dashboard" },
     { name: "Calendario", icon: Calendar, path: "/calendario" },
-    { name: "Préstamo Artículos", icon: Package, path: "/articulos" },
+    {
+      name: "Solicitar Préstamo",
+      icon: PackageOpen,
+      path: "/solicitar-prestamo",
+    },
+    { name: "Solicitudes", icon: ClipboardList, path: "/solicitudes" },
     {
       name: "Reserva Espacios",
       icon: MonitorSmartphone,
       path: "/solicitar-reserva",
     },
+
+    // STAFF (Ayudante + Docente + Coordinador + Director): Historial
+    ...(isStaff
+      ? [{ name: "Historial", icon: History, path: "/historial" }]
+      : []),
+
+    // ADMIN AREA (Coordinador + Director)
     ...(isAdminArea
       ? [
           { name: "Gestión Reservas", icon: CalendarCheck, path: "/reservas" },
@@ -95,7 +118,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           { name: "Configuración", icon: Settings, path: "/configuracion" },
         ]
       : []),
-    { name: "Historial", icon: History, path: "/historial" },
+
+    // SOLO ADMIN / DIRECTOR
     ...(userRoles.includes("ADMIN") || userRoles.includes("DIRECTOR")
       ? [{ name: "Usuarios", icon: Users, path: "/usuarios" }]
       : []),
@@ -123,7 +147,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-3 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-3 scroll-styled scroll-dark">
           {menuItems.map((item) => {
             const isActive = location.pathname.includes(item.path);
             return (
@@ -185,7 +209,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-8">
+        <main
+          className="flex-1 overflow-x-hidden overflow-y-scroll bg-gray-50 p-8 scroll-styled scroll-light"
+          style={{ scrollbarGutter: "stable" }}
+        >
           {children || <Outlet />}
         </main>
       </div>

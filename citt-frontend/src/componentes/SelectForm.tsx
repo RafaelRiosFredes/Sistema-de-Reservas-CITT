@@ -8,12 +8,13 @@ interface SelectFormProps extends React.SelectHTMLAttributes<HTMLSelectElement> 
 const SelectForm: React.FC<SelectFormProps> = ({
   label,
   opciones,
+  className,
   ...props
 }) => {
   return (
-    <div className="form-group">
-      <label className="form-label">{label}</label>
-      <select className="form-input bg-white" {...props}>
+    <div className={className || (label ? "form-group" : "w-full")}>
+      {label && <label className="form-label">{label}</label>}
+      <select className="form-input bg-white w-full" {...props}>
         <option value="" disabled>
           Seleccione una opción
         </option>
