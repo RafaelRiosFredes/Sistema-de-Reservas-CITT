@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Modal from "./Modal";
+import Modal from "../componentes/Modal";
 import api from "../api/axiosConfig";
 import { AlertTriangle, Info } from "lucide-react";
 

@@ -67,7 +67,7 @@ export const ModalCrearEspacio = ({ isOpen, onClose, onSuccess }: ModalCrearEspa
             value={capacidad} 
             onChange={(e) => setCapacidad(Number(e.target.value))}
             min={1} 
-            max={30} 
+            max={50} 
             className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
             required 
           />
