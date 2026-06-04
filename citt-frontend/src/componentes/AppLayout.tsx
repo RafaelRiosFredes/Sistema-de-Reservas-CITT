@@ -14,14 +14,15 @@ import {
   Bell,
 } from "lucide-react";
 import api from "../api/axiosConfig";
+import { useSeguridad } from "../hooks/useSeguridad";
 
-interface AppLayoutProps {
+interface AdminLayoutProps {
   children: React.ReactNode;
   titulo: string;
   breadcrumb: string;
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({
+export const AdminLayout: React.FC<AdminLayoutProps> = ({
   children,
   titulo,
   breadcrumb,
@@ -29,46 +30,37 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Estado para controlar la verificación de la sesión
-  const [isVerificando, setIsVerificando] = useState(true);
-
-  // Verificamos la sesión al montar el componente y cada 6 minutos para mantenerla activa
-  useEffect(() => {
-    const verificarSesion = async () => {
-      try {
-        await api.get("/auth/perfil");
-        setIsVerificando(false); // Si la sesión es válida, dejamos de mostrar la pantalla de carga
-      } catch (error) {
-        localStorage.clear();
-        navigate("/"); // Redirigimos a la página de inicio si no hay sesión válida
-      }
-    };
-    verificarSesion();
-
-    const intervaloLatido = setInterval(() => {
-      api.get("/auth/perfil").catch(() => {});
-    }, 6000); // Latido cada 6 minutos para mantener la sesión activa
-
-    return () => clearInterval(intervaloLatido); // Limpiar el intervalo al desmontar el componente
-  }, [navigate]);
+  // Estado para bloquear la vista mientras se valida la cookie
+  const { isVerificando } = useSeguridad(["DIRECTOR", "COORDINADOR"]);
 
   const email = localStorage.getItem("userEmail") || "Usuario";
   const rolesRaw = localStorage.getItem("userRoles");
   const userRoles = rolesRaw ? JSON.parse(rolesRaw) : [];
   const rolPrincipal = userRoles.includes("DIRECTOR")
     ? "Director"
-    : "Coordinador CITT";
+    : userRoles.includes("COORDINADOR")
+      ? "Coordinador CITT"
+      : "Usuario";
 
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
     } catch {
-      // Si el logout falla, igual limpiamos la sesión local y redirigimos
+      // Ignoramos errores de red en el logout para forzar la salida local
     } finally {
       localStorage.clear();
       navigate("/");
     }
   };
+
+  // Mientras se verifica la cookie, mostramos una pantalla de carga para evitar parpadeos o acceso no autorizado.
+  if (isVerificando) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const menuItems = [
     { name: "Inicio", icon: LayoutDashboard, path: "/admin/dashboard" },
@@ -80,15 +72,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { name: "Reportes", icon: FileText, path: "/admin/reportes" },
     { name: "Configuración", icon: Settings, path: "/admin/configuracion" },
   ];
-
-  // Pantalla de carga mientras se verifica la sesión
-  if (isVerificando) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
@@ -152,7 +135,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* CONTENIDO PRINCIPAL (DERECHA) */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* HEADER */}
+        {/* HEADER TOP BAR */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-10 shadow-sm">
           <div className="flex flex-col">
             <h1 className="text-xl font-bold text-gray-800 leading-none">
@@ -162,15 +145,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Buscador */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition-all"
-              />
-            </div>
             {/* Notificaciones */}
             <button className="relative text-gray-500 hover:text-blue-600 transition-colors cursor-pointer">
               <Bell className="w-5 h-5" />
