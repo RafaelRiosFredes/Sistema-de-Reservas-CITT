@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { AlertCircle, Tag, Cpu, Box } from "lucide-react";
-import Modal from "../componentes/Modal";
-import InputForm from "../componentes/InputForm";
-import Boton from "../componentes/Boton";
+import Modal from "./Modal";
+import InputForm from "./InputForm";
+import Boton from "./Boton";
 import api from "../api/axiosConfig";
 
 interface ModalCrearCategoriaProps {
@@ -16,13 +16,13 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
   onClose,
   onSuccess,
 }) => {
-  // Estados controlados para el formulario
+  // Estado local e independiente: El padre no necesita saber qué pasa aquí adentro hasta que haya éxito
   const [nombreCategoria, setNombreCategoria] = useState("");
   const [esTecnologico, setEsTecnologico] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Función para resetear el estado del formulario
+  // Función de limpieza profunda para garantizar un estado puro al reabrir
   const resetearEstado = () => {
     setNombreCategoria("");
     setEsTecnologico(true);
@@ -37,7 +37,7 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación básica del formulario
+    // Validación asimétrica temprana: Evitamos peticiones inútiles al backend
     if (!nombreCategoria.trim()) {
       setErrorMsg("El nombre de la categoría es obligatorio.");
       return;
@@ -53,8 +53,8 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
       });
 
       resetearEstado();
-      onSuccess(); // Notificamos al padre para refrescar la lista de categorías
-      onClose();
+      onSuccess(); // Le avisamos al padre que debe recargar la tabla
+      onClose(); // Cerramos el modal
     } catch (error: any) {
       setErrorMsg(
         error.response?.data?.mensaje ||
@@ -100,7 +100,7 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
             />
           </div>
 
-          {/* Clasificación del Activo */}
+          {/* Campo: Clasificación Tecnológica (Diseño Radio Buttons) */}
           <div>
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
               Clasificación del Activo
@@ -139,7 +139,8 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
               </button>
             </div>
             <p className="text-xs text-slate-400 mt-2 font-medium">
-                Esta clasificación es importante para la gestión interna y reportes, pero no afecta la funcionalidad del sistema.            
+              Determina si esta categoría aparecerá en el catálogo de reservas
+              para alumnos.
             </p>
           </div>
         </div>

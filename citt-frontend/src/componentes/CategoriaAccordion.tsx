@@ -1,142 +1,175 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, Package, Check, X } from "lucide-react";
-import Boton from "./Boton";
+import {
+  ChevronDown,
+  ChevronUp,
+  Laptop,
+  Smartphone,
+  Printer,
+  Monitor,
+} from "lucide-react";
 
-interface MarcaDesglose {
+export interface MarcaDesglose {
   marca: string;
   cantidad: number;
 }
 
-interface CategoriaAccordionProps {
+export interface CategoriaCatalogo {
+  idCategoria: number;
   nombreCategoria: string;
-  totalDisponibles: number;
+  totalCategoria: number;
   desgloseMarcas: MarcaDesglose[];
-  // Actualizamos la función para que ahora también envíe la cantidad deseada al padre
-  onSolicitar: (marca: string, cantidad: number) => void;
+}
+
+interface CategoriaAccordionProps {
+  categoria: CategoriaCatalogo;
+  // Estado que viene del padre para saber qué marcas de esta categoría están seleccionadas y cuántas
+  selecciones: Record<string, number>;
+  onActualizarSeleccion: (marca: string, cantidad: number) => void;
 }
 
 const CategoriaAccordion: React.FC<CategoriaAccordionProps> = ({
-  nombreCategoria,
-  totalDisponibles,
-  desgloseMarcas,
-  onSolicitar,
+  categoria,
+  selecciones,
+  onActualizarSeleccion,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Estados para manejar la lógica de "cuántos quiere"
-  const [marcaSeleccionada, setMarcaSeleccionada] = useState<string | null>(
-    null,
-  );
-  const [cantidadDeseada, setCantidadDeseada] = useState<number>(1);
-
-  const iniciarSeleccion = (marca: string) => {
-    setMarcaSeleccionada(marca);
-    setCantidadDeseada(1); // Siempre partimos sugiriendo 1
+  // Icono dinámico simple (puedes expandirlo según tus necesidades)
+  const renderIcon = () => {
+    const nombre = categoria.nombreCategoria.toLowerCase();
+    if (nombre.includes("tablet") || nombre.includes("celular"))
+      return <Smartphone size={20} />;
+    if (nombre.includes("impresora")) return <Printer size={20} />;
+    if (nombre.includes("monitor")) return <Monitor size={20} />;
+    return <Laptop size={20} />;
   };
 
-  const confirmarSolicitud = (marca: string) => {
-    onSolicitar(marca, cantidadDeseada);
-    setMarcaSeleccionada(null); // Reseteamos la vista después de pedir
+  const handleSeleccionar = (marca: string) => {
+    onActualizarSeleccion(marca, 1); // Por defecto selecciona 1 al hacer clic
+    setIsOpen(true);
+  };
+
+  const handleIncrementar = (marca: string, stockMaximo: number) => {
+    const actual = selecciones[marca] || 0;
+    if (actual < stockMaximo) {
+      onActualizarSeleccion(marca, actual + 1);
+    }
+  };
+
+  const handleDecrementar = (marca: string) => {
+    const actual = selecciones[marca] || 0;
+    if (actual <= 1) {
+      // Si baja de 1, lo deselecciona completamente
+      onActualizarSeleccion(marca, 0);
+    } else {
+      onActualizarSeleccion(marca, actual - 1);
+    }
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-border shadow-sm overflow-hidden mb-4 transition-all hover:shadow-md">
-      {/* CABECERA PLEGABLE */}
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden transition-all mb-4">
+      {/* CABECERA DEL ACORDEÓN */}
       <div
-        className="px-6 py-4 flex justify-between items-center cursor-pointer bg-white hover:bg-gray-50 transition-colors"
+        className="flex items-center justify-between p-5 cursor-pointer hover:bg-slate-50 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 text-primary rounded-lg">
-            <Package size={24} />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+            {renderIcon()}
           </div>
-          <h3 className="m-0 text-xl">{nombreCategoria}</h3>
+          <h3 className="text-lg font-bold text-slate-800 m-0">
+            {categoria.nombreCategoria}
+          </h3>
         </div>
 
-        <div className="flex items-center gap-8">
-          <span className="font-bold text-lg text-dark">
-            Stock Total: {totalDisponibles}
+        <div className="flex items-center gap-6">
+          <span className="text-sm font-medium text-slate-600">
+            Stock Total: {categoria.totalCategoria} Unidades
           </span>
-          <div className="text-gray-400">
-            {isOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+          <div className="text-slate-400 bg-white border border-slate-200 p-1.5 rounded-lg shadow-sm flex items-center justify-center">
+            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
         </div>
       </div>
 
-      {/* CONTENIDO DESPLEGADO: LISTA VERTICAL CON SELECTOR DE CANTIDAD */}
+      {/* CONTENIDO DESPLEGABLE (ÁRBOL DE MARCAS) */}
       {isOpen && (
-        <div className="border-t-2 border-dark bg-white flex flex-col">
-          {desgloseMarcas.map((item, idx) => {
-            const enModoSeleccion = marcaSeleccionada === item.marca;
+        <div className="px-6 pb-6 pt-2">
+          {/* Contenedor con la línea lateral simulando un árbol */}
+          <div className="ml-5 pl-6 border-l-2 border-slate-200 space-y-3 relative">
+            {categoria.desgloseMarcas.map((item, idx) => {
+              const cantidadSeleccionada = selecciones[item.marca] || 0;
+              const isSelected = cantidadSeleccionada > 0;
 
-            return (
-              <div
-                key={idx}
-                className="px-8 py-4 border-b border-gray-border last:border-b-0 flex justify-between items-center hover:bg-gray-50 transition-colors h-[72px]"
-              >
-                {/* Lado Izquierdo: Datos */}
-                <div className="flex items-center justify-between w-1/2 pr-8">
-                  <p className="font-bold text-dark text-lg m-0">
-                    {item.marca}
-                  </p>
-                  <p className="font-bold text-gray-500 text-sm m-0">
-                    Stock: {item.cantidad}
-                  </p>
-                </div>
+              return (
+                <div
+                  key={idx}
+                  className={`relative flex items-center justify-between p-4 rounded-xl transition-all ${
+                    isSelected
+                      ? "border-2 border-blue-600 bg-white shadow-sm"
+                      : "border border-slate-200 bg-white hover:border-blue-300"
+                  }`}
+                >
+                  {/* Línea horizontal conectora del árbol */}
+                  <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-slate-200 -translate-y-1/2" />
 
-                {/* Lado Derecho: Interacción (Botón o Selector) */}
-                {enModoSeleccion ? (
-                  <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
-                    {/* Input de Cantidad */}
-                    <div className="flex items-center gap-2 bg-white px-2 py-1.5 rounded-md border border-gray-border shadow-sm">
-                      <span className="text-xs font-bold text-gray-400 uppercase">
-                        Cant:
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={item.cantidad}
-                        value={cantidadDeseada}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          // Bloqueamos que no pida más del stock ni menos de 1
-                          if (val > 0 && val <= item.cantidad)
-                            setCantidadDeseada(val);
-                        }}
-                        className="w-10 text-center border-none outline-none font-bold text-sm bg-transparent"
-                      />
-                    </div>
-
-                    {/* Botón Cancelar */}
-                    <button
-                      onClick={() => setMarcaSeleccionada(null)}
-                      className="p-1.5 text-gray-400 hover:text-error hover:bg-error/10 rounded-md transition-colors cursor-pointer border-none bg-transparent"
-                      title="Cancelar"
-                    >
-                      <X size={20} />
-                    </button>
-
-                    {/* Botón Confirmar */}
-                    <Boton
-                      variante="primario"
-                      onClick={() => confirmarSolicitud(item.marca)}
-                      className="px-4 py-2 text-sm flex items-center gap-1"
-                    >
-                      <Check size={16} /> Pedir
-                    </Boton>
+                  {/* Lado Izquierdo: Nombre de Marca */}
+                  <div className="flex-1">
+                    <h4 className="text-lg font-bold text-slate-800 m-0 leading-none">
+                      {item.marca}
+                    </h4>
                   </div>
-                ) : (
-                  <Boton
-                    variante="secundario"
-                    onClick={() => iniciarSeleccion(item.marca)}
-                    className="bg-white text-dark border border-gray-border hover:border-primary hover:text-primary transition-all font-bold px-6 py-2 rounded-md cursor-pointer"
-                  >
-                    Seleccionar
-                  </Boton>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Lado Derecho: Controles interactivos */}
+                  <div className="flex items-center gap-6">
+                    {/* Selector de Cantidad alineado al mockup: [ + ] 2 [ - ] */}
+                    {isSelected && (
+                      <div className="flex items-center bg-blue-50 border border-blue-100 rounded-lg overflow-hidden shadow-sm h-9 animate-in fade-in zoom-in duration-200">
+                        <button
+                          onClick={() =>
+                            handleIncrementar(item.marca, item.cantidad)
+                          }
+                          disabled={cantidadSeleccionada >= item.cantidad}
+                          className="px-3 h-full text-blue-600 hover:bg-blue-100 font-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          +
+                        </button>
+                        <div className="px-3 h-full flex items-center justify-center bg-white border-x border-blue-100 font-bold text-slate-800 min-w-[3rem]">
+                          {cantidadSeleccionada}
+                        </div>
+                        <button
+                          onClick={() => handleDecrementar(item.marca)}
+                          className="px-3 h-full text-blue-600 hover:bg-blue-100 font-black transition-colors"
+                        >
+                          -
+                        </button>
+                      </div>
+                    )}
+
+                    <span className="text-sm font-medium text-slate-500 w-32 text-right">
+                      Stock: {item.cantidad} Unidades
+                    </span>
+
+                    {/* Botón de Acción Final */}
+                    <div className="w-40 flex justify-end">
+                      {isSelected ? (
+                        <span className="bg-slate-100 text-slate-600 text-xs font-bold px-4 py-2 rounded-full whitespace-nowrap animate-in fade-in duration-200">
+                          Selección actual
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSeleccionar(item.marca)}
+                          className="bg-[#007bff] hover:bg-blue-700 text-white text-sm font-bold px-6 py-2 rounded-lg transition-colors shadow-sm cursor-pointer whitespace-nowrap"
+                        >
+                          Seleccionar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

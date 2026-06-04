@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { AlertCircle, Package, Info, Lock } from "lucide-react";
-import Modal from "../componentes/Modal";
-import InputForm from "../componentes/InputForm";
-import Boton from "../componentes/Boton";
+import Modal from "./Modal";
+import InputForm from "./InputForm";
+import Boton from "./Boton";
 import api from "../api/axiosConfig";
 
 interface CategoriaDTO {
@@ -50,7 +50,7 @@ export const ModalEditarArticulo: React.FC<ModalEditarArticuloProps> = ({
 
   useEffect(() => {
     if (isOpen && articulo) {
-      // Cargar los estados disponibles para el dropdown
+      // 1. Cargar Estados disponibles
       const fetchEstados = async () => {
         try {
           const res = await api.get("/estados");
@@ -61,7 +61,7 @@ export const ModalEditarArticulo: React.FC<ModalEditarArticuloProps> = ({
       };
       fetchEstados();
 
-      // Prellenamos el formulario con los datos del artículo a editar
+      // 2. Pre-llenar el formulario
       setFormData({
         nombreArticulo: articulo.nombreArticulo || "",
         idCategoria: articulo.idCategoria?.toString() || "",
@@ -103,12 +103,28 @@ export const ModalEditarArticulo: React.FC<ModalEditarArticuloProps> = ({
       );
       return;
     }
+    const estadoSeleccionado = estados.find(
+      (e) => e.idEstadoArticulo.toString() === formData.idEstadoArticulo,
+    );
+    const nombreEstadoNuevo = estadoSeleccionado
+      ? estadoSeleccionado.nombreEstado.toUpperCase()
+      : "";
+
+    if (["DAÑADO", "MANTENCION"].includes(nombreEstadoNuevo)) {
+      if (!formData.comentarios || !formData.comentarios.trim()) {
+        setErrorMsg(
+          `Para marcar el artículo como ${nombreEstadoNuevo}, debe ingresar obligatoriamente un comentario interno justificando el estado.`,
+        );
+        return;
+      }
+    }
 
     setIsLoading(true);
     setErrorMsg("");
 
     try {
-    // Construimos el payload con validaciones y transformaciones necesarias
+      // Construcción asimétrica del payload: 
+      // Solo enviamos lo que el backend necesita, evitando campos vacíos o innecesarios
       const payload = {
         nombreArticulo: formData.nombreArticulo.trim(),
         idCategoria: Number(formData.idCategoria),
@@ -212,8 +228,6 @@ export const ModalEditarArticulo: React.FC<ModalEditarArticuloProps> = ({
                   ))}
                 </select>
               </div>
-
-              {/* Código Duoc */}
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <label className="block text-xs font-bold text-slate-400 uppercase">

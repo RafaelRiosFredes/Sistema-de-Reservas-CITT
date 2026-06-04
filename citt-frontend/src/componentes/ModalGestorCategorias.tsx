@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Tag,
   Edit2,
   Check,
   X,
@@ -10,8 +9,8 @@ import {
   Box,
   Cpu,
 } from "lucide-react";
-import Modal from "../componentes/Modal";
-import Boton from "../componentes/Boton";
+import Modal from "./Modal";
+import Boton from "./Boton";
 import api from "../api/axiosConfig";
 
 interface CategoriaAdminDTO {
@@ -24,7 +23,7 @@ interface CategoriaAdminDTO {
 interface ModalGestorCategoriasProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenCrear: () => void; // Función para abrir el modal de creación, se llama desde el botón "Nueva Categoría"
+  onOpenCrear: () => void; // Función para abrir el modal de creación desde el gestor
 }
 
 export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
@@ -36,7 +35,7 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Estados para la Edición en Línea
+  // Estados para edición inline
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editNombre, setEditNombre] = useState("");
   const [editEsTecnologico, setEditEsTecnologico] = useState(true);
@@ -46,9 +45,9 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
     try {
       const response = await api.get("/categorias/todas");
       setCategorias(response.data);
-      setErrorMsg(""); // Limpiamos cualquier error previo al cargar correctamente
+      setErrorMsg(""); // Limpiamos el error si tiene éxito
     } catch (error: any) {
-      // Manejo de errores mejorado para mostrar información relevante del backend
+      // Manejo de errores mejorado con detalles del backend
       const status = error.response?.status || "Desconocido";
       const mensajeBackend =
         error.response?.data?.mensaje ||
@@ -70,15 +69,13 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
     }
   }, [isOpen]);
 
-  // Función para alternar el estado de la categoría (Activo <-> Inactivo)
-
   const handleToggleEstado = async (cat: CategoriaAdminDTO) => {
     try {
       if (!cat.eliminado) {
-        // Si no está eliminado, lo eliminamos (lo que lo inactiva)
+        // Si NO está eliminado (Activo), hacemos DELETE lógico
         await api.delete(`/categorias/${cat.idCategoria}`);
       } else {
-        // Si ya está eliminado, lo restauramos (lo que lo activa)
+        // Si ESTÁ eliminado (Inactivo), usamos PATCH para restaurar
         await api.patch(`/categorias/${cat.idCategoria}/restaurar`);
       }
       // Actualizamos la tabla
@@ -128,8 +125,9 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
         {/* Cabecera de Acciones */}
         <div className="flex justify-between items-center mb-2">
           <p className="text-sm text-slate-500">
-            Aquí puedes gestionar las categorías de recursos. 
-            Edita, desactiva o crea nuevas categorías según sea necesario.
+            Administra el catálogo base. Las categorías inactivas no afectarán a
+            los artículos existentes, pero no podrán ser asignadas a nuevos
+            ítems.
           </p>
           <Boton
             onClick={() => {
@@ -172,7 +170,7 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {categorias.map((cat) => {
-                  // Determinamos si esta fila está en modo edición y si la categoría está activa o inactiva
+                  // Lógica para determinar el estado visual de la fila
                   const isEditing = editingId === cat.idCategoria;
                   const isActivo = !cat.eliminado;
 

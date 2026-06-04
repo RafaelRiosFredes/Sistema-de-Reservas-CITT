@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { AlertCircle, Package, AlertTriangle, Info } from "lucide-react";
-import Modal from "../componentes/Modal";
-import InputForm from "../componentes/InputForm";
-import Boton from "../componentes/Boton";
+import Modal from "./Modal";
+import InputForm from "./InputForm";
+import Boton from "./Boton";
 import api from "../api/axiosConfig";
 
-// DTOs para tipar las categorías y estados que vienen del backend
+// DTOs para tipar las respuestas de la API
 interface CategoriaDTO {
   idCategoria: number;
   nombreCategoria: string;
@@ -20,8 +20,7 @@ interface ModalCrearArticuloProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  categorias: CategoriaDTO[]; 
-  // Recibimos las categorías como prop para evitar cargar datos innecesarios cuando el modal no está abierto
+  categorias: CategoriaDTO[];
 }
 
 export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
@@ -34,7 +33,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Estado local para manejar el formulario
+  // Agrupamos el estado en un solo objeto para facilitar su manejo
   const [formData, setFormData] = useState({
     nombreArticulo: "",
     idCategoria: "",
@@ -50,7 +49,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
     comentarios: "",
   });
 
-  // Efecto para cargar los estados del artículo cada vez que se abre el modal y para limpiar el formulario al cerrarlo
+  // Cargar Estados de Artículo solo cuando el modal se abre
   useEffect(() => {
     if (isOpen) {
       const fetchEstados = async () => {
@@ -73,7 +72,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
       };
       fetchEstados();
     } else {
-      // Limpiar el formulario y errores al cerrar el modal
+      // Limpieza profunda al cerrar
       setFormData({
         nombreArticulo: "",
         idCategoria: "",
@@ -104,7 +103,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validaciones básicas antes de enviar al backend
+    // VALIDACIONES BÁSICAS
     if (
       !formData.nombreArticulo.trim() ||
       !formData.idCategoria ||
@@ -153,7 +152,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
     }
   };
 
-  // Bloqueo Visual si no hay categorías
+  // Si no hay categorías, mostramos un mensaje específico en lugar del formulario
   if (categorias.length === 0) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} titulo="Añadir Nuevo Artículo">
@@ -165,7 +164,8 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
             Faltan Categorías
           </h3>
           <p className="text-slate-500 text-sm mb-6">
-            No se pueden registrar artículos sin categorías.
+            El sistema requiere que el artículo pertenezca a una familia.
+            Actualmente no hay ninguna categoría registrada en la base de datos.
           </p>
           <Boton
             onClick={onClose}
@@ -189,7 +189,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
         )}
 
         <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-6 custom-scrollbar">
-          {/* IDENTIFICACIÓN BÁSICA */}
+          {/* IDENTIFICACIÓN BÁSICA (Obligatoria/Alta prioridad) */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
             <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 mb-2">
               <Package size={14} /> Identificación Básica
@@ -279,7 +279,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
             </div>
           </div>
 
-          {/* TRAZABILIDAD Y DETALLES ADICIONALES */}
+          {/* TRAZABILIDAD Y DETALLES (Opcional) */}
           <div className="space-y-4 px-1">
             <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 border-b border-slate-200 pb-2">
               <Info size={14} /> Trazabilidad y Detalles Adicionales
