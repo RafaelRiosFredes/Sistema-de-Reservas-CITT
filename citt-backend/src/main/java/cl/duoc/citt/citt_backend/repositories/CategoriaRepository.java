@@ -18,4 +18,7 @@ public interface CategoriaRepository extends JpaRepository<Categoria,Long> {
     @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE categoria SET eliminado = false WHERE id_categoria = :id", nativeQuery = true)
     int restaurarCategoriaNativo(@Param("id") Long id);
+
+    @Query(value = "SELECT * FROM categoria ORDER BY id_categoria ASC", nativeQuery = true)
+    List<Categoria> findAllIgnorandoFiltros();
 }

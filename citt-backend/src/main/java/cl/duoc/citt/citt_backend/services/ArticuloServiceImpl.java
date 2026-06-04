@@ -107,6 +107,8 @@ public class ArticuloServiceImpl implements ArticuloService{
                 .nombreCategoria(a.getCategoria().getNombreCategoria())
                 .idEstadoArticulo(a.getEstadoArticulo().getIdEstadoArticulo())
                 .nombreEstado(a.getEstadoArticulo().getNombreEstado())
+                .esTecnologico(a.getCategoria().isEsTecnologico())
+                .eliminado(a.isEliminado())
                 .build();
     }
 
@@ -180,7 +182,11 @@ public class ArticuloServiceImpl implements ArticuloService{
     }
 
     @Override
-    public Page<ArticuloResponseDTO> listarArticulosAdmin(Long idCategoria, String nombre, Pageable pageable) {
+    public Page<ArticuloResponseDTO> listarArticulosAdmin(Long idCategoria, String nombre, boolean mostrarEliminados, Pageable pageable) {
+        if (mostrarEliminados) {
+            return articuloRepository.findAllAdminNativo(idCategoria, nombre, true, pageable)
+                    .map(this::toDTO);
+        }
         return articuloRepository.findAllPaginadoFiltrado(idCategoria, nombre, pageable)
                 .map(this::toDTO);
     }
@@ -220,5 +226,10 @@ public class ArticuloServiceImpl implements ArticuloService{
             throw new ReglaNegocioException("El artículo no existe.");
         }
         return obtenerArticuloPorId(id);
+    }
+
+    @Override
+    public void eliminarFisicamente(Long id) {
+        articuloRepository.eliminarFisicamente(id);
     }
 }

@@ -38,6 +38,7 @@ public class CategoriaServiceImpl implements CategoriaService{
                 .idCategoria(c.getIdCategoria())
                 .nombreCategoria(c.getNombreCategoria())
                 .esTecnologico(c.isEsTecnologico())
+                .eliminado(c.isEliminado())
                 .build();
     }
 
@@ -144,5 +145,13 @@ public class CategoriaServiceImpl implements CategoriaService{
         }
         // Como ya revivió, podemos buscarla y devolverla con el método normal
         return obtenerCategoriaPorId(id);
+    }
+
+    @Override
+    public List<CategoriaResponseDTO> listarTodasAdmin() {
+        return categoriaRepository.findAllIgnorandoFiltros()
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 }

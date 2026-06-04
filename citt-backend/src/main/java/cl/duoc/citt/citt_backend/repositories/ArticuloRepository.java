@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +17,27 @@ public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
 
     @Query(value = "SELECT COUNT(*) FROM articulo WHERE id_categoria = :idCategoria", nativeQuery = true)
     int contarHistoricoPorCategoriaId(@Param("idCategoria") Long idCategoria);
+
+    @Query(value = "SELECT * FROM articulo " +
+            "WHERE (:idCategoria IS NULL OR id_categoria = :idCategoria) " +
+            "AND (:nombre IS NULL OR LOWER(nombre_articulo) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
+            "AND (:mostrarEliminados = true OR eliminado = false) " +
+            "ORDER BY nombre_articulo ASC",
+            countQuery = "SELECT COUNT(*) FROM articulo " +
+                    "WHERE (:idCategoria IS NULL OR id_categoria = :idCategoria) " +
+                    "AND (:nombre IS NULL OR LOWER(nombre_articulo) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
+                    "AND (:mostrarEliminados = true OR eliminado = false)",
+            nativeQuery = true)
+    Page<Articulo> findAllAdminNativo(
+            @Param("idCategoria") Long idCategoria,
+            @Param("nombre") String nombre,
+            @Param("mostrarEliminados") boolean mostrarEliminados,
+            Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM articulo WHERE id_articulo = :id", nativeQuery = true)
+    void eliminarFisicamente(@Param("id") Long id);
 
     // countQuery para que Spring sepa cuántas páginas totales hay cuando usamos JOIN FETCH
     @Query(value = "SELECT a FROM Articulo a JOIN FETCH a.categoria JOIN FETCH a.estadoArticulo " +

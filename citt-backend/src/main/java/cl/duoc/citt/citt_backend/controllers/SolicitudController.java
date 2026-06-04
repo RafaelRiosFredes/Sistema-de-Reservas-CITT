@@ -42,7 +42,7 @@ public class SolicitudController {
 
     @Operation(summary = "Listar todas las solicitudes (Admin)", description = "Permite a los administradores ver todas las reservas.")
     @GetMapping
-    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('AYUDANTE', 'DOCENTE', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<List<SolicitudResponseDTO>> obtenerTodas() {
         return ResponseEntity.ok(solicitudService.obtenerTodas());
     }
@@ -58,7 +58,7 @@ public class SolicitudController {
 
     @Operation(summary = "Entregar recursos físicos", description = "Asigna los IDs físicos exactos y pasa la solicitud a EN PROCESO.")
     @PatchMapping("/{id}/entregar")
-    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('AYUDANTE', 'DOCENTE', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<SolicitudResponseDTO> entregarRecursos(
             @PathVariable Long id,
             @RequestBody List<Long> idsArticulosFisicos) {
@@ -67,7 +67,7 @@ public class SolicitudController {
 
     @Operation(summary = "Devolver recursos", description = "Recibe los artículos, permite marcar cuáles se dañaron con su justificación y pasa la solicitud a FINALIZADA.")
     @PatchMapping("/{id}/devolver")
-    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('AYUDANTE', 'DOCENTE', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<SolicitudResponseDTO> devolverRecursos(
             @PathVariable Long id,
             @RequestBody(required = false) cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto) {

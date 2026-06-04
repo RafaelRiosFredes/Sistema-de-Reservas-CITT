@@ -25,4 +25,8 @@ public class ArticuloResponseDTO {
 
     private Long idEstadoArticulo;
     private String nombreEstado;
+
+    private Boolean esTecnologico;
+
+    private boolean eliminado;
 }

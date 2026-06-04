@@ -16,7 +16,7 @@ public interface ArticuloService {
 
     ArticuloResponseDTO actualizarArticulo(Long id, ArticuloUpdateDTO dto);
 
-    Page<ArticuloResponseDTO> listarArticulosAdmin(Long idCategoria, String nombre, Pageable pageable);
+    Page<ArticuloResponseDTO> listarArticulosAdmin(Long idCategoria, String nombre, boolean mostrarEliminados, Pageable pageable);
 
     Page<ArticuloResponseDTO> listarTecnologicosPorEstado(String estado, Pageable pageable);
 
@@ -25,4 +25,6 @@ public interface ArticuloService {
     EstadisticasInventarioDTO obtenerEstadisticasDashboard();
 
     ArticuloResponseDTO restaurarArticulo(Long id);
+
+    void eliminarFisicamente(Long id);
 }

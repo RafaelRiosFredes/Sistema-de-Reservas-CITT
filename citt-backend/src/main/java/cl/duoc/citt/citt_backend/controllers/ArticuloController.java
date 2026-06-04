@@ -27,14 +27,15 @@ import java.util.Map;
 public class ArticuloController {
     private final ArticuloService articuloService;
 
-    @Operation(summary = "Listar artículos (Admin)", description = "Lista paginada y filtrable por categoría y nombre.")
+    @Operation(summary = "Listar artículos (Admin)", description = "Lista paginada y filtrable por categoría, nombre y estado lógico.")
     @GetMapping
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<Page<ArticuloResponseDTO>> listarArticulos(
             @RequestParam(required = false) Long idCategoria,
             @RequestParam(required = false) String nombre,
+            @RequestParam(required = false, defaultValue = "false") boolean mostrarEliminados,
             Pageable pageable) {
-        return ResponseEntity.ok(articuloService.listarArticulosAdmin(idCategoria, nombre, pageable));
+        return ResponseEntity.ok(articuloService.listarArticulosAdmin(idCategoria, nombre, mostrarEliminados, pageable));
     }
 
     @Operation(summary = "Listar tecnológicos por estado (Admin)", description = "Obtiene una lista paginada de artículos tecnológicos filtrados por su estado (DISPONIBLE, PRESTADO, DAÑADO, MANTENCION).")
@@ -76,6 +77,14 @@ public class ArticuloController {
         Map<String, String> respuesta = new HashMap<>();
         respuesta.put("mensaje","El artículo con ID " + id + " fue eliminado correctamente del sistema.");
         return ResponseEntity.ok(respuesta);
+    }
+
+    @Operation(summary = "Eliminar Definitivamente (Admin)", description = "Borrado físico. Fallará si el artículo tiene historial.")
+    @DeleteMapping("/{id}/definitivo")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<Void> eliminarFisicamente(@PathVariable Long id) {
+        articuloService.eliminarFisicamente(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Obtener estadísticas del inventario", description = "Devuelve los conteos globales para las tarjetas del dashboard de administración.")

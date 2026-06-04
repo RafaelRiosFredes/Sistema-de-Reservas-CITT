@@ -23,4 +23,6 @@ public interface CategoriaService {
     void eliminarCategoria(Long id);
 
     CategoriaResponseDTO restaurarCategoria(Long id);
+
+    List<CategoriaResponseDTO> listarTodasAdmin();
 }

@@ -29,6 +29,13 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.listarCategorias());
     }
 
+    @Operation(summary = "Listar todas (Admin)", description = "Obtiene todas las categorías incluyendo las eliminadas lógicamente.")
+    @GetMapping("/todas")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    public ResponseEntity<List<CategoriaResponseDTO>> listarTodasAdmin() {
+        return ResponseEntity.ok(categoriaService.listarTodasAdmin());
+    }
+
     // Cualquier usuario autenticado puede ver la información
     @Operation(summary = "Listar categorías tecnológicas", description = "Obtiene solo las categorías marcadas como tecnológicas para la vista de alumnos.")
     @GetMapping("/tecnologicas")
@@ -39,13 +46,14 @@ public class CategoriaController {
     // Cualquier usuario autenticado puede ver la información
     @Operation(summary = "Catálogo Alumnos", description = "Categorías tecnológicas agrupadas con desglose por marcas.")
     @GetMapping("/catalogo-alumnos")
+    @PreAuthorize("hasAnyRole('ALUMNO', 'AYUDANTE', 'DOCENTE', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<List<CategoriaAgrupadaDTO>> obtenerCatalogoAlumnos() {
         return ResponseEntity.ok(categoriaService.listarVistaAlumnos());
     }
 
     // Cualquier usuario autenticado puede ver la información
     @Operation(summary = "Obtener una categoria", description = "Busca una categoria específica por su ID.")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\\\d+}")
     public ResponseEntity<CategoriaResponseDTO> obtenerCategoria(@PathVariable Long id){
         return ResponseEntity.ok(categoriaService.obtenerCategoriaPorId(id));
     }

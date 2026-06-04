@@ -23,7 +23,7 @@ public class Categoria {
     @Column(name = "nombre_categoria", unique = true, nullable = false)
     private String nombreCategoria;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean eliminado = false;
 
     @Column(name = "es_tecnologico", nullable = false)

@@ -12,4 +12,5 @@ public class CategoriaResponseDTO {
     private Long idCategoria;
     private String nombreCategoria;
     private Boolean esTecnologico;
+    private Boolean eliminado;
 }
