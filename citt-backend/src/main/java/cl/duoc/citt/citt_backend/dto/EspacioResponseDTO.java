@@ -17,5 +17,6 @@ public class EspacioResponseDTO {
     private String comentarios;
     private Integer capacidad;
     private String estado;
+    private Double porcentajeOcupacion;
 
 }

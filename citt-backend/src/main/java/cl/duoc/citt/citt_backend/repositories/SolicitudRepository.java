@@ -16,6 +16,8 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
     List<Solicitud> findByUsuarioOrderByFechaDesc(Usuario usuario);
 
+    List<Solicitud> findByFecha(LocalDate fecha);
+
     // Consulta para verificar si un espacio ya está reservado en un horario específico
     @Query("SELECT COUNT(s) FROM Solicitud s WHERE s.espacio.id = :idEspacio " +
             "AND s.fecha = :fecha " +

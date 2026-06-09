@@ -30,12 +30,21 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // 1. Ignorar peticiones OPTIONS (CORS pre-flight)
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        //  Extrae el token JWT desde la cookie  "auth_token"
+        // 2. Ignorar recursos estáticos (Mejora de rendimiento adoptada de COPIA)
+        String path = request.getRequestURI();
+        if (path.contains("/assets/") || path.endsWith(".css") || path.endsWith(".js") ||
+                path.endsWith(".png") || path.endsWith(".svg") || path.endsWith(".ico")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 3. Extrae el token JWT desde la cookie "auth_token"
         String jwt = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -46,7 +55,15 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
             }
         }
 
-        // Si se encontró el token, se procesa la autenticación
+        // 4. Fallback: Buscar en el header de Authorization si no hay cookie (Crucial para Swagger/Postman)
+        if (jwt == null) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                jwt = authHeader.substring(7);
+            }
+        }
+
+        // 5. Núcleo de autenticación y reglas de negocio
         if (jwt != null) {
             try {
                 String userEmail = jwtUtilidades.extraerUsername(jwt);
@@ -56,14 +73,14 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
 
                     if (jwtUtilidades.esTokenValido(jwt, userDetails)) {
 
-                        //  CAMBIO DE CONTRASEÑA PROVISIONAL
+                        // REGLA FUNDAMENTAL: Control de cambio de contraseña provisional
                         if (userDetails instanceof cl.duoc.citt.citt_backend.model.Usuario) {
                             cl.duoc.citt.citt_backend.model.Usuario usuario = (cl.duoc.citt.citt_backend.model.Usuario) userDetails;
 
                             if (usuario.isDebeCambiarPassword()) {
                                 String rutaPeticion = request.getServletPath();
 
-                                // Lista blanca de endpoints que el usuario SÍ puede ingresar con la clave provisoria
+                                // Lista blanca de endpoints permitidos
                                 boolean esRutaPermitida = rutaPeticion.equals("/api/auth/cambiar-password") ||
                                         rutaPeticion.equals("/api/auth/login") ||
                                         rutaPeticion.equals("/api/auth/logout") ||
@@ -76,12 +93,12 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
                                     response.setContentType("application/json");
                                     response.setCharacterEncoding("UTF-8");
                                     response.getWriter().write("{\"error\": \"ACCESO_DENEGADO\", \"message\": \"Debe cambiar su contraseña predeterminada para acceder a esta función.\"}");
-                                    return;
+                                    return; // Se detiene la cadena de filtros
                                 }
                             }
                         }
 
-                        // Si el usuario es válido y no está bloqueado, se establece en el contexto
+                        // Si pasa las barreras, se establece en el contexto de seguridad
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities());
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -89,7 +106,7 @@ public class JwtFiltroAutenticacion extends OncePerRequestFilter {
                     }
                 }
             } catch (Exception e) {
-                // Evita que el backend se caiga si el token expira
+                // Evita que el backend colapse silenciosamente si el token tiene anomalías
                 System.out.println(">>> Error en filtro JWT: " + e.getMessage());
             }
         }

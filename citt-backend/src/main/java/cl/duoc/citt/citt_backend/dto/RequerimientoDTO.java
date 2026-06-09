@@ -11,6 +11,8 @@ public class RequerimientoDTO {
     @NotNull(message = "El ID de categoría es obligatorio")
     private Long idCategoria;
 
+    private String nombreCategoria;
+
     @NotBlank(message = "La marca es obligatoria")
     private String marca;
 

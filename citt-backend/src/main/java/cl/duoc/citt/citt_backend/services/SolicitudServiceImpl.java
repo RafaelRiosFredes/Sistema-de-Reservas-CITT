@@ -39,6 +39,13 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new ReglaNegocioException("La hora de inicio debe ser anterior a la hora de fin.");
         }
 
+        LocalTime apertura = LocalTime.of(8, 0);
+        LocalTime cierre = LocalTime.of(22, 0);
+
+        if (dto.getHoraInicio().isBefore(apertura) || dto.getHoraFin().isAfter(cierre)) {
+            throw new ReglaNegocioException("El horario de reservas del CITT es estrictamente entre las 08:00 y las 22:00 horas.");
+        }
+
         if (dto.getFecha().equals(LocalDate.now()) && dto.getHoraInicio().isBefore(LocalTime.now())) {
             throw new ReglaNegocioException("La hora de inicio de la reserva no puede estar en el pasado.");
         }
@@ -63,6 +70,18 @@ public class SolicitudServiceImpl implements SolicitudService {
                 .build();
 
         Boolean pideExclusividad = dto.getExclusividad() != null ? dto.getExclusividad() : false;
+
+        if (pideExclusividad) {
+            boolean hasPermission = usuario.getRoles().stream()
+                    .anyMatch(r -> {
+                        String nombre = r.getNombre().toUpperCase();
+                        return nombre.equals("DOCENTE") || nombre.equals("DIRECTOR") || nombre.equals("COORDINADOR");
+                    });
+
+            if (!hasPermission) {
+                throw new ReglaNegocioException("Solo Docentes, Directores y Coordinadores pueden solicitar la exclusividad del CITT.");
+            }
+        }
 
         int exclusividadesExistentes = solicitudRepository.contarExclusividadesActivas(dto.getFecha(), dto.getHoraInicio(), dto.getHoraFin());
         if (exclusividadesExistentes > 0) {
@@ -128,6 +147,7 @@ public class SolicitudServiceImpl implements SolicitudService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SolicitudResponseDTO> obtenerMisSolicitudes(String emailUsuario) {
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
@@ -138,6 +158,7 @@ public class SolicitudServiceImpl implements SolicitudService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SolicitudResponseDTO> obtenerTodas() {
         return solicitudRepository.findAll().stream()
                 .map(this::mapToDTO)
@@ -250,9 +271,20 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setArticulos(articulosFisicos);
         }
 
-        if (solicitud.getEspacio() != null) {
-            EstadoEspacio ocupado = estadoEspacioRepository.findAll().stream()
-                    .filter(e -> e.getNombre().equalsIgnoreCase("OCUPADO")).findFirst().get();
+        EstadoEspacio ocupado = estadoEspacioRepository.findAll().stream()
+                .filter(e -> e.getNombre().equalsIgnoreCase("OCUPADO")).findFirst().get();
+
+        if (Boolean.TRUE.equals(solicitud.getExclusividad())) {
+            List<Espacio> todosEspacios = espacioRepository.findAll();
+            for (Espacio esp : todosEspacios) {
+                // Solo ocupamos los que están disponibles, para no pisar mantenimientos o daños previos
+                if (esp.getEstado().getNombre().equalsIgnoreCase("DISPONIBLE") ||
+                        (solicitud.getEspacio() != null && esp.getId().equals(solicitud.getEspacio().getId()))) {
+                    esp.setEstado(ocupado);
+                }
+            }
+            espacioRepository.saveAll(todosEspacios);
+        } else if (solicitud.getEspacio() != null) {
             solicitud.getEspacio().setEstado(ocupado);
             espacioRepository.save(solicitud.getEspacio());
         }
@@ -302,21 +334,44 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
 
         // 3. PROCESAMIENTO DEL ESPACIO FÍSICO (Comentarios exclusivos por daño en devolución)
-        if (solicitud.getEspacio() != null) {
+        EstadoEspacio disponibleEspacio = estadoEspacioRepository.findAll().stream()
+                .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
+        EstadoEspacio danadoEspacio = estadoEspacioRepository.findAll().stream()
+                .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst().get();
+
+        if (Boolean.TRUE.equals(solicitud.getExclusividad())) {
+            List<Espacio> todosEspacios = espacioRepository.findAll();
+            for (Espacio esp : todosEspacios) {
+                // Solo liberamos los que nosotros ocupamos (y que actualmente digan OCUPADO)
+                if (esp.getEstado().getNombre().equalsIgnoreCase("OCUPADO") ||
+                        (solicitud.getEspacio() != null && esp.getId().equals(solicitud.getEspacio().getId()))) {
+
+                    if (solicitud.getEspacio() != null && esp.getId().equals(solicitud.getEspacio().getId()) && Boolean.TRUE.equals(dto.getEspacioDanado())) {
+                        if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
+                            throw new ReglaNegocioException("Justificación obligatoria: Debe ingresar una explicación detallada indicando qué daños sufrió el espacio físico.");
+                        }
+                        esp.setEstado(danadoEspacio);
+                        esp.setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + dto.getComentarioEspacio().trim().toUpperCase());
+                    } else {
+                        esp.setEstado(disponibleEspacio);
+                        esp.setComentarios(null); // Limpiamos cualquier comentario anterior al liberar
+                    }
+                }
+            }
+            espacioRepository.saveAll(todosEspacios);
+
+        } else if (solicitud.getEspacio() != null) {
             if (Boolean.TRUE.equals(dto.getEspacioDanado())) {
                 if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
                     throw new ReglaNegocioException("Justificación obligatoria: Debe ingresar una explicación detallada indicando qué daños sufrió el espacio físico.");
                 }
-                EstadoEspacio danadoEspacio = estadoEspacioRepository.findAll().stream()
-                        .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst().get();
 
                 solicitud.getEspacio().setEstado(danadoEspacio);
                 // Aquí es el único punto donde se genera el comentario de daño del espacio
                 solicitud.getEspacio().setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + dto.getComentarioEspacio().trim().toUpperCase());
             } else {
-                EstadoEspacio disponibleEspacio = estadoEspacioRepository.findAll().stream()
-                        .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
                 solicitud.getEspacio().setEstado(disponibleEspacio);
+                solicitud.getEspacio().setComentarios(null);
             }
             espacioRepository.save(solicitud.getEspacio());
         }
@@ -339,7 +394,39 @@ public class SolicitudServiceImpl implements SolicitudService {
                 .exclusividad(s.getExclusividad())
                 .emailUsuario(s.getUsuario().getEmail())
                 .nombreEspacio(s.getEspacio() != null ? s.getEspacio().getNombre() : null)
-                .nombresArticulos(s.getArticulos() != null ? s.getArticulos().stream().map(Articulo::getNombreArticulo).collect(Collectors.toList()) : new ArrayList<>())
+                .nombresArticulos(
+                        s.getArticulos() != null && !s.getArticulos().isEmpty()
+                                ? s.getArticulos().stream().map(Articulo::getNombreArticulo).collect(Collectors.toList())
+                                : s.getRequerimientos() != null
+                                ? s.getRequerimientos().stream()
+                                .map(r -> r.getCantidad() + "x " + r.getCategoria().getNombreCategoria() + " (" + r.getMarca() + ")")
+                                .collect(Collectors.toList())
+                                : new ArrayList<>()
+                )
+                .requerimientos(
+                        s.getRequerimientos() != null
+                                ? s.getRequerimientos().stream().map(r -> {
+                            RequerimientoDTO req = new RequerimientoDTO();
+                            req.setIdCategoria(r.getCategoria().getIdCategoria());
+                            req.setNombreCategoria(r.getCategoria().getNombreCategoria());
+                            req.setMarca(r.getMarca());
+                            req.setCantidad(r.getCantidad());
+                            return req;
+                        }).collect(Collectors.toList())
+                                : new ArrayList<>()
+                )
+                .articulosAsignados(
+                        s.getArticulos() != null
+                                ? s.getArticulos().stream().map(a -> {
+                            cl.duoc.citt.citt_backend.dto.ArticuloAsignadoDTO asig = new cl.duoc.citt.citt_backend.dto.ArticuloAsignadoDTO();
+                            asig.setIdArticulo(a.getIdArticulo());
+                            asig.setNombreArticulo(a.getNombreArticulo());
+                            asig.setCodigoDuoc(a.getCodigoDuoc());
+                            asig.setMarca(a.getMarca());
+                            return asig;
+                        }).collect(Collectors.toList())
+                                : new ArrayList<>()
+                )
                 .build();
     }
 }

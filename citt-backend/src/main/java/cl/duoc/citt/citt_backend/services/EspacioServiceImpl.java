@@ -7,11 +7,14 @@ import cl.duoc.citt.citt_backend.dto.EspacioUpdateDTO;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import cl.duoc.citt.citt_backend.model.Espacio;
 import cl.duoc.citt.citt_backend.model.EstadoEspacio;
+import cl.duoc.citt.citt_backend.model.Solicitud;
 import cl.duoc.citt.citt_backend.repositories.EspacioRepository;
 import cl.duoc.citt.citt_backend.repositories.EstadoEspacioRepository;
+import cl.duoc.citt.citt_backend.repositories.SolicitudRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,6 +26,7 @@ public class EspacioServiceImpl implements EspacioService {
 
     private final EspacioRepository repository;
     private final EstadoEspacioRepository estadoRepository;
+    private final SolicitudRepository solicitudRepository;
 
     @Override
     public EspacioResponseDTO crear(EspacioRequestDTO dto){
@@ -65,7 +69,7 @@ public class EspacioServiceImpl implements EspacioService {
         return lista.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-   @Override
+    @Override
     public EspacioResponseDTO obtenerPorId(Long id){
         Espacio espacio = repository.findById(id)
                 .orElseThrow(() -> new ReglaNegocioException("Espacio no encontrado"));
@@ -112,6 +116,23 @@ public class EspacioServiceImpl implements EspacioService {
     }
 
     private EspacioResponseDTO mapToDTO(Espacio espacio) {
+        LocalDate hoy = LocalDate.now();
+        List<Solicitud> reservasHoy = solicitudRepository.findByFecha(hoy).stream()
+                .filter(s -> s.getEstadoSolicitud().getNombre().equalsIgnoreCase("FINALIZADA"))
+                .collect(Collectors.toList());
+
+        long minutosOcupados = 0;
+        for (Solicitud s : reservasHoy) {
+            if (Boolean.TRUE.equals(s.getExclusividad()) ||
+                    (s.getEspacio() != null && s.getEspacio().getId().equals(espacio.getId()))) {
+                minutosOcupados += java.time.Duration.between(s.getHoraInicio(), s.getHoraFin()).toMinutes();
+            }
+        }
+
+        double porcentaje = (minutosOcupados / 840.0) * 100.0;
+        porcentaje = Math.round(porcentaje * 10.0) / 10.0;
+        if (porcentaje > 100.0) porcentaje = 100.0;
+
         return EspacioResponseDTO.builder()
                 .id(espacio.getId())
                 .nombre(espacio.getNombre())
@@ -119,6 +140,7 @@ public class EspacioServiceImpl implements EspacioService {
                 .capacidad(espacio.getCapacidad())
                 // Forzar mayúsculas ayuda a evitar errores en el === del frontend
                 .estado(espacio.getEstado().getNombre().toUpperCase())
+                .porcentajeOcupacion(porcentaje)
                 .build();
     }
 
