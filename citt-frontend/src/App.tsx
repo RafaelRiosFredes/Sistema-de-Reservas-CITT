@@ -4,10 +4,9 @@ import LoginPage from './pages/LoginPage';
 import PerfilPage from './pages/perfilPage';
 import UsuariosPage from './pages/UsuariosPage';
 import EspaciosPage from "./pages/EspaciosPage";
-import { ReservarEspacioPage } from "./pages/SolicitarReservaPage";
-import { FormularioReservaEspacioPage } from "./pages/FormularioSolicitudPage";
-import { ReservasPage } from "./pages/ReservasPage";
-import { HistorialEspaciosPage } from "./pages/HistorialPage";
+import { SolicitarReservaPage } from "./pages/SolicitarReservaPage";
+import { FormularioSolicitudPage } from "./pages/FormularioSolicitudPage";
+import { HistorialPage } from "./pages/HistorialPage";
 import { CalendarioPage } from "./pages/CalendarioPage";
 
 // Páginas de la rama articulos
@@ -26,10 +25,9 @@ function App() {
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/usuarios" element={<UsuariosPage />} />
           <Route path="/espacios" element={<EspaciosPage />} />
-          <Route path="/reservar-espacio" element={<ReservarEspacioPage />} />
-          <Route path="/formulario-reserva" element={<FormularioReservaEspacioPage />} />
-          <Route path="/reservas" element={<ReservasPage />} />
-          <Route path="/historial-espacios" element={<HistorialEspaciosPage />} />
+          <Route path="/reservar-espacio" element={<SolicitarReservaPage />} />
+          <Route path="/formulario-reserva" element={<FormularioSolicitudPage />} />
+          <Route path="/historial-espacios" element={<HistorialPage />} />
           <Route path="/calendario" element={<CalendarioPage />} />
           <Route path="/articulos" element={<ArticulosPage />} />
           <Route path="/solicitar-prestamo" element={<SolicitarPrestamoPage />} />
