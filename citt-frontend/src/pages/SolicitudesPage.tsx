@@ -60,11 +60,11 @@ interface ArticuloDTO {
 const ESTADOS_ACTIVOS = ["PENDIENTE", "APROBADA", "EN PROCESO"];
 
 export const SolicitudesPage: React.FC = () => {
-  const rolActivo = localStorage.getItem("rolActivo") || "";
+  const rolActivo = localStorage.getItem("activeRole") || "";
   const isStaff = ["AYUDANTE", "DOCENTE", "COORDINADOR", "DIRECTOR"].includes(
-    rolActivo
+    rolActivo.toUpperCase()
   );
-  const isDirectorOrCoordinador = ["COORDINADOR", "DIRECTOR"].includes(rolActivo);
+  const isDirectorOrCoordinador = ["COORDINADOR", "DIRECTOR"].includes(rolActivo.toUpperCase());
 
   const [misSolicitudes, setMisSolicitudes] = useState<SolicitudDTO[]>([]);
   const [todasSolicitudes, setTodasSolicitudes] = useState<SolicitudDTO[]>([]);

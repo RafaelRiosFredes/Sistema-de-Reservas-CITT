@@ -20,7 +20,7 @@ export const SolicitarReservaPage: React.FC = () => {
   const { isVerificando } = useSeguridad(); 
   const navigate = useNavigate();
   
-  const rolActivo = localStorage.getItem("rolActivo") || "ALUMNO";
+  const rolActivo = localStorage.getItem("activeRole") || "ALUMNO";
   const rolUpper = rolActivo.toUpperCase();
   
   let rolUser: "PROFESOR" | "AYUDANTE" | "ALUMNO" = "ALUMNO";
@@ -155,7 +155,13 @@ export const SolicitarReservaPage: React.FC = () => {
                       <div className="flex items-start gap-3 text-gray-600">
                         <Briefcase size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
                         <span className="text-sm line-clamp-2">
-                          {espacio.comentarios || "Sin descripción de equipamiento."}
+                          {(() => {
+                            if (!espacio.comentarios) return "Sin descripción de equipamiento.";
+                            if (rolUser === "ALUMNO" && espacio.comentarios.toUpperCase().includes("DAÑADO")) {
+                              return "El espacio se encuentra actualmente con daños en su equipamiento.";
+                            }
+                            return espacio.comentarios;
+                          })()}
                         </span>
                       </div>
                     </div>

@@ -88,14 +88,18 @@ const LoginPage = () => {
         // Si tiene un solo rol, lo guardamos y entramos directo al perfil
         localStorage.setItem('activeRole', roles[0] || '');
         setSuccessMsg('¡Inicio de sesión exitoso! Redirigiendo...');
-        setTimeout(() => navigate('/perfil'), 1500);
+        setTimeout(() => navigate('/dashboard'), 1500);
       }
 
     } catch (error: any) {
       console.error('Error de inicio de sesión:', error);
 
       // INTERCEPTAR LA CLAVE PROVISORIA
-      if (error.response?.data?.error === 'ACCESO_DENEGADO') {
+      const errorDataStr = typeof error.response?.data === 'string' 
+        ? error.response.data 
+        : JSON.stringify(error.response?.data || {});
+        
+      if (errorDataStr.includes('ACCESO_DENEGADO') || errorDataStr.includes('Debe cambiar su contrase')) {
         setSuccessMsg('Para tu seguridad, debes crear una nueva contraseña personal.');
         changeView('force_change_password');
         return;
@@ -147,7 +151,7 @@ const LoginPage = () => {
       } else {
         localStorage.setItem('activeRole', roles[0] || '');
         setSuccessMsg('¡Contraseña actualizada! Redirigiendo...');
-        setTimeout(() => navigate('/perfil'), 1500);
+        setTimeout(() => navigate('/dashboard'), 1500);
       }
     } catch (error: any) {
       const msg = error.response?.data?.mensaje || 'Error al actualizar contraseña. Recuerda que debe ser segura.';
@@ -161,7 +165,7 @@ const LoginPage = () => {
   const handleConfirmarRol = () => {
     localStorage.setItem('activeRole', rolSeleccionado);
     setShowRolModal(false);
-    navigate('/perfil');
+    navigate('/dashboard');
   };
 
   const handleOlvidoPassword = async (e: FormEvent) => {

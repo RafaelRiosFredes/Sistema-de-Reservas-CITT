@@ -34,10 +34,11 @@ export const HistorialPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
 
-  const rolActivo = localStorage.getItem("rolActivo") || "";
+  const activeRole = localStorage.getItem("activeRole") || "";
+  const isStaff = ["AYUDANTE", "DOCENTE", "COORDINADOR", "DIRECTOR"].includes(activeRole);
 
   // Alumnos no pueden ver el historial, pero profesores y ayudantes sí
-  if (rolActivo === "ALUMNO") {
+  if (activeRole === "ALUMNO") {
     return <Navigate to="/solicitudes" replace />;
   }
 

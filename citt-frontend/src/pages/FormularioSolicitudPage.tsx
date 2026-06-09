@@ -118,7 +118,7 @@ export const FormularioSolicitudPage: React.FC = () => {
 
     } catch (error: any) {
       console.error(error);
-      setErrorMsj(error.response?.data?.message || "Ocurrió un error al procesar la solicitud.");
+      setErrorMsj(error.response?.data?.mensaje || "Ocurrió un error al procesar la solicitud.");
     } finally {
       setIsSubmitting(false);
     }

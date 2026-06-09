@@ -10,10 +10,13 @@ interface ItemSolicitudProps {
   motivo?: string;
   estado:
     | "PENDIENTE"
-    | "RECHAZADO"
-    | "DEVUELTO"
+    | "APROBADA"
+    | "EN PROCESO"
+    | "RECHAZADA"
+    | "FINALIZADA"
     | "DISPONIBLE"
-    | "OCUPADO"
+    | "PRESTADO"
+    | "DAÑADO"
     | "MANTENCION";
   onVerDetalle: () => void;
 }
@@ -31,7 +34,7 @@ const ItemSolicitud: React.FC<ItemSolicitudProps> = ({
   const bordeColor =
     estado === "PENDIENTE"
       ? "border-l-[#B7791F]"
-      : estado === "RECHAZADO"
+      : estado === "RECHAZADA"
         ? "border-l-error"
         : "border-l-primary";
 

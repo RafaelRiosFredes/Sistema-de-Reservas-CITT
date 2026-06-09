@@ -32,12 +32,19 @@ export const CalendarioEspacios: React.FC = () => {
   const fetchEventos = async () => {
     try {
       const response = await api.get<CalendarioEventoDTO[]>('/solicitudes/calendario');
+      
+      // Función para generar un color único (pastel/agradable) basado en el ID de la solicitud
+      const generateColor = (id: number) => {
+        const hue = (id * 137.508) % 360; // Distribución dorada
+        return `hsl(${hue}, 70%, 50%)`;
+      };
+
       const mappedEvents = response.data.map(evento => ({
         id: String(evento.idSolicitud),
         title: `${evento.nombreEspacio} - ${evento.title} ${evento.esExclusivo ? '⭐ (EXCLUSIVO)' : ''}`,
         start: `${evento.date}T${evento.start}`,
         end: `${evento.date}T${evento.end}`,
-        backgroundColor: evento.esExclusivo ? '#ef4444' : '#3b82f6', // Rojo para exclusivo, Azul para normal
+        backgroundColor: evento.esExclusivo ? '#ef4444' : generateColor(evento.idSolicitud), // Color único por evento normal
         borderColor: 'transparent',
         extendedProps: {
           exclusivo: evento.esExclusivo,
@@ -90,6 +97,13 @@ export const CalendarioEspacios: React.FC = () => {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
           }}
+          buttonText={{
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día',
+            list: 'Agenda'
+          }}
           slotMinTime="08:00:00"
           slotMaxTime="22:00:00"
           events={eventos}
@@ -98,6 +112,7 @@ export const CalendarioEspacios: React.FC = () => {
           eventClassNames="cursor-pointer shadow-sm hover:shadow-md transition-shadow rounded-md border-0"
           allDaySlot={false}
           locale="es"
+          slotEventOverlap={false}
         />
       </div>
 

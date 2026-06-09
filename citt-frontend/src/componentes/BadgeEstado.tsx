@@ -10,7 +10,8 @@ interface BadgeEstadoProps {
     | "APROBADA"
     | "EN PROCESO"
     | "RECHAZADA"
-    | "FINALIZADA"; // Estados de Solicitud (Backend)
+    | "FINALIZADA" // Estados de Solicitud (Backend)
+    | "OCUPADO"; 
   texto?: string;
 }
 const BadgeEstado: React.FC<BadgeEstadoProps> = ({ estado, texto }) => {
@@ -30,6 +31,7 @@ const BadgeEstado: React.FC<BadgeEstadoProps> = ({ estado, texto }) => {
     },
     RECHAZADA: { clase: "bg-[#FFF5F5] text-[#C53030]", label: "Rechazada" },
     FINALIZADA: { clase: "bg-[#E6FFFA] text-[#319795]", label: "Finalizada" },
+    OCUPADO: { clase: "bg-orange-100 text-orange-800", label: "Ocupado" },
   };
 
   const { clase, label } = configuracion[estado];

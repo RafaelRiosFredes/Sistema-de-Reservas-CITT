@@ -26,8 +26,15 @@ interface CategoriaAccordionProps {
   onActualizarSeleccion: (marca: string, cantidad: number) => void;
 }
 
+interface AnimatedBrandItemProps {
+  item: MarcaDesglose;
+  idx: number;
+  selecciones: Record<string, number>;
+  onActualizarSeleccion: (marca: string, cantidad: number) => void;
+}
+
 // Subcomponente que maneja su propia animación de altura muy suave (grid-template-rows)
-const AnimatedBrandItem = ({
+const AnimatedBrandItem: React.FC<AnimatedBrandItemProps> = ({
   item,
   idx,
   selecciones,
@@ -44,13 +51,13 @@ const AnimatedBrandItem = ({
   const cantidadSeleccionada = selecciones[item.marca] || 0;
   const isSelected = cantidadSeleccionada > 0;
 
-  const handleIncrementar = (marca, stockMaximo) => {
+  const handleIncrementar = (marca: string, stockMaximo: number) => {
     if (cantidadSeleccionada < stockMaximo) {
       onActualizarSeleccion(marca, cantidadSeleccionada + 1);
     }
   };
 
-  const handleDecrementar = (marca) => {
+  const handleDecrementar = (marca: string) => {
     if (cantidadSeleccionada <= 1) {
       onActualizarSeleccion(marca, 0);
     } else {

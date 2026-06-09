@@ -6,7 +6,7 @@ interface TarjetaRecursoProps {
   titulo: string;
   subtitulo?: string;
   descripcion: React.ReactNode;
-  estadoFisico: "DISPONIBLE" | "OCUPADO" | "MANTENCION";
+  estadoFisico: "DISPONIBLE" | "MANTENCION" | "DAÑADO" | "PRESTADO" | "PENDIENTE" | "APROBADA" | "EN PROCESO" | "RECHAZADA" | "FINALIZADA" | "OCUPADO";
   textoBoton: string;
   onAction: () => void;
 }

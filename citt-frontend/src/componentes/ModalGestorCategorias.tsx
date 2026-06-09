@@ -51,7 +51,7 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
       const status = error.response?.status || "Desconocido";
       const mensajeBackend =
         error.response?.data?.mensaje ||
-        error.response?.data?.message ||
+        error.response?.data?.mensaje ||
         error.message;
 
       setErrorMsg(`Error del Servidor (Status ${status}): ${mensajeBackend}`);

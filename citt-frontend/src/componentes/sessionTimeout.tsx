@@ -19,7 +19,7 @@ const SessionTimeout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const lastActivityTime = useRef<number>(Date.now());
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerIntervalRef = useRef<number | null>(null);
   // Si estamos en la página de login, no registramos inactividad ni forzamos cierre
   const isExcludedPage = location.pathname === '/' || location.pathname === '/login';
   const resetActivity = useCallback(() => {
@@ -37,15 +37,15 @@ const SessionTimeout: React.FC = () => {
     } catch (error) {
       console.error("Error al cerrar sesión por inactividad", error);
     } finally {
-      // Independientemente de si la API falló (ej: token ya expirado), limpiamos el estado y redirigimos
-      setShowModal(false);
-      navigate('/login');
+      // Independientemente de si la API falló (ej: token ya expirado), limpiamos y redirigimos
+      localStorage.clear();
+      navigate('/');
     }
   }, [navigate]);
   useEffect(() => {
     if (isExcludedPage) {
       if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
+        window.clearInterval(timerIntervalRef.current);
       }
       return;
     }
@@ -55,7 +55,7 @@ const SessionTimeout: React.FC = () => {
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
     events.forEach((event) => window.addEventListener(event, resetActivity));
     // Revisar inactividad cada 10 segundos
-    timerIntervalRef.current = setInterval(() => {
+    timerIntervalRef.current = window.setInterval(() => {
       const currentTime = Date.now();
       const inactiveDuration = currentTime - lastActivityTime.current;
       if (inactiveDuration >= LOGOUT_TIME) {
@@ -67,7 +67,7 @@ const SessionTimeout: React.FC = () => {
     return () => {
       events.forEach((event) => window.removeEventListener(event, resetActivity));
       if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
+        window.clearInterval(timerIntervalRef.current);
       }
     };
   }, [isExcludedPage, resetActivity, handleLogout, showModal]);

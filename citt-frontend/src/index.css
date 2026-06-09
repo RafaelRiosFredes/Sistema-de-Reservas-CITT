@@ -1,71 +1,148 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
 
-/*
-  ================================================
-  ESTILOS  CITT
-  Proyecto: Sistema de Reservas y Gestión
-  React + TSX
-  ================================================
-*/
-
-/* 1. CONFIGURACIÓN DEL TEMA */
-@theme {
-  --color-primary: #307FE2;
-  --color-secondary: #8BB8E8;
-  --color-dark: #1A1A1A;
-  --color-gray-light: #F4F7F9;
-  --color-gray-border: #E1E8ED;
-  --color-success: #28A745;
-  --color-error: #DC3545;
-
-  --font-lato: "Lato", sans-serif;
-
-  --shadow-auth: 0 10px 30px rgba(0, 0, 0, 0.1);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* 3. ESTILOS BASE (Reseteo y Tipografía) */
 @layer base {
   body {
-    @apply bg-gray-light text-dark font-lato leading-relaxed;
-    margin: 0;
+    font-family: 'Lato', sans-serif;
   }
-  h1 { @apply text-[2.6875rem] font-bold mb-6; }
-  h2 { @apply text-[2.1rem] font-bold mb-5; }
-  h3 { @apply text-[1.5rem] font-bold mb-4; }
-  h4 { @apply text-[1.25rem] font-normal; }
-  p { @apply text-base font-normal; }
-  small { @apply text-[0.8125rem] font-normal; }
+
+  h1 {
+    font-size: 2.6875rem;
+    font-weight: 700;
+    /* Bold */
+  }
+
+  h2 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    /* Bold */
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    /* Bold */
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    font-weight: 400;
+    /* Regular */
+  }
+
+  h5 {
+    font-size: 1rem;
+    font-weight: 400;
+    /* Regular */
+  }
+
+  p {
+    font-size: 1rem;
+    font-weight: 400;
+    /* Regular */
+  }
+
+  small {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    /* Regular */
+  }
 }
 
-/* 4. COMPONENTES (Clases listas para usar) */
+
 @layer components {
-  .container-main { @apply max-w-[1200px] mx-auto p-8; }
 
-  .btn { @apply inline-block px-8 py-3 rounded-md font-bold cursor-pointer transition-all border-none text-base text-center no-underline; }
-  .btn-primary { @apply bg-primary text-white hover:bg-[#2565b3] hover:-translate-y-0.5 active:scale-95; }
-  .btn-secondary { @apply bg-secondary text-white hover:opacity-90; }
-  .btn-block { @apply w-full flex justify-center; }
+  /* Botones */
+  .btn {
+    @apply px-6 py-2 rounded-lg font-bold transition-all cursor-pointer;
+  }
 
-  .form-group { @apply mb-6 text-left; }
-  .form-label { @apply block mb-2 font-bold text-dark; }
-  .form-input { @apply w-full px-4 py-3 border border-gray-border rounded-md font-lato text-base transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary; }
+  .btn-primary {
+    @apply bg-[#002B49] text-white hover:bg-[#003d66];
+  }
 
-  .card-booking { @apply bg-white p-8 rounded-xl border border-gray-border shadow-sm transition-transform hover:-translate-y-1; }
+  .btn-secondary {
+    @apply bg-white border border-gray-300 text-gray-700 hover:border-[#002B49] hover:text-[#002B49];
+  }
 
-  .status-badge { @apply inline-block px-3 py-1 rounded-full text-xs font-bold uppercase; }
-  .status-available { @apply bg-[#E6FFFA] text-[#319795]; }
-  .status-reserved { @apply bg-[#FFF5F5] text-[#C53030]; }
+  .btn-block {
+    @apply w-full block text-center;
+  }
+
+  /* Formularios */
+  .form-group {
+    @apply mb-4;
+  }
+
+  .form-label {
+    @apply block text-sm font-bold text-gray-700 mb-1;
+  }
+
+  .form-input {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002B49] focus:border-transparent;
+  }
+
+  /* Layout y Sidebar */
+
+  /* ====== SCROLLBARS PERSONALIZADOS ====== */
+  .scroll-styled::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scroll-styled::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .scroll-styled::-webkit-scrollbar-track {
+    background-color: transparent !important;
+  }
+
+  .scroll-styled::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+
+  /* Variante Oscura (Para el menú lateral azul oscuro) - 100% invisible hasta el hover */
+  .scroll-dark::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0);
+  }
+
+  .scroll-dark:hover {
+    -webkit-transform: translateZ(0);
+    /* Forzar redibujado en Webkit */
+  }
+
+  .scroll-dark:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Variante Clara (Para el área blanca/gris principal) - Ligeramente visible, más oscuro en hover */
+  .scroll-light::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 43, 73, 0.15);
+    /* Color institucional CITT translúcido */
+  }
+
+  .scroll-light::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 43, 73, 0.4);
+  }
 
   .layout-dashboard {
-    @apply grid min-h-screen;
-    grid-template-columns: 280px 1fr;
+    @apply min-h-screen flex bg-gray-100;
   }
-  .sidebar-main { @apply bg-dark text-white p-8 flex flex-col gap-8; }
-  .nav-link-custom { @apply flex items-center gap-4 p-3 rounded-lg text-[#A0AEC0] no-underline transition-all hover:bg-primary/10 hover:text-primary; }
-  .nav-link-active { @apply bg-primary/10 text-primary; }
 
-  .calendar-container { @apply grid grid-cols-7 gap-px bg-gray-border border border-gray-border rounded-lg overflow-hidden; }
-  .calendar-day-box { @apply bg-white min-h-[100px] p-2; }
+  .sidebar-main {
+    @apply w-64 bg-[#002B49] text-white p-8 flex flex-col;
+  }
+
+  .nav-link-custom {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-[#003d66] hover:text-white transition-all font-bold;
+  }
+
+  .nav-link-active {
+    @apply bg-[#003d66] text-white;
+  }
 }

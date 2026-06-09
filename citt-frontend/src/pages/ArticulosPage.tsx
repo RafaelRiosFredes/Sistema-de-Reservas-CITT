@@ -12,14 +12,15 @@ import { TablaArticulosLectura } from "../componentes/TablaArticulosLectura";
 
 export const ArticulosPage: React.FC = () => {
   // 1. Buscamos el rol que el usuario seleccionó explícitamente en el Login
-  const rolActivo = localStorage.getItem("rolActivo");
+  const rolActivo = localStorage.getItem("activeRole") || "";
   const rolesRaw = localStorage.getItem("userRoles");
   const userRoles: string[] = rolesRaw ? JSON.parse(rolesRaw) : [];
 
   // 2. Evaluador de acceso: Prioriza el 'rolActivo'. Si no existe (fallback), usa el array global.
   const verificarAcceso = (rolesPermitidos: string[]) => {
-    if (rolActivo) return rolesPermitidos.includes(rolActivo);
-    return userRoles.some((r) => rolesPermitidos.includes(r));
+    const rolUpper = rolActivo.toUpperCase();
+    if (rolUpper) return rolesPermitidos.includes(rolUpper);
+    return userRoles.some((r) => rolesPermitidos.includes(r.toUpperCase()));
   };
 
   const isAdminArea = verificarAcceso(["ADMIN", "DIRECTOR", "COORDINADOR"]);

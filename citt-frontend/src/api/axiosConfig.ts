@@ -75,8 +75,18 @@ api.interceptors.response.use(
     // Control de expiración o denegación de accesos (401 o 403)
     if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       
+      console.log('AXIOS INTERCEPTOR CAUGHT 401/403:', originalRequest.url, error.response?.data);
+
       // Evitar interceptar las llamadas al login o al propio endpoint de refresco
-      if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refrescar-token')) {
+      // TAMBIÉN evitamos interceptar cuando es un ACCESO_DENEGADO (ej: por clave provisoria)
+      const errorDataStr = JSON.stringify(error.response?.data || {});
+      
+      if (
+        originalRequest.url?.includes('/auth/login') || 
+        originalRequest.url?.includes('/auth/refrescar-token') ||
+        errorDataStr.includes('ACCESO_DENEGADO') ||
+        errorDataStr.includes('Debe cambiar su contrase')
+      ) {
         return Promise.reject(error);
       }
 

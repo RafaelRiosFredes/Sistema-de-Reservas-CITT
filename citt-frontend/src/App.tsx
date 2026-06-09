@@ -8,6 +8,7 @@ import { SolicitarReservaPage } from "./pages/SolicitarReservaPage";
 import { FormularioSolicitudPage } from "./pages/FormularioSolicitudPage";
 import { HistorialPage } from "./pages/HistorialPage";
 import { CalendarioPage } from "./pages/CalendarioPage";
+import { DashboardPage } from "./pages/DashboardPage";
 
 // Páginas de la rama articulos
 import { ArticulosPage } from "./pages/ArticulosPage";
@@ -22,11 +23,12 @@ function App() {
 
         {/* RUTAS PRIVADAS (Con el menú lateral) */}
         <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/usuarios" element={<UsuariosPage />} />
           <Route path="/espacios" element={<EspaciosPage />} />
           <Route path="/solicitar-reserva" element={<SolicitarReservaPage />} />
-          <Route path="/formulario-reserva" element={<FormularioSolicitudPage />} />
+          <Route path="/crear-solicitud" element={<FormularioSolicitudPage />} />
           <Route path="/historial-espacios" element={<HistorialPage />} />
           <Route path="/calendario" element={<CalendarioPage />} />
           <Route path="/articulos" element={<ArticulosPage />} />
@@ -34,7 +36,6 @@ function App() {
           <Route path="/solicitudes" element={<SolicitudesPage />} />
           
           {/* Rutas en desarrollo para evitar redirecciones al login */}
-          <Route path="/dashboard" element={<PerfilPage />} />
           <Route path="/prestamos" element={<PerfilPage />} />
           <Route path="/configuracion" element={<PerfilPage />} />
           <Route path="/reportes" element={<PerfilPage />} />
