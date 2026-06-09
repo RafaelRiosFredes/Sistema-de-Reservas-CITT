@@ -5,16 +5,27 @@ import api from "../api/axiosConfig";
 import CategoriaAccordion from "./CategoriaAccordion";
 import type { CategoriaCatalogo } from "./CategoriaAccordion";
 
-export const CatalogoArticulos: React.FC = () => {
+export interface CatalogoArticulosProps {
+  initialSelecciones?: Record<number, Record<string, number>>;
+  onConfirmSelection?: (selecciones: Record<number, Record<string, number>>) => void;
+  isEmbedded?: boolean;
+}
+
+export const CatalogoArticulos: React.FC<CatalogoArticulosProps> = ({
+  initialSelecciones = {},
+  onConfirmSelection,
+  isEmbedded = false
+}) => {
   const navigate = useNavigate();
   const [categorias, setCategorias] = useState<CategoriaCatalogo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
 
-  // Estructura: { [idCategoria]: { [marca]: cantidad } }
+  // ESTADO MAESTRO DE SELECCIONES (El "Carrito")
+  // Estructura: { idCategoria: { marca: cantidad } }
   const [seleccionesGlobales, setSeleccionesGlobales] = useState<
     Record<number, Record<string, number>>
-  >({});
+  >(initialSelecciones);
 
   const fetchCatalogo = async () => {
     setIsLoading(true);
@@ -28,7 +39,7 @@ export const CatalogoArticulos: React.FC = () => {
     }
   };
 
-  // Cargar el catálogo al montar el componente
+  // Carga de datos desde el nuevo endpoint de Swagger
   useEffect(() => {
     fetchCatalogo();
   }, []);
@@ -82,22 +93,24 @@ export const CatalogoArticulos: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
-      {/* BANNER SUPERIOR */}
-      <div className="bg-gradient-to-r from-[#003B5C] to-[#007bff] rounded-xl p-6 text-white shadow-md flex items-center gap-4">
-        <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-          <PackageOpen size={28} className="text-white" />
+      {/* 1. BANNER SUPERIOR (Replicando el diseño azul) */}
+      {!isEmbedded && (
+        <div className="bg-gradient-to-r from-[#003B5C] to-[#007bff] rounded-xl p-6 text-white shadow-md flex items-center gap-4">
+          <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+            <PackageOpen size={28} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black m-0 tracking-tight">
+              Artículos Disponibles
+            </h2>
+            <p className="text-blue-100 text-sm mt-1 m-0 font-medium">
+              Consulta el catálogo y solicita equipos en préstamo.
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-black m-0 tracking-tight">
-            Artículos Disponibles
-          </h2>
-          <p className="text-blue-100 text-sm mt-1 m-0 font-medium">
-            Consulta el catálogo y solicita equipos en préstamo.
-          </p>
-        </div>
-      </div>
+      )}
 
-      {/* BARRA DE BÚSQUEDA Y REFRESCO */}
+      {/* 2. BARRA DE BÚSQUEDA Y REFRESCO */}
       <div className="flex gap-3 items-center">
         <div className="relative flex-1 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center p-2">
           <div className="pl-4 text-slate-400">
@@ -116,13 +129,11 @@ export const CatalogoArticulos: React.FC = () => {
           className="p-3 border border-slate-300 rounded-xl hover:text-blue-600 hover:border-blue-300 cursor-pointer bg-white transition-colors shadow-sm"
           title="Actualizar catálogo"
         >
-          <RefreshCw
-            className={`w-5 h-5 ${isLoading ? "animate-spin text-blue-600" : ""}`}
-          />
+          <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin text-blue-600" : ""}`} />
         </button>
       </div>
 
-      {/* LISTADO DE CATEGORIAS */}
+      {/* 3. LISTADO DE ACORDEONES */}
       <div className="flex flex-col">
         {categoriasFiltradas.length === 0 ? (
           <div className="bg-white p-12 text-center rounded-xl border border-slate-200 shadow-sm">
@@ -144,28 +155,29 @@ export const CatalogoArticulos: React.FC = () => {
         )}
       </div>
 
-      {/* BARRA FLOTANTE DE SELECCIÓN */}
-      {totalItems > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 px-6 md:px-10 flex flex-col md:flex-row justify-between items-center gap-4 z-40 animate-in slide-in-from-bottom-full duration-300">
+      {/* 4. BARRA FLOTANTE DE SELECCIÓN */}
+      {(totalItems > 0 || isEmbedded) && (
+        <div className={`${isEmbedded ? 'sticky bottom-0 rounded-b-xl' : 'fixed bottom-0 left-0 right-0 md:left-64'} bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] p-4 px-6 md:px-10 flex flex-col md:flex-row justify-between items-center gap-4 z-40 animate-in slide-in-from-bottom-full duration-300`}>
           <div className="flex items-center gap-3 text-slate-700 font-bold">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
               <ShoppingCart size={20} />
             </div>
             <div>
-              <p className="m-0 text-lg leading-tight">
-                {totalItems} artículo{totalItems !== 1 ? "s" : ""} seleccionado
-                {totalItems !== 1 ? "s" : ""}
-              </p>
-              <p className="m-0 text-xs text-slate-500 font-medium">
-                Listos para solicitar préstamo
-              </p>
+              <p className="m-0 text-lg leading-tight">{totalItems} artículo{totalItems !== 1 ? "s" : ""} seleccionado{totalItems !== 1 ? "s" : ""}</p>
+              <p className="m-0 text-xs text-slate-500 font-medium">Listos para solicitar préstamo</p>
             </div>
           </div>
           <button
-            onClick={() => navigate("/crear-solicitud")}
+            onClick={() => {
+              if (isEmbedded && onConfirmSelection) {
+                onConfirmSelection(seleccionesGlobales);
+              } else {
+                navigate("/crear-solicitud", { state: { seleccionesGlobales } });
+              }
+            }}
             className="w-full md:w-auto px-8 py-3 bg-[#003B5C] hover:bg-blue-800 text-white rounded-xl font-bold transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
           >
-            Solicitar Préstamo
+            {isEmbedded ? "Confirmar Artículos" : "Solicitar Préstamo"}
           </button>
         </div>
       )}

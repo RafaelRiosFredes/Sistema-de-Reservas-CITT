@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axiosConfig";
-import { AppLayout } from "../componentes/AppLayout";
+
 import { RefreshCw } from "lucide-react";
 import InputBusqueda from "../componentes/InputBusqueda";
 import SelectForm from "../componentes/SelectForm";
@@ -11,12 +11,12 @@ import { CatalogoArticulos } from "../componentes/CatalogoArticulos";
 import { TablaArticulosLectura } from "../componentes/TablaArticulosLectura";
 
 export const ArticulosPage: React.FC = () => {
-  // Roles y permisos
+  // 1. Buscamos el rol que el usuario seleccionó explícitamente en el Login
   const rolActivo = localStorage.getItem("rolActivo");
   const rolesRaw = localStorage.getItem("userRoles");
   const userRoles: string[] = rolesRaw ? JSON.parse(rolesRaw) : [];
 
-  // Función para verificar acceso basada en rolActivo o userRoles
+  // 2. Evaluador de acceso: Prioriza el 'rolActivo'. Si no existe (fallback), usa el array global.
   const verificarAcceso = (rolesPermitidos: string[]) => {
     if (rolActivo) return rolesPermitidos.includes(rolActivo);
     return userRoles.some((r) => rolesPermitidos.includes(r));
@@ -26,9 +26,9 @@ export const ArticulosPage: React.FC = () => {
   const isAyudante = verificarAcceso(["AYUDANTE"]);
   const isAlumno = verificarAcceso(["ALUMNO", "DOCENTE"]);
 
-  // Vistas condicionales
+  // 3. MUTUA EXCLUSIÓN: Forzamos matemáticamente a que solo una vista pueda ser True
   const mostrarVistaAdmin = isAdminArea;
-  const mostrarVistaAyudante = false;
+  const mostrarVistaAyudante = false; // Ayudante ya no ve la tabla de lectura
   const mostrarVistaCatalogo = !isAdminArea;
 
   const [articulos, setArticulos] = useState<any[]>([]);
@@ -51,6 +51,7 @@ export const ArticulosPage: React.FC = () => {
   };
 
   const fetchArticulos = async (page = 0) => {
+    // Si la vista activa es el catálogo, evitamos la petición inútil a la tabla
     if (mostrarVistaCatalogo) {
       setLoading(false);
       return;
@@ -91,7 +92,11 @@ export const ArticulosPage: React.FC = () => {
   }, [currentPage, filtroNombre, filtroCategoriaId, mostrarEliminados]);
 
   return (
-    <AppLayout titulo="Inventario / Artículos" breadcrumb="Inicio / Artículos">
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Inventario / Artículos</h1>
+        <p className="text-sm text-gray-500">Inicio / Artículos</p>
+      </div>
       {/* HEADER DE FILTROS OCULTO PARA EL CATÁLOGO */}
       {!mostrarVistaCatalogo && (
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col gap-4">
@@ -187,6 +192,6 @@ export const ArticulosPage: React.FC = () => {
           )}
         </>
       )}
-    </AppLayout>
+    </>
   );
 };

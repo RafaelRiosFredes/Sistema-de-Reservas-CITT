@@ -12,11 +12,26 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
+  MapPin,
 } from "lucide-react";
-import { AppLayout } from "../componentes/AppLayout";
+
 import api from "../api/axiosConfig";
 import BadgeEstado from "../componentes/BadgeEstado";
 import { ModalConfirmacion } from "../componentes/ModalConfirmacion";
+
+interface RequerimientoDTO {
+  idCategoria: number;
+  nombreCategoria: string;
+  marca: string;
+  cantidad: number;
+}
+
+interface ArticuloAsignadoDTO {
+  idArticulo: number;
+  nombreArticulo: string;
+  codigoDuoc: string;
+  marca: string;
+}
 
 interface SolicitudDTO {
   idSolicitud: number;
@@ -30,6 +45,16 @@ interface SolicitudDTO {
   emailUsuario: string;
   nombreEspacio: string | null;
   nombresArticulos: string[];
+  requerimientos?: RequerimientoDTO[];
+  articulosAsignados?: ArticuloAsignadoDTO[];
+}
+
+interface ArticuloDTO {
+  idArticulo: number;
+  nombreArticulo: string;
+  marca: string;
+  idCategoria: number;
+  nombreEstado: string;
 }
 
 const ESTADOS_ACTIVOS = ["PENDIENTE", "APROBADA", "EN PROCESO"];
@@ -37,8 +62,9 @@ const ESTADOS_ACTIVOS = ["PENDIENTE", "APROBADA", "EN PROCESO"];
 export const SolicitudesPage: React.FC = () => {
   const rolActivo = localStorage.getItem("rolActivo") || "";
   const isStaff = ["AYUDANTE", "DOCENTE", "COORDINADOR", "DIRECTOR"].includes(
-    rolActivo,
+    rolActivo
   );
+  const isDirectorOrCoordinador = ["COORDINADOR", "DIRECTOR"].includes(rolActivo);
 
   const [misSolicitudes, setMisSolicitudes] = useState<SolicitudDTO[]>([]);
   const [todasSolicitudes, setTodasSolicitudes] = useState<SolicitudDTO[]>([]);
@@ -49,6 +75,17 @@ export const SolicitudesPage: React.FC = () => {
   // Modal states
   const [modalDevolver, setModalDevolver] = useState(false);
   const [modalEntregar, setModalEntregar] = useState(false);
+  const [idsFisicos, setIdsFisicos] = useState("");
+  const [idsSeleccionadosList, setIdsSeleccionadosList] = useState<number[]>([]);
+  const [articulosInventario, setArticulosInventario] = useState<ArticuloDTO[]>([]);
+  const [modalRechazar, setModalRechazar] = useState(false);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
+
+  // Estados para Devolución
+  const [espacioDanado, setEspacioDanado] = useState(false);
+  const [comentarioEspacio, setComentarioEspacio] = useState("");
+  const [articulosDanados, setArticulosDanados] = useState<{ idArticulo: number; comentario: string }[]>([]);
+
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<SolicitudDTO | null>(null);
 
@@ -77,15 +114,49 @@ export const SolicitudesPage: React.FC = () => {
     fetchData();
   }, []);
 
+  const cargarInventario = async () => {
+    try {
+      const res = await api.get("/articulos?size=1000");
+      setArticulosInventario(res.data.content);
+    } catch (error) {
+      console.error("Error al cargar inventario", error);
+    }
+  };
+
+  useEffect(() => {
+    if (modalEntregar) {
+      cargarInventario();
+    }
+  }, [modalEntregar]);
+
+  const handleCheckboxChange = (id: number) => {
+    setIdsSeleccionadosList((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleArticuloDanadoChange = (idArticulo: number, isDamaged: boolean) => {
+    if (isDamaged) {
+      setArticulosDanados(prev => [...prev, { idArticulo, comentario: "" }]);
+    } else {
+      setArticulosDanados(prev => prev.filter(a => a.idArticulo !== idArticulo));
+    }
+  };
+
+  const handleArticuloComentarioChange = (idArticulo: number, comentario: string) => {
+    setArticulosDanados(prev => prev.map(a => a.idArticulo === idArticulo ? { ...a, comentario } : a));
+  };
+
   // Filtrar solo activas para "Mis Solicitudes" del alumno y staff
   const misSolicitudesFiltradas = misSolicitudes
     .filter((s) => ESTADOS_ACTIVOS.includes(s.estado))
     .filter(
       (s) =>
         s.proposito?.toLowerCase().includes(filtro.toLowerCase()) ||
+        (s.nombreEspacio && s.nombreEspacio.toLowerCase().includes(filtro.toLowerCase())) ||
         s.nombresArticulos?.some((a) =>
-          a.toLowerCase().includes(filtro.toLowerCase()),
-        ),
+          a.toLowerCase().includes(filtro.toLowerCase())
+        )
     );
 
   // Filtrar todas las activas para la gestión del staff
@@ -95,24 +166,38 @@ export const SolicitudesPage: React.FC = () => {
       (s) =>
         s.emailUsuario?.toLowerCase().includes(filtro.toLowerCase()) ||
         s.proposito?.toLowerCase().includes(filtro.toLowerCase()) ||
+        (s.nombreEspacio && s.nombreEspacio.toLowerCase().includes(filtro.toLowerCase())) ||
         s.nombresArticulos?.some((a) =>
-          a.toLowerCase().includes(filtro.toLowerCase()),
-        ),
+          a.toLowerCase().includes(filtro.toLowerCase())
+        )
     );
 
   const handleEntregar = async () => {
     if (!solicitudSeleccionada) return;
+
+    // Parsear el string de IDs separados por coma
+    const idsManuales = idsFisicos
+      .split(",")
+      .map((id) => parseInt(id.trim()))
+      .filter((id) => !isNaN(id));
+
+    // Combinar IDs manuales con los seleccionados por checkbox (evitando duplicados)
+    const idsCombined = Array.from(new Set([...idsManuales, ...idsSeleccionadosList]));
+
     try {
       await api.patch(
         `/solicitudes/${solicitudSeleccionada.idSolicitud}/entregar`,
-        [],
+        idsCombined
       );
       setSuccessMsg("Artículos entregados exitosamente.");
       setTimeout(() => setSuccessMsg(""), 3000);
+      setModalEntregar(false);
+      setIdsFisicos("");
+      setIdsSeleccionadosList([]);
       fetchData();
     } catch (error: any) {
       setErrorMsg(
-        error.response?.data?.mensaje || "Error al entregar artículos.",
+        error.response?.data?.mensaje || "Error al entregar artículos."
       );
       setTimeout(() => setErrorMsg(""), 4000);
     }
@@ -123,14 +208,43 @@ export const SolicitudesPage: React.FC = () => {
     try {
       await api.patch(
         `/solicitudes/${solicitudSeleccionada.idSolicitud}/devolver`,
+        {
+          articulosDanados,
+          espacioDanado,
+          comentarioEspacio: espacioDanado ? comentarioEspacio : null
+        }
       );
       setSuccessMsg("Devolución registrada exitosamente.");
       setTimeout(() => setSuccessMsg(""), 3000);
+      setModalDevolver(false);
+      setEspacioDanado(false);
+      setComentarioEspacio("");
+      setArticulosDanados([]);
+      setSolicitudSeleccionada(null);
       fetchData();
     } catch (error: any) {
       setErrorMsg(
-        error.response?.data?.mensaje || "Error al registrar la devolución.",
+        error.response?.data?.mensaje || "Error al registrar la devolución."
       );
+      setTimeout(() => setErrorMsg(""), 4000);
+    }
+  };
+
+  const handleCambiarEstado = async (idEstado: number, motivo?: string) => {
+    if (!solicitudSeleccionada) return;
+    try {
+      await api.patch(`/solicitudes/${solicitudSeleccionada.idSolicitud}/estado`, {
+        idEstadoSolicitud: idEstado,
+        motivo: motivo || ""
+      });
+      setSuccessMsg(idEstado === 2 ? "Solicitud aprobada exitosamente." : "Solicitud rechazada exitosamente.");
+      setTimeout(() => setSuccessMsg(""), 3000);
+      setModalRechazar(false);
+      setMotivoRechazo("");
+      setSolicitudSeleccionada(null);
+      fetchData();
+    } catch (error: any) {
+      setErrorMsg(error.response?.data?.mensaje || "Error al cambiar el estado de la solicitud.");
       setTimeout(() => setErrorMsg(""), 4000);
     }
   };
@@ -144,7 +258,11 @@ export const SolicitudesPage: React.FC = () => {
     vistaActiva === "mias" ? misSolicitudesFiltradas : todasFiltradas;
 
   return (
-    <AppLayout titulo="Solicitudes" breadcrumb="Inicio / Solicitudes">
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Solicitudes</h1>
+        <p className="text-sm text-gray-500">Inicio / Solicitudes</p>
+      </div>
       <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* BANNER */}
         <div className="bg-gradient-to-r from-[#003B5C] to-[#007bff] rounded-xl p-6 text-white shadow-md flex items-center gap-4">
@@ -219,8 +337,8 @@ export const SolicitudesPage: React.FC = () => {
               type="text"
               placeholder={
                 vistaActiva === "todas"
-                  ? "Buscar por email, propósito o artículo..."
-                  : "Buscar por propósito o artículo..."
+                  ? "Buscar por email, propósito, espacio o artículo..."
+                  : "Buscar por propósito, espacio o artículo..."
               }
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
@@ -275,7 +393,7 @@ export const SolicitudesPage: React.FC = () => {
                       Horario
                     </th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      Artículos
+                      Recursos
                     </th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Propósito
@@ -324,23 +442,30 @@ export const SolicitudesPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-4">
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {s.nombresArticulos &&
-                          s.nombresArticulos.length > 0 ? (
-                            s.nombresArticulos.map((art, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium"
-                              >
-                                <Package size={10} />
-                                {art}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">
-                              Sin artículos
+                        <div className="flex flex-col gap-2 max-w-[200px]">
+                          {s.nombreEspacio && (
+                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                              <MapPin size={14} className="text-blue-500" />
+                              {s.nombreEspacio}
                             </span>
                           )}
+                          <div className="flex flex-wrap gap-1">
+                            {s.nombresArticulos && s.nombresArticulos.length > 0 ? (
+                              s.nombresArticulos.map((art, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium"
+                                >
+                                  <Package size={10} />
+                                  {art}
+                                </span>
+                              ))
+                            ) : !s.nombreEspacio ? (
+                              <span className="text-xs text-slate-400 italic">
+                                Sin recursos
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-sm text-slate-600 max-w-[180px] truncate">
@@ -390,9 +515,35 @@ export const SolicitudesPage: React.FC = () => {
                               </button>
                             )}
                             {s.estado === "PENDIENTE" && (
-                              <span className="text-xs text-slate-400 italic px-2">
-                                Esperando aprobación
-                              </span>
+                              isDirectorOrCoordinador ? (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setSolicitudSeleccionada(s);
+                                      // Ejecutar en el próximo ciclo de eventos para asegurar que el estado se actualice
+                                      setTimeout(() => handleCambiarEstado(2), 0);
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs font-bold hover:bg-green-100 hover:border-green-300 transition-all cursor-pointer"
+                                  >
+                                    <CheckCircle size={14} />
+                                    Aceptar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSolicitudSeleccionada(s);
+                                      setModalRechazar(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-bold hover:bg-red-100 hover:border-red-300 transition-all cursor-pointer"
+                                  >
+                                    <AlertCircle size={14} />
+                                    Rechazar
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic px-2">
+                                  Esperando aprobación
+                                </span>
+                              )
                             )}
                           </div>
                         </td>
@@ -416,51 +567,268 @@ export const SolicitudesPage: React.FC = () => {
       </div>
 
       {/* MODAL ENTREGAR */}
-      <ModalConfirmacion
-        isOpen={modalEntregar}
-        onClose={() => {
-          setModalEntregar(false);
-          setSolicitudSeleccionada(null);
-        }}
-        onConfirm={handleEntregar}
-        title="Confirmar Entrega"
-        message={
-          <>
-            ¿Confirmas la entrega de los artículos de la solicitud{" "}
-            <strong>#{solicitudSeleccionada?.idSolicitud}</strong> a{" "}
-            <strong>{solicitudSeleccionada?.emailUsuario}</strong>?
-            <br />
-            <span className="text-xs text-slate-400 mt-2 block">
-              La solicitud pasará al estado "EN PROCESO".
-            </span>
-          </>
-        }
-        confirmText="Confirmar Entrega"
-        isDestructive={false}
-      />
+      {modalEntregar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                  <ArrowDownToLine size={20} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 m-0">Confirmar Entrega</h3>
+              </div>
+              <p className="text-slate-600 text-sm mb-4">
+                Por favor, ingresa los IDs de los artículos físicos que estás entregando (separados por coma) para la solicitud <strong>#{solicitudSeleccionada?.idSolicitud}</strong>.
+              </p>
+
+              {/* Sección de Selección por Inventario */}
+              {solicitudSeleccionada?.requerimientos && solicitudSeleccionada.requerimientos.length > 0 && (
+                <div className="mb-4">
+                  <strong className="block mb-2 text-sm text-gray-800">Seleccionar desde Inventario:</strong>
+                  <div className="max-h-60 overflow-y-auto pr-2 flex flex-col gap-3">
+                    {solicitudSeleccionada.requerimientos.map((req, idx) => {
+                      // Filtrar inventario por categoria, marca y disponible
+                      const disponibles = articulosInventario.filter(a =>
+                        a.idCategoria === req.idCategoria &&
+                        a.marca.toLowerCase() === req.marca.toLowerCase() &&
+                        a.nombreEstado === "DISPONIBLE"
+                      );
+
+                      return (
+                        <div key={idx} className="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                          <p className="text-sm font-bold text-slate-700 mb-2">
+                            {req.cantidad}x {req.nombreCategoria} ({req.marca})
+                          </p>
+                          {disponibles.length === 0 ? (
+                            <p className="text-xs text-red-500 italic">No hay stock disponible para este requerimiento.</p>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              {disponibles.map(art => (
+                                <label key={art.idArticulo} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer p-1.5 hover:bg-slate-100 rounded">
+                                  <input
+                                    type="checkbox"
+                                    className="rounded border-slate-300"
+                                    checked={idsSeleccionadosList.includes(art.idArticulo)}
+                                    onChange={() => handleCheckboxChange(art.idArticulo)}
+                                  />
+                                  <span>#{art.idArticulo} - {art.nombreArticulo}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Sección de Entrada Manual */}
+              <div className="mb-2">
+                <strong className="block mb-1 text-sm text-gray-800">Entrada Manual (IDs opcionales):</strong>
+                <input
+                  type="text"
+                  value={idsFisicos}
+                  onChange={(e) => setIdsFisicos(e.target.value)}
+                  placeholder="Ej: 1, 4, 7 (Si usas lector de código)"
+                  className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm"
+                />
+              </div>
+            </div>
+            <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setModalEntregar(false);
+                  setIdsFisicos("");
+                  setIdsSeleccionadosList([]);
+                  setSolicitudSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEntregar}
+                disabled={idsSeleccionadosList.length === 0 && !idsFisicos.trim() && (solicitudSeleccionada?.requerimientos?.length || 0) > 0}
+                className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                Confirmar Entrega
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DEVOLVER */}
-      <ModalConfirmacion
-        isOpen={modalDevolver}
-        onClose={() => {
-          setModalDevolver(false);
-          setSolicitudSeleccionada(null);
-        }}
-        onConfirm={handleDevolver}
-        title="Confirmar Devolución"
-        message={
-          <>
-            ¿Confirmas la recepción de los artículos de la solicitud{" "}
-            <strong>#{solicitudSeleccionada?.idSolicitud}</strong>?
-            <br />
-            <span className="text-xs text-slate-400 mt-2 block">
-              La solicitud será marcada como "FINALIZADA".
-            </span>
-          </>
-        }
-        confirmText="Confirmar Devolución"
-        isDestructive={false}
-      />
-    </AppLayout>
+      {modalDevolver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                  <Undo2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 m-0">Confirmar Devolución</h3>
+                  <p className="text-xs text-slate-500 m-0">Solicitud #{solicitudSeleccionada?.idSolicitud}</p>
+                </div>
+              </div>
+              <p className="text-slate-600 text-sm mb-6">
+                Por favor, verifica el estado en que se está entregando el espacio y los recursos físicos. Marca si hay algún daño y añade los detalles.
+              </p>
+
+              {/* Daño en el Espacio */}
+              {solicitudSeleccionada?.nombreEspacio && (
+                <div className="mb-6 border border-slate-200 rounded-xl p-4 bg-slate-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <strong className="text-sm text-slate-800 flex items-center gap-2">
+                      <MapPin size={16} className="text-blue-500"/>
+                      {solicitudSeleccionada.nombreEspacio}
+                    </strong>
+                    <label className="flex items-center gap-2 text-sm text-red-600 cursor-pointer font-medium bg-red-50 px-2 py-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={espacioDanado}
+                        onChange={(e) => setEspacioDanado(e.target.checked)}
+                        className="rounded border-red-300 text-red-600 focus:ring-red-200"
+                      />
+                      Espacio Dañado
+                    </label>
+                  </div>
+                  {espacioDanado && (
+                    <div className="mt-3 animate-in fade-in slide-in-from-top-2">
+                      <textarea
+                        value={comentarioEspacio}
+                        onChange={(e) => setComentarioEspacio(e.target.value)}
+                        placeholder="Detalla los daños encontrados en el espacio..."
+                        className="w-full p-3 border border-red-200 rounded-xl outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 text-sm bg-white"
+                        rows={2}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Daño en Artículos Físicos */}
+              {solicitudSeleccionada?.articulosAsignados && solicitudSeleccionada.articulosAsignados.length > 0 && (
+                <div>
+                  <strong className="block mb-3 text-sm text-gray-800">Equipos Asignados:</strong>
+                  <div className="flex flex-col gap-3">
+                    {solicitudSeleccionada.articulosAsignados.map(art => {
+                      const isDamaged = articulosDanados.some(a => a.idArticulo === art.idArticulo);
+                      const currentComentario = articulosDanados.find(a => a.idArticulo === art.idArticulo)?.comentario || "";
+
+                      return (
+                        <div key={art.idArticulo} className={`border rounded-xl p-3 transition-colors ${isDamaged ? 'border-red-200 bg-red-50/30' : 'border-slate-200 bg-white'}`}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-bold text-slate-700 m-0">{art.nombreArticulo} ({art.marca})</p>
+                              <p className="text-xs text-slate-500 m-0">ID: #{art.idArticulo} | Cód: {art.codigoDuoc || 'N/A'}</p>
+                            </div>
+                            <label className="flex items-center gap-2 text-sm text-red-600 cursor-pointer font-medium hover:bg-red-50 px-2 py-1 rounded transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={isDamaged}
+                                onChange={(e) => handleArticuloDanadoChange(art.idArticulo, e.target.checked)}
+                                className="rounded border-slate-300 text-red-600 focus:ring-red-200"
+                              />
+                              Reportar Daño
+                            </label>
+                          </div>
+                          {isDamaged && (
+                            <div className="mt-3 animate-in fade-in slide-in-from-top-2">
+                              <textarea
+                                value={currentComentario}
+                                onChange={(e) => handleArticuloComentarioChange(art.idArticulo, e.target.value)}
+                                placeholder={`Detalla los daños para el artículo ${art.nombreArticulo}...`}
+                                className="w-full p-2 border border-red-200 rounded-lg outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 text-sm bg-white"
+                                rows={2}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {(!solicitudSeleccionada?.nombreEspacio && (!solicitudSeleccionada?.articulosAsignados || solicitudSeleccionada.articulosAsignados.length === 0)) && (
+                <p className="text-sm text-slate-500 italic text-center py-4">Esta solicitud no tiene recursos asignados para evaluar.</p>
+              )}
+            </div>
+
+            <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setModalDevolver(false);
+                  setEspacioDanado(false);
+                  setComentarioEspacio("");
+                  setArticulosDanados([]);
+                  setSolicitudSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDevolver}
+                disabled={
+                  (espacioDanado && !comentarioEspacio.trim()) ||
+                  articulosDanados.some(a => !a.comentario.trim())
+                }
+                className="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                Confirmar Devolución
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL RECHAZAR */}
+      {modalRechazar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                  <AlertCircle size={20} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 m-0">Rechazar Solicitud</h3>
+              </div>
+              <p className="text-slate-600 text-sm mb-4">
+                Por favor, ingresa el motivo del rechazo para la solicitud <strong>#{solicitudSeleccionada?.idSolicitud}</strong>. Esto es obligatorio.
+              </p>
+              <textarea
+                value={motivoRechazo}
+                onChange={(e) => setMotivoRechazo(e.target.value)}
+                placeholder="Ej: El espacio no está disponible en esa fecha..."
+                className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 resize-none min-h-[100px] text-sm"
+              />
+            </div>
+            <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setModalRechazar(false);
+                  setMotivoRechazo("");
+                  setSolicitudSeleccionada(null);
+                }}
+                className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleCambiarEstado(4, motivoRechazo)} // ID 4 = RECHAZADA
+                disabled={!motivoRechazo.trim()}
+                className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                Confirmar Rechazo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

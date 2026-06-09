@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import {
   History,
   Search,
@@ -8,8 +9,9 @@ import {
   Clock,
   User,
   Archive,
+  MapPin,
 } from "lucide-react";
-import { AppLayout } from "../componentes/AppLayout";
+
 import api from "../api/axiosConfig";
 import BadgeEstado from "../componentes/BadgeEstado";
 
@@ -31,6 +33,13 @@ export const HistorialPage: React.FC = () => {
   const [solicitudes, setSolicitudes] = useState<SolicitudDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
+
+  const rolActivo = localStorage.getItem("rolActivo") || "";
+
+  // Alumnos no pueden ver el historial, pero profesores y ayudantes sí
+  if (rolActivo === "ALUMNO") {
+    return <Navigate to="/solicitudes" replace />;
+  }
 
   const fetchHistorial = async () => {
     setLoading(true);
@@ -55,9 +64,10 @@ export const HistorialPage: React.FC = () => {
       (s) =>
         s.emailUsuario?.toLowerCase().includes(filtro.toLowerCase()) ||
         s.proposito?.toLowerCase().includes(filtro.toLowerCase()) ||
+        (s.nombreEspacio && s.nombreEspacio.toLowerCase().includes(filtro.toLowerCase())) ||
         s.nombresArticulos?.some((a) =>
-          a.toLowerCase().includes(filtro.toLowerCase()),
-        ),
+          a.toLowerCase().includes(filtro.toLowerCase())
+        )
     );
 
   const formatHora = (hora: string) => {
@@ -66,7 +76,11 @@ export const HistorialPage: React.FC = () => {
   };
 
   return (
-    <AppLayout titulo="Historial" breadcrumb="Inicio / Historial">
+    <>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Historial</h1>
+        <p className="text-sm text-gray-500">Inicio / Historial</p>
+      </div>
       <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* BANNER */}
         <div className="bg-gradient-to-r from-[#1e293b] to-[#475569] rounded-xl p-6 text-white shadow-md flex items-center gap-4">
@@ -92,7 +106,7 @@ export const HistorialPage: React.FC = () => {
             </div>
             <input
               type="text"
-              placeholder="Buscar por email, propósito o artículo..."
+              placeholder="Buscar por email, propósito, espacio o artículo..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               className="w-full pl-4 pr-4 py-2 border-none outline-none font-medium text-slate-700 bg-transparent"
@@ -142,7 +156,7 @@ export const HistorialPage: React.FC = () => {
                       Horario
                     </th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      Artículos
+                      Recursos
                     </th>
                     <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Propósito
@@ -184,23 +198,30 @@ export const HistorialPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-4">
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {s.nombresArticulos &&
-                          s.nombresArticulos.length > 0 ? (
-                            s.nombresArticulos.map((art, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium"
-                              >
-                                <Package size={10} />
-                                {art}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">
-                              Sin artículos
+                        <div className="flex flex-col gap-2 max-w-[200px]">
+                          {s.nombreEspacio && (
+                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                              <MapPin size={14} className="text-blue-500" />
+                              {s.nombreEspacio}
                             </span>
                           )}
+                          <div className="flex flex-wrap gap-1">
+                            {s.nombresArticulos && s.nombresArticulos.length > 0 ? (
+                              s.nombresArticulos.map((art, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium"
+                                >
+                                  <Package size={10} />
+                                  {art}
+                                </span>
+                              ))
+                            ) : !s.nombreEspacio ? (
+                              <span className="text-xs text-slate-400 italic">
+                                Sin recursos
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-sm text-slate-600 max-w-[180px] truncate">
@@ -226,6 +247,6 @@ export const HistorialPage: React.FC = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 };
