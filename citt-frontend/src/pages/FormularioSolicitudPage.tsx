@@ -20,7 +20,7 @@ export const FormularioSolicitudPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const rolActivo = localStorage.getItem("rolActivo") || "ALUMNO";
+  const rolActivo = localStorage.getItem("activeRole") || "ALUMNO";
   const rolUpper = rolActivo.toUpperCase();
   const canRequestExclusividad = rolUpper.includes("DOCENTE") || rolUpper.includes("DIRECTOR") || rolUpper.includes("COORDINADOR");
 

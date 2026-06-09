@@ -35,7 +35,7 @@ const EspaciosPage = () => {
 
   useEffect(() => {
     if (!isVerificando) {
-      const rolActivo = localStorage.getItem("rolActivo"); 
+      const rolActivo = localStorage.getItem("activeRole"); 
       const rolesRaw = localStorage.getItem("userRoles");
 
       try {
@@ -135,8 +135,8 @@ const EspaciosPage = () => {
     );
   }
 
-  const rolActivo = localStorage.getItem("rolActivo") || "";
-  const isAdminArea = ["ADMIN", "DIRECTOR", "COORDINADOR"].includes(rolActivo);
+  const rolActivo = localStorage.getItem("activeRole") || "";
+  const isAdminArea = ["ADMIN", "DIRECTOR", "COORDINADOR"].includes(rolActivo.toUpperCase());
 
   if (!isAdminArea) {
     return <Navigate to="/solicitar-reserva" replace />;

@@ -34,7 +34,7 @@ export const CalendarioEspacios: React.FC = () => {
       const response = await api.get<CalendarioEventoDTO[]>('/solicitudes/calendario');
       const mappedEvents = response.data.map(evento => ({
         id: String(evento.idSolicitud),
-        title: `${evento.nombreEspacio} - ${evento.title} ${evento.esExclusivo ? '⭐' : ''}`,
+        title: `${evento.nombreEspacio} - ${evento.title} ${evento.esExclusivo ? '⭐ (EXCLUSIVO)' : ''}`,
         start: `${evento.date}T${evento.start}`,
         end: `${evento.date}T${evento.end}`,
         backgroundColor: evento.esExclusivo ? '#ef4444' : '#3b82f6', // Rojo para exclusivo, Azul para normal
@@ -56,6 +56,14 @@ export const CalendarioEspacios: React.FC = () => {
   };
 
   const handleEventClick = (clickInfo: any) => {
+    // Solo admins/coordinadores/directores pueden abrir el detalle
+    const rolActivo = localStorage.getItem("activeRole") || "";
+    const isAdmin = ["ADMIN", "DIRECTOR", "COORDINADOR"].includes(rolActivo.toUpperCase());
+    
+    if (!isAdmin) {
+      return; // No hace nada si no es admin
+    }
+
     const props = clickInfo.event.extendedProps;
     setSelectedEvent({
       title: clickInfo.event.title,
@@ -183,14 +191,21 @@ export const CalendarioEspacios: React.FC = () => {
         .fc-theme-standard .fc-scrollgrid { border-color: #f1f5f9; border-radius: 0.5rem; overflow: hidden; }
         .fc-theme-standard th { border-color: #e2e8f0; padding: 16px 0; background-color: #f8fafc; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: #64748b; }
         .fc-theme-standard td { border-color: #f1f5f9; }
-        .fc-button-primary { background-color: #0f172a !important; border-color: #0f172a !important; text-transform: capitalize; border-radius: 0.75rem !important; padding: 0.5rem 1.25rem !important; font-weight: 600 !important; font-size: 0.875rem !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; letter-spacing: 0.025em; }
+        .fc-button-primary { background-color: #0f172a !important; border-color: #0f172a !important; text-transform: capitalize; border-radius: 0.75rem !important; padding: 0.5rem 1.25rem !important; font-weight: 600 !important; font-size: 0.875rem !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; letter-spacing: 0.025em; display: inline-flex; align-items: center; justify-content: center; }
         .fc-button-primary:hover { background-color: #334155 !important; border-color: #334155 !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; transform: translateY(-1px); }
         .fc-button-primary:not(:disabled):active, .fc-button-primary:not(:disabled).fc-button-active { background-color: #020617 !important; border-color: #020617 !important; transform: translateY(0); }
-        .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 800 !important; color: #0f172a; letter-spacing: -0.025em; }
+        .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 800 !important; color: #0f172a; letter-spacing: -0.025em; margin: 0 1rem !important; display: inline-block; white-space: nowrap; }
         .fc-timegrid-slot { height: 3.5em !important; }
         .fc-event { padding: 4px 6px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: all 0.2s; }
         .fc-event:hover { filter: brightness(1.1); transform: scale(1.02); z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .fc-v-event .fc-event-main { padding: 2px; }
+        /* ARREGLOS DE LAYOUT (Fuerza flexbox que Tailwind V4 puede romper) */
+        .fc .fc-header-toolbar { display: flex !important; justify-content: space-between !important; align-items: center !important; margin-bottom: 1.5rem !important; gap: 1rem; flex-wrap: wrap; }
+        .fc .fc-toolbar-chunk { display: flex !important; align-items: center !important; gap: 0.5rem; }
+        .fc .fc-button-group { display: inline-flex !important; }
+        .fc .fc-button-group > .fc-button { margin-left: -1px; }
+        .fc .fc-button-group > .fc-button:first-child { margin-left: 0; }
+        .fc .fc-view-harness { min-height: 500px; }
       `}} />
     </div>
   );

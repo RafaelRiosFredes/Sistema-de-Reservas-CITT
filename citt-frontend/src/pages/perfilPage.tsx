@@ -130,7 +130,12 @@ const PerfilPage = () => {
   );
 
   return (
-    <AppLayout titulo="Mi Perfil" breadcrumb="CITT DuocUC / Perfil">
+    <>
+      <div className="flex flex-col mb-6 ml-6 mt-6">
+        <h1 className="text-2xl font-bold text-gray-800">Mi Perfil</h1>
+        <span className="text-xs text-gray-400 mt-1">CITT DuocUC / Perfil</span>
+      </div>
+
       <SessionTimeout />
 
       <Modal
@@ -344,7 +349,7 @@ const PerfilPage = () => {
 
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

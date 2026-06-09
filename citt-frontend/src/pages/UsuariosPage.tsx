@@ -207,7 +207,12 @@ const UsuariosPage = () => {
   }
 
   return (
-    <AppLayout titulo="Gestión de Usuarios" breadcrumb="CITT DuocUC / Usuarios">
+    <>
+      <div className="flex flex-col mb-6 ml-6 mt-6">
+        <h1 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
+        <span className="text-xs text-gray-400 mt-1">CITT DuocUC / Usuarios</span>
+      </div>
+
       <SessionTimeout />
 
       {/* Modal de Edición de Roles */}
@@ -437,7 +442,7 @@ const UsuariosPage = () => {
 
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 };
 

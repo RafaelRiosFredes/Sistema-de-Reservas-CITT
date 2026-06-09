@@ -97,7 +97,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             icon: MonitorSmartphone,
             path: "/espacios",
           },
-          { name: "Gestión Préstamos", icon: Handshake, path: "/prestamos" },
           { name: "Reportes", icon: FileText, path: "/reportes" },
           { name: "Configuración", icon: Settings, path: "/configuracion" },
         ]
