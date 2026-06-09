@@ -1,23 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import {
-  Cpu,
-  Calendar,
-  Package,
-  History,
-  Users,
-  FileText,
-  Settings,
-  LogOut,
-  Bell,
-  PieChart,
-  CalendarCheck,
-  Handshake,
-  Box,
-  UserCog,
-  MonitorSmartphone,
-  ClipboardList,
-  PackageOpen,
+  Cpu, Calendar, Package, History, Users, FileText, Settings, LogOut, Bell, PieChart, CalendarCheck, Handshake, Box, UserCog, MonitorSmartphone, ClipboardList, PackageOpen,
 } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useSeguridad } from "../hooks/useSeguridad";
@@ -100,7 +84,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
     // STAFF (Ayudante + Docente + Coordinador + Director): Historial
     ...(isStaff
-      ? [{ name: "Historial", icon: History, path: "/historial" }]
+      ? [{ name: "Historial", icon: History, path: "/historial-espacios" }]
       : []),
 
     // ADMIN AREA (Coordinador + Director)
