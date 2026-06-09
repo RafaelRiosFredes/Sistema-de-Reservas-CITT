@@ -10,6 +10,11 @@ import { ReservasPage } from "./pages/ReservasPage";
 import { HistorialEspaciosPage } from "./pages/HistorialPage";
 import { CalendarioPage } from "./pages/CalendarioPage";
 
+// Páginas de la rama articulos
+import { ArticulosPage } from "./pages/ArticulosPage";
+import { SolicitarPrestamoPage } from "./pages/SolicitarPrestamoPage";
+import { SolicitudesPage } from "./pages/SolicitudesPage";
+
 function App() {
   return (
     <BrowserRouter>
@@ -26,6 +31,9 @@ function App() {
           <Route path="/reservas" element={<ReservasPage />} />
           <Route path="/historial-espacios" element={<HistorialEspaciosPage />} />
           <Route path="/calendario" element={<CalendarioPage />} />
+          <Route path="/articulos" element={<ArticulosPage />} />
+          <Route path="/solicitar-prestamo" element={<SolicitarPrestamoPage />} />
+          <Route path="/solicitudes" element={<SolicitudesPage />} />
         </Route>
 
         {/* COMODÍN */}
