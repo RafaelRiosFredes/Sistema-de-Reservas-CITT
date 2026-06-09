@@ -79,5 +79,14 @@ public class SolicitudController {
         return ResponseEntity.ok(solicitudService.devolverArticulos(id, dto));
     }
 
+    @Operation(summary = "Obtener eventos para el calendario", description = "Retorna reservas de espacios aprobadas o en uso. Filtra datos sensibles si no es Admin.")
+    @GetMapping("/calendario")
+    public ResponseEntity<List<cl.duoc.citt.citt_backend.dto.CalendarioEventoDTO>> obtenerEventosCalendario() {
+        String email = null;
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            email = SecurityContextHolder.getContext().getAuthentication().getName();
+        }
+        return ResponseEntity.ok(solicitudService.obtenerEventosCalendario(email));
+    }
 
 }

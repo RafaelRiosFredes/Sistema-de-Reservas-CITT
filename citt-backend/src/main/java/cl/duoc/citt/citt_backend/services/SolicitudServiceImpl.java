@@ -382,6 +382,43 @@ public class SolicitudServiceImpl implements SolicitudService {
         return mapToDTO(solicitudRepository.save(solicitud));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<cl.duoc.citt.citt_backend.dto.CalendarioEventoDTO> obtenerEventosCalendario(String emailUsuario) {
+        Usuario usuario = null;
+        if (emailUsuario != null && !emailUsuario.equals("anonymousUser")) {
+             usuario = usuarioRepository.findByEmail(emailUsuario).orElse(null);
+        }
+        
+        boolean isAdmin = false;
+        if (usuario != null) {
+            isAdmin = usuario.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+        }
+        
+        boolean finalIsAdmin = isAdmin;
+
+        List<Solicitud> solicitudes = solicitudRepository.findSolicitudesParaCalendario();
+        
+        return solicitudes.stream().map(s -> {
+            cl.duoc.citt.citt_backend.dto.CalendarioEventoDTO dto = cl.duoc.citt.citt_backend.dto.CalendarioEventoDTO.builder()
+                    .idSolicitud(s.getIdSolicitud())
+                    .title(s.getProposito())
+                    .date(s.getFecha())
+                    .start(s.getHoraInicio())
+                    .end(s.getHoraFin())
+                    .nombreEspacio(s.getEspacio() != null ? s.getEspacio().getNombre() : "CITT Completo")
+                    .esExclusivo(s.getExclusividad())
+                    .build();
+                    
+            if (finalIsAdmin) {
+                dto.setSolicitanteEmail(s.getUsuario().getEmail());
+                dto.setEstadoActual(s.getEstadoSolicitud().getNombre());
+            }
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
     private SolicitudResponseDTO mapToDTO(Solicitud s) {
         return SolicitudResponseDTO.builder()
                 .idSolicitud(s.getIdSolicitud())

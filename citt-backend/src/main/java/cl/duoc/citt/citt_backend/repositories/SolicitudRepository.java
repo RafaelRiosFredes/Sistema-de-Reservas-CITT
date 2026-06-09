@@ -50,4 +50,7 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
             @Param("horaInicio") LocalTime horaInicio,
             @Param("horaFin") LocalTime horaFin
     );
+
+    @Query("SELECT s FROM Solicitud s WHERE s.espacio IS NOT NULL AND s.estadoSolicitud.nombre IN ('APROBADA', 'EN PROCESO')")
+    List<Solicitud> findSolicitudesParaCalendario();
 }
