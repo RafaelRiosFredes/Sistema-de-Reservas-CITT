@@ -53,7 +53,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // CORRECCIÓN: Agregamos el puerto 5174 y 5175 que Vite usa cuando el 5173 está ocupado
+        // puertos para ocupar
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
@@ -62,12 +62,11 @@ public class SecurityConfig {
                 "http://localhost:5183"
         ));
 
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"));
 
-        // CORRECCIÓN: Quitamos el "*" y ponemos las cabeceras explícitas necesarias para trabajar con cookies fijas
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
 
-        // Mantenemos tu configuración vital para las cookies
+        // configuración para las cookies
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
