@@ -19,17 +19,7 @@ export const StaffDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-2xl shadow-lg relative overflow-hidden">
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold text-white mb-2">¡Hola, Docente/Ayudante!</h2>
-          <p className="text-blue-100 text-sm max-w-2xl leading-relaxed">
-            Bienvenido al portal de gestión académica. Desde aquí puedes revisar rápidamente la disponibilidad de los laboratorios, agendar espacios para tus clases o reservar el equipamiento necesario para tus actividades.
-          </p>
-        </div>
-        {/* Decoración abstracta de fondo */}
-        <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-        <div className="absolute right-20 -bottom-20 w-60 h-60 rounded-full bg-white opacity-5"></div>
-      </div>
+
 
       {/* Accesos Rápidos (Staff) */}
       <div>

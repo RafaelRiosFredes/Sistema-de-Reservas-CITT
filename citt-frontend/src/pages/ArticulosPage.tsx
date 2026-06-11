@@ -94,10 +94,7 @@ export const ArticulosPage: React.FC = () => {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Inventario / Artículos</h1>
-        <p className="text-sm text-gray-500">Inicio / Artículos</p>
-      </div>
+
       {/* HEADER DE FILTROS OCULTO PARA EL CATÁLOGO */}
       {!mostrarVistaCatalogo && (
         <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col gap-4">

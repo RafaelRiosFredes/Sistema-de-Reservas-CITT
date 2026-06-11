@@ -16,7 +16,7 @@ const TarjetaAccionRapida: React.FC<TarjetaAccionRapidaProps> = ({
   return (
     <button
       onClick={onClick}
-      className="bg-white p-8 rounded-xl border border-gray-border shadow-sm flex flex-col items-center justify-center gap-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30 w-full"
+      className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center gap-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30 w-full"
     >
       <div className="p-4 bg-gray-50 rounded-full text-primary">{icono}</div>
       <div className="text-center">

@@ -31,7 +31,7 @@ const SelectorHorario: React.FC<SelectorHorarioProps> = ({
             className={`py-3 px-2 rounded-md font-bold text-sm text-center border transition-all disabled:opacity-50 disabled:bg-gray-100 disabled:cursor-not-allowed ${
               esSeleccionado
                 ? "bg-primary text-white border-primary shadow-sm"
-                : "bg-white text-gray-600 border-gray-border hover:border-primary hover:text-primary cursor-pointer"
+                : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary cursor-pointer"
             }`}
           >
             {b.horaInicio} - {b.horaFin}

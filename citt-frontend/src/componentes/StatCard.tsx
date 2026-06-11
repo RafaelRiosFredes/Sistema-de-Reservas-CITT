@@ -17,7 +17,7 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const borderClass = colorBorde
     ? `border-l-4 border-l-${colorBorde}`
-    : "border border-gray-border";
+    : "border border-gray-200";
 
   return (
     <div

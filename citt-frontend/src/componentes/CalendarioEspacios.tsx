@@ -80,13 +80,7 @@ export const CalendarioEspacios: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden p-6 transition-all duration-300 hover:shadow-2xl border border-gray-100">
-      <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-6 flex items-center gap-3">
-        <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-        </svg>
-        Calendario de Espacios
-      </h2>
+    <div className="w-full h-full bg-white rounded-3xl shadow-sm p-8 border border-gray-100">
       
       <div className="calendar-container h-[700px] overflow-hidden">
         <FullCalendar
@@ -203,17 +197,18 @@ export const CalendarioEspacios: React.FC = () => {
       )}
 
       <style dangerouslySetInnerHTML={{__html: `
-        .fc-theme-standard .fc-scrollgrid { border-color: #f1f5f9; border-radius: 0.5rem; overflow: hidden; }
-        .fc-theme-standard th { border-color: #e2e8f0; padding: 16px 0; background-color: #f8fafc; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: #64748b; }
-        .fc-theme-standard td { border-color: #f1f5f9; }
-        .fc-button-primary { background-color: #0f172a !important; border-color: #0f172a !important; text-transform: capitalize; border-radius: 0.75rem !important; padding: 0.5rem 1.25rem !important; font-weight: 600 !important; font-size: 0.875rem !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; letter-spacing: 0.025em; display: inline-flex; align-items: center; justify-content: center; }
-        .fc-button-primary:hover { background-color: #334155 !important; border-color: #334155 !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; transform: translateY(-1px); }
-        .fc-button-primary:not(:disabled):active, .fc-button-primary:not(:disabled).fc-button-active { background-color: #020617 !important; border-color: #020617 !important; transform: translateY(0); }
-        .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 800 !important; color: #0f172a; letter-spacing: -0.025em; margin: 0 1rem !important; display: inline-block; white-space: nowrap; }
-        .fc-timegrid-slot { height: 3.5em !important; }
-        .fc-event { padding: 4px 6px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: all 0.2s; }
-        .fc-event:hover { filter: brightness(1.1); transform: scale(1.02); z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .fc-v-event .fc-event-main { padding: 2px; }
+        .fc-theme-standard .fc-scrollgrid { border-color: #f1f5f9; border-radius: 0.5rem; overflow: hidden; border: none; }
+        .fc-theme-standard th { border: none; border-bottom: 1px solid #f1f5f9; padding: 16px 0; background-color: #ffffff; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: #64748b; }
+        .fc-theme-standard td { border-color: #f8fafc; }
+        .fc-button-primary { background-color: #ffffff !important; border: 1px solid #e2e8f0 !important; color: #334155 !important; text-transform: capitalize; border-radius: 0.75rem !important; padding: 0.5rem 1.25rem !important; font-weight: 600 !important; font-size: 0.875rem !important; transition: all 0.2s ease !important; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; }
+        .fc-button-primary:hover { background-color: #f8fafc !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
+        .fc-button-primary:not(:disabled):active, .fc-button-primary:not(:disabled).fc-button-active { background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #0f172a !important; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05) !important; }
+        .fc-toolbar-title { font-size: 1.5rem !important; font-weight: 700 !important; color: #1e293b; letter-spacing: -0.025em; margin: 0 1rem !important; display: inline-block; white-space: nowrap; }
+        .fc-timegrid-slot { height: 4em !important; border-bottom: 1px dashed #f8fafc !important; }
+        .fc-timegrid-axis { border: none !important; color: #94a3b8; font-size: 0.75rem; font-weight: 500; }
+        .fc-event { padding: 4px 6px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); transition: all 0.2s; border: none; }
+        .fc-event:hover { filter: brightness(1.05); transform: translateY(-1px); z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .fc-v-event .fc-event-main { padding: 4px; }
         /* ARREGLOS DE LAYOUT (Fuerza flexbox que Tailwind V4 puede romper) */
         .fc .fc-header-toolbar { display: flex !important; justify-content: space-between !important; align-items: center !important; margin-bottom: 1.5rem !important; gap: 1rem; flex-wrap: wrap; }
         .fc .fc-toolbar-chunk { display: flex !important; align-items: center !important; gap: 0.5rem; }

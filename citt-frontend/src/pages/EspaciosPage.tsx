@@ -145,18 +145,11 @@ const EspaciosPage = () => {
   // --- ADMIN VIEW ONLY ---
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Espacios (Admin)</h1>
-        <p className="text-sm text-gray-500">Inicio / Espacios (Admin)</p>
-      </div>
+
       <div className="flex flex-col gap-6">
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">Gestión de Espacios Físicos</h2>
-            <p className="text-gray-500 text-sm mt-1">Administra los laboratorios y salas disponibles en la sede CITT</p>
-          </div>
-          <button onClick={() => setIsModalOpen(true)} className="bg-[#021626] text-white font-bold px-6 py-2.5 rounded-lg flex items-center gap-2 hover:bg-[#003b73] transition-all cursor-pointer border-none">
-            <Plus size={18} /> Añadir Espacio
+        <div className="flex justify-end">
+          <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm cursor-pointer">
+            <Plus className="w-4 h-4" /> Agregar Espacio
           </button>
         </div>
 

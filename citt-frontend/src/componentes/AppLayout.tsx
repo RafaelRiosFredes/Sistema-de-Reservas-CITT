@@ -1,10 +1,50 @@
 import React from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import {
-  Cpu, Calendar, Package, History, Users, FileText, Settings, LogOut, Bell, PieChart, CalendarCheck, Handshake, Box, UserCog, MonitorSmartphone, ClipboardList, PackageOpen,
+  Cpu, Calendar, Package, History, Users, FileText, Settings, LogOut, PieChart, CalendarCheck, Handshake, Box, UserCog, MonitorSmartphone, ClipboardList, PackageOpen,
 } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useSeguridad } from "../hooks/useSeguridad";
+import { HeaderBanner } from "./HeaderBanner";
+
+// Nombres  para cada ruta del sistema
+const RUTAS_NOMBRES: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/perfil": "Mi Perfil",
+  "/usuarios": "Gestión de Usuarios",
+  "/espacios": "Gestión de Espacios",
+  "/solicitar-reserva": "Reserva de Espacios",
+  "/crear-solicitud": "Nueva Solicitud",
+  "/historial-espacios": "Historial de Solicitudes",
+  "/calendario": "Calendario",
+  "/articulos": "Inventario",
+  "/solicitar-prestamo": "Solicitar Artículo",
+  "/solicitudes": "Solicitudes",
+  "/prestamos": "Préstamos",
+  "/configuracion": "Configuración",
+  "/reportes": "Reportes",
+  "/reservas": "Gestión de Reservas",
+  "/historial": "Historial",
+};
+
+const RUTAS_DESCRIPCIONES: Record<string, string> = {
+  "/dashboard": "Resumen global del estado de inventario y accesos rápidos.",
+  "/perfil": "Revisa y actualiza tu información personal.",
+  "/usuarios": "Crea cuentas, revisa registros y administra los roles.",
+  "/espacios": "Administra los laboratorios y salas disponibles en la sede CITT.",
+  "/solicitar-reserva": "Visualiza los laboratorios operativos de la sede y gestiona tus solicitudes de reserva.",
+  "/crear-solicitud": "Completa el formulario para solicitar artículos o espacios.",
+  "/historial-espacios": "Registro completo de solicitudes finalizadas y artículos devueltos.",
+  "/calendario": "Revisa los eventos programados y las reservas de laboratorios.",
+  "/articulos": "Administra el inventario de artículos disponibles para préstamo.",
+  "/solicitar-prestamo": "Consulta el catálogo y solicita equipos en préstamo.",
+  "/solicitudes": "Administra las solicitudes de préstamo y entrega de artículos.",
+  "/prestamos": "Revisa el estado de los préstamos activos.",
+  "/configuracion": "Configura los parámetros del sistema.",
+  "/reportes": "Genera y revisa los reportes estadísticos.",
+  "/reservas": "Administra y revisa las reservas de espacios.",
+  "/historial": "Revisa el historial de acciones.",
+};
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -40,7 +80,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     ? getRolPrincipal([rolActivo])
     : getRolPrincipal(userRoles);
 
-  // Evaluadores de acceso basados en rolActivo
+  //  acceso basados en rolActivo
   const isAdminArea = ["ADMIN", "DIRECTOR", "COORDINADOR"].includes(rolActivo);
   const isStaff = ["AYUDANTE", "DOCENTE", "COORDINADOR", "DIRECTOR"].includes(
     rolActivo,
@@ -71,40 +111,33 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { name: "Dashboard", icon: PieChart, path: "/dashboard" },
     { name: "Calendario", icon: Calendar, path: "/calendario" },
     {
-      name: "Solicitar Préstamo",
+      name: "Solicitar Artículo",
       icon: PackageOpen,
       path: "/solicitar-prestamo",
     },
     { name: "Solicitudes", icon: ClipboardList, path: "/solicitudes" },
     {
-      name: "Reserva Espacios",
+      name: "Reserva de Espacios",
       icon: MonitorSmartphone,
       path: "/solicitar-reserva",
     },
 
-    // STAFF (Ayudante + Docente + Coordinador + Director): Historial
+
     ...(isStaff
       ? [{ name: "Historial", icon: History, path: "/historial-espacios" }]
       : []),
 
-    // ADMIN AREA (Coordinador + Director)
+
     ...(isAdminArea
       ? [
-          { name: "Gestión Reservas", icon: CalendarCheck, path: "/reservas" },
+          { name: "Usuarios", icon: Users, path: "/usuarios" },
           { name: "Inventario", icon: Box, path: "/articulos" },
           {
-            name: "Espacios (Admin)",
+            name: "Espacios",
             icon: MonitorSmartphone,
             path: "/espacios",
           },
-          { name: "Reportes", icon: FileText, path: "/reportes" },
-          { name: "Configuración", icon: Settings, path: "/configuracion" },
         ]
-      : []),
-
-    // SOLO ADMIN / DIRECTOR
-    ...(userRoles.includes("ADMIN") || userRoles.includes("DIRECTOR")
-      ? [{ name: "Usuarios", icon: Users, path: "/usuarios" }]
       : []),
   ];
 
@@ -117,16 +150,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             CITT <span className="font-normal text-gray-400">DuocUC</span>
           </span>
         </div>
-
-        <div className="p-4 mx-4 mt-6 mb-2 bg-[#27293d] rounded-xl flex items-center gap-3 border border-gray-700">
-          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">
-            {email.charAt(0).toUpperCase()}
+        <div className="mx-4 mt-6 mb-2 p-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-white/5 cursor-pointer" onClick={() => navigate('/perfil')}>
+          <div className="relative shrink-0">
+            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-semibold text-lg">
+              {rolPrincipal.charAt(0).toUpperCase()}
+            </div>
+            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#1e1e2d]"></div>
           </div>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-semibold text-white truncate">
-              {rolPrincipal}
-            </span>
-            <span className="text-xs text-gray-400 truncate">{email}</span>
+          <div className="flex flex-col overflow-hidden justify-center">
+            <span className="text-sm font-medium text-slate-200 truncate capitalize">{rolPrincipal}</span>
           </div>
         </div>
 
@@ -175,28 +207,33 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-10 shadow-sm">
-          <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-gray-800 leading-none">
-              {titulo}
-            </h1>
-            <span className="text-xs text-gray-400 mt-1">{breadcrumb}</span>
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+        {/* Envolvemos el Header en un contenedor con max-width para que coincida con el contenido */}
+        <div className="w-full flex-shrink-0">
+          <div className="max-w-[1600px] mx-auto px-8 pt-8">
+            <HeaderBanner 
+              pantallaActual={RUTAS_NOMBRES[location.pathname] || "Sistema CITT"} 
+              descripcion={
+                location.pathname === "/dashboard" 
+                  ? (rolActivo === "ALUMNO" 
+                      ? "Utiliza este espacio para revisar los laboratorios disponibles, pedir materiales para tus proyectos o reservar un lugar tranquilo para programar y estudiar con tu equipo." 
+                      : (rolActivo === "DOCENTE" || rolActivo === "AYUDANTE")
+                        ? "Bienvenido al portal de gestión académica. Desde aquí puedes revisar rápidamente la disponibilidad de los laboratorios, agendar espacios para tus clases o reservar equipamiento."
+                        : RUTAS_DESCRIPCIONES[location.pathname])
+                  : RUTAS_DESCRIPCIONES[location.pathname] || ""
+              }
+            />
           </div>
-
-          <div className="flex items-center gap-6">
-            <button className="relative text-gray-500 hover:text-blue-600 transition-colors cursor-pointer">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
-            </button>
-          </div>
-        </header>
+        </div>
 
         <main
-          className="flex-1 overflow-x-hidden overflow-y-scroll bg-gray-50 p-8 scroll-styled scroll-light"
+          className="flex-1 overflow-x-hidden overflow-y-scroll scroll-styled scroll-light"
           style={{ scrollbarGutter: "stable" }}
         >
-          {children || <Outlet />}
+          {/* El contenido principal también tiene el mismo max-width para alinear perfecto */}
+          <div className="max-w-[1600px] mx-auto w-full px-8 py-4">
+            {children || <Outlet />}
+          </div>
         </main>
       </div>
     </div>

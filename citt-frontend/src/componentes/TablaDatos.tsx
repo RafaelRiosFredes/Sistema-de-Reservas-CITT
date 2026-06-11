@@ -7,11 +7,11 @@ interface TablaDatosProps {
 
 const TablaDatos: React.FC<TablaDatosProps> = ({ columnas, children }) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-border shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-gray-border bg-gray-50/50">
+            <tr className="border-b border-gray-200 bg-gray-50/50">
               {columnas.map((col, index) => (
                 <th
                   key={index}

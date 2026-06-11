@@ -24,22 +24,22 @@ export const TablaArticulosLectura: React.FC<TablaArticulosLecturaProps> = ({
           key={art.idArticulo}
           className="hover:bg-slate-50 transition-colors"
         >
-          <td className="p-4 border-b border-gray-border font-mono text-sm text-slate-500">
+          <td className="p-4 border-b border-gray-200 font-mono text-sm text-slate-500">
             {art.codigoDuoc || "N/A"}
           </td>
-          <td className="p-4 border-b border-gray-border">
+          <td className="p-4 border-b border-gray-200">
             <p className="font-bold text-slate-800 m-0">{art.nombreArticulo}</p>
             <p className="text-xs text-slate-400 m-0">
               {art.marca || "Genérico"}
             </p>
           </td>
-          <td className="p-4 border-b border-gray-border text-sm font-medium">
+          <td className="p-4 border-b border-gray-200 text-sm font-medium">
             {art.categoria?.nombreCategoria || "Sin categoría"}
           </td>
-          <td className="p-4 border-b border-gray-border text-sm text-slate-600">
+          <td className="p-4 border-b border-gray-200 text-sm text-slate-600">
             {art.etiqueta || "Sin asignar"}
           </td>
-          <td className="p-4 border-b border-gray-border">
+          <td className="p-4 border-b border-gray-200">
             <BadgeEstado estado={art.estado?.nombreEstado || "MANTENCION"} />
           </td>
         </tr>

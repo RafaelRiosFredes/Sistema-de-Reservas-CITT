@@ -76,7 +76,7 @@ const Layout: React.FC<LayoutProps> = ({
       {/* CONTENIDO PRINCIPAL */}
       <main className="p-12 overflow-y-auto w-full bg-gray-light">
         <header className="flex justify-end items-center mb-8">
-          <div className="flex items-center gap-4 bg-white p-2 pr-4 rounded-full border border-gray-border shadow-sm">
+          <div className="flex items-center gap-4 bg-white p-2 pr-4 rounded-full border border-gray-200 shadow-sm">
             <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
               {nombreUsuario.charAt(0)}
             </div>

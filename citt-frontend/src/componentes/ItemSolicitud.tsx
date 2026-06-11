@@ -40,7 +40,7 @@ const ItemSolicitud: React.FC<ItemSolicitudProps> = ({
 
   return (
     <div
-      className={`bg-white p-6 rounded-xl border border-gray-border border-l-4 ${bordeColor} shadow-sm flex justify-between items-center transition-all hover:-translate-y-0.5 mb-4`}
+      className={`bg-white p-6 rounded-xl border border-gray-200 border-l-4 ${bordeColor} shadow-sm flex justify-between items-center transition-all hover:-translate-y-0.5 mb-4`}
     >
       <div className="flex items-start gap-6">
         <div className="p-3 bg-primary/10 text-primary rounded-lg mt-1">

@@ -32,7 +32,7 @@ const GraficoOcupacion: React.FC<GraficoOcupacionProps> = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-gray-border shadow-sm w-full h-full flex flex-col">
+    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm w-full h-full flex flex-col">
       {/* Cabecera del Gráfico */}
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-2">

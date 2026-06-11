@@ -112,6 +112,7 @@ const PerfilPage = () => {
     localStorage.setItem('activeRole', rolSeleccionado);
     setRolActivo(rolSeleccionado);
     setShowRolModal(false);
+    window.location.reload(); // Forzar recarga para que el Layout y Banners actualicen visualmente
   };
 
   const handleLogout = async () => {
@@ -131,10 +132,7 @@ const PerfilPage = () => {
 
   return (
     <>
-      <div className="flex flex-col mb-6 ml-6 mt-6">
-        <h1 className="text-2xl font-bold text-gray-800">Mi Perfil</h1>
-        <span className="text-xs text-gray-400 mt-1">CITT DuocUC / Perfil</span>
-      </div>
+
 
       <SessionTimeout />
 
@@ -172,34 +170,34 @@ const PerfilPage = () => {
         </div>
       </Modal>
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="w-full mx-auto px-6 py-10">
 
         {/* TARJETA DE PERFIL */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden mb-8">
-          <div className="relative h-32 bg-gradient-to-br from-slate-800 via-blue-900 to-blue-700">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-            <div className="absolute bottom-0 left-20 w-40 h-40 bg-blue-300 opacity-20 rounded-full blur-2xl -mb-10"></div>
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8 p-8 flex flex-col md:flex-row items-center gap-8 relative">
+          {/* Avatar */}
+          <div className="w-32 h-32 shrink-0 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 flex items-center justify-center text-5xl font-black border-4 border-white shadow-md relative z-10">
+            {userData.email.charAt(0).toUpperCase()}
           </div>
-          <div className="px-10 pb-10 -mt-16 relative flex flex-col items-center text-center">
-            <div className="w-28 h-28 rounded-full bg-slate-800 text-white flex items-center justify-center text-5xl font-black border-4 border-white shadow-md mb-4 relative z-10">
-              {userData.email.charAt(0).toUpperCase()}
-            </div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight">{userData.email}</h1>
-
-            {/* Roles del usuario y botón de cambio de rol (Centrados) */}
-            <div className="mt-5 flex flex-col items-center gap-4 w-full">
+          
+          {/* Info */}
+          <div className="flex flex-col items-center md:items-start text-center md:text-left flex-1">
+            <h1 className="text-3xl font-black text-gray-800 tracking-tight mb-2">{userData.email}</h1>
+            <p className="text-gray-500 font-medium mb-6">Gestiona tus roles y seguridad desde este panel.</p>
+            
+            {/* Roles del usuario y botón de cambio de rol */}
+            <div className="flex flex-col md:flex-row items-center gap-4 w-full">
               {/* Contenedor de las etiquetas de los roles */}
-              <div className="flex flex-wrap gap-2 items-center justify-center">
+              <div className="flex flex-wrap gap-2 items-center justify-center md:justify-start flex-1">
                 {userData.roles.map(rol => (
                   <span
                     key={rol}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm border ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm border ${
                       rol === rolActivo
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-indigo-50 text-indigo-700 border-indigo-100'
                     }`}
                   >
-                    <Shield size={12} />
+                    <Shield size={14} />
                     {rol}
                     {rol === rolActivo && <span className="ml-1 opacity-80">(activo)</span>}
                   </span>
@@ -210,7 +208,7 @@ const PerfilPage = () => {
               {userData.roles.length > 1 && (
                 <button
                   onClick={() => setShowRolModal(true)}
-                  className="px-6 py-2 rounded-full text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  className="px-6 py-2 rounded-full text-sm font-bold bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer md:ml-auto shrink-0"
                 >
                   <RefreshCw size={16} /> Cambiar Rol Activo
                 </button>
@@ -224,7 +222,7 @@ const PerfilPage = () => {
 
           {/* INFORMACIÓN DE CUENTA */}
           <div className="md:col-span-5 space-y-6">
-            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-shadow duration-300">
+            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm transition-shadow duration-300">
               <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-3">
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><User size={20}/></div>
                 Información de Cuenta
@@ -259,7 +257,7 @@ const PerfilPage = () => {
 
           {/* SEGURIDAD */}
           <div className="md:col-span-7">
-            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-shadow duration-300">
+            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm transition-shadow duration-300">
               <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-3">
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><KeyRound size={20}/></div>
                 Seguridad de la Cuenta

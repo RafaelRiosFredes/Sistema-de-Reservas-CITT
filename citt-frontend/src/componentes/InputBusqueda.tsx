@@ -16,7 +16,7 @@ const InputBusqueda: React.FC<InputBusquedaProps> = ({
       </div>
       <input
         type="text"
-        className="w-full pl-10 pr-4 py-2 border border-gray-border rounded-lg font-lato text-sm transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
+        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg font-lato text-sm transition-all focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
         placeholder={placeholder}
         {...props}
       />

@@ -19,7 +19,7 @@ const OpcionRol: React.FC<OpcionRolProps> = ({
       className={`p-6 border-2 rounded-xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-all ${
         seleccionado
           ? "border-primary bg-primary/5 text-primary"
-          : "border-gray-border bg-white text-gray-500 hover:border-gray-400"
+          : "border-gray-200 bg-white text-gray-500 hover:border-gray-400"
       }`}
     >
       <div className={`${seleccionado ? "text-primary" : "text-gray-400"}`}>

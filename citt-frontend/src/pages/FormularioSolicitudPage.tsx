@@ -142,7 +142,7 @@ export const FormularioSolicitudPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto w-full animate-in fade-in duration-500">
+      <div className="flex flex-col lg:flex-row gap-8 w-full mx-auto animate-in fade-in duration-500">
         
         {/* LADO IZQUIERDO: FORMULARIO */}
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

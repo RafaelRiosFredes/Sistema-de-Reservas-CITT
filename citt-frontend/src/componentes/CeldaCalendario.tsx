@@ -19,7 +19,7 @@ const CeldaCalendario: React.FC<CeldaCalendarioProps> = ({
 }) => {
   return (
     <div
-      className={`min-h-[80px] p-2 border-r border-b border-gray-border relative ${esFondoGris ? "bg-gray-50" : "bg-white"}`}
+      className={`min-h-[80px] p-2 border-r border-b border-gray-200 relative ${esFondoGris ? "bg-gray-50" : "bg-white"}`}
     >
       {/* Indicador de eventos */}
       <div className="flex flex-col gap-1 w-full h-full">

@@ -69,7 +69,7 @@ export const SolicitudesPage: React.FC = () => {
   const [misSolicitudes, setMisSolicitudes] = useState<SolicitudDTO[]>([]);
   const [todasSolicitudes, setTodasSolicitudes] = useState<SolicitudDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"mias" | "todas">("mias");
+  const [vistaActiva, setVistaActiva] = useState<"mias" | "todas">(isDirectorOrCoordinador ? "todas" : "mias");
   const [filtro, setFiltro] = useState("");
 
   // Modal states
@@ -259,27 +259,9 @@ export const SolicitudesPage: React.FC = () => {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Solicitudes</h1>
-        <p className="text-sm text-gray-500">Inicio / Solicitudes</p>
-      </div>
-      <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {/* BANNER */}
-        <div className="bg-gradient-to-r from-[#003B5C] to-[#007bff] rounded-xl p-6 text-white shadow-md flex items-center gap-4">
-          <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-            <ClipboardList size={28} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black m-0 tracking-tight">
-              {isStaff ? "Gestión de Solicitudes" : "Mis Solicitudes"}
-            </h2>
-            <p className="text-blue-100 text-sm mt-1 m-0 font-medium">
-              {isStaff
-                ? "Administra las solicitudes de préstamo y entrega de artículos."
-                : "Revisa el estado de tus solicitudes de préstamo activas."}
-            </p>
-          </div>
-        </div>
+
+      <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+
 
         {/* MENSAJES DE FEEDBACK */}
         {successMsg && (
@@ -298,11 +280,26 @@ export const SolicitudesPage: React.FC = () => {
         {/* TABS PARA STAFF */}
         {isStaff && (
           <div className="flex gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm w-max">
+            {isDirectorOrCoordinador && (
+              <button
+                onClick={() => setVistaActiva("todas")}
+                className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
+                  vistaActiva === "todas"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <FileText size={16} />
+                  Todas las Solicitudes
+                </span>
+              </button>
+            )}
             <button
               onClick={() => setVistaActiva("mias")}
               className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
                 vistaActiva === "mias"
-                  ? "bg-[#003B5C] text-white shadow-md"
+                  ? "bg-blue-600 text-white shadow-md"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               }`}
             >
@@ -311,19 +308,21 @@ export const SolicitudesPage: React.FC = () => {
                 Mis Solicitudes
               </span>
             </button>
-            <button
-              onClick={() => setVistaActiva("todas")}
-              className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
-                vistaActiva === "todas"
-                  ? "bg-[#003B5C] text-white shadow-md"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <FileText size={16} />
-                Todas las Solicitudes
-              </span>
-            </button>
+            {!isDirectorOrCoordinador && (
+              <button
+                onClick={() => setVistaActiva("todas")}
+                className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
+                  vistaActiva === "todas"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <FileText size={16} />
+                  Todas las Solicitudes
+                </span>
+              </button>
+            )}
           </div>
         )}
 

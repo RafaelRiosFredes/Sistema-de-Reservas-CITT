@@ -20,7 +20,7 @@ const TarjetaRecurso: React.FC<TarjetaRecursoProps> = ({
   onAction,
 }) => {
   return (
-    <div className="bg-white p-6 rounded-xl border border-gray-border shadow-sm flex flex-col h-full transition-transform hover:-translate-y-1">
+    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-full transition-transform hover:-translate-y-1">
       <div className="flex justify-between items-start mb-4">
         <div>
           {subtitulo && (

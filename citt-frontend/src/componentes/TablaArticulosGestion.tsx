@@ -90,17 +90,17 @@ export const TablaArticulosGestion: React.FC<TablaArticulosGestionProps> = ({
                   : "hover:bg-blue-50/40"
               }`}
             >
-              <td className="p-4 border-b border-gray-border text-sm text-gray-400 font-semibold">
+              <td className="p-4 border-b border-gray-200 text-sm text-gray-400 font-semibold">
                 #{art.idArticulo}
               </td>
 
               <td
-                className={`p-4 border-b border-gray-border text-sm font-mono font-bold ${isEliminado ? "text-gray-400 line-through" : "text-gray-600"}`}
+                className={`p-4 border-b border-gray-200 text-sm font-mono font-bold ${isEliminado ? "text-gray-400 line-through" : "text-gray-600"}`}
               >
                 {art.codigoDuoc || "-"}
               </td>
 
-              <td className="p-4 border-b border-gray-border text-sm font-bold text-gray-800">
+              <td className="p-4 border-b border-gray-200 text-sm font-bold text-gray-800">
                 <span
                   className={isEliminado ? "line-through text-gray-500" : ""}
                 >
@@ -111,11 +111,11 @@ export const TablaArticulosGestion: React.FC<TablaArticulosGestionProps> = ({
                 </div>
               </td>
 
-              <td className="p-4 border-b border-gray-border text-sm text-gray-600 font-medium">
+              <td className="p-4 border-b border-gray-200 text-sm text-gray-600 font-medium">
                 {art.nombreCategoria || "General"}
               </td>
 
-              <td className="p-4 border-b border-gray-border">
+              <td className="p-4 border-b border-gray-200">
                 {isEliminado ? (
                   <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border bg-red-100 text-red-600 border-red-200">
                     DADO DE BAJA
@@ -125,7 +125,7 @@ export const TablaArticulosGestion: React.FC<TablaArticulosGestionProps> = ({
                 )}
               </td>
 
-              <td className="p-4 border-b border-gray-border text-center">
+              <td className="p-4 border-b border-gray-200 text-center">
                 <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   {isEliminado ? (
                     <>

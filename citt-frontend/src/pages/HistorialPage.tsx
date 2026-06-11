@@ -78,26 +78,9 @@ export const HistorialPage: React.FC = () => {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Historial</h1>
-        <p className="text-sm text-gray-500">Inicio / Historial</p>
-      </div>
-      <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {/* BANNER */}
-        <div className="bg-gradient-to-r from-[#1e293b] to-[#475569] rounded-xl p-6 text-white shadow-md flex items-center gap-4">
-          <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-            <History size={28} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black m-0 tracking-tight">
-              Historial de Solicitudes
-            </h2>
-            <p className="text-slate-300 text-sm mt-1 m-0 font-medium">
-              Registro completo de solicitudes finalizadas y artículos
-              devueltos.
-            </p>
-          </div>
-        </div>
+
+      <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+
 
         {/* BARRA DE BÚSQUEDA + REFRESH */}
         <div className="flex gap-3 items-center">

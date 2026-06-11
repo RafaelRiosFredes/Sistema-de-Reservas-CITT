@@ -21,7 +21,7 @@ const ItemSeleccionArticulo: React.FC<ItemSeleccionArticuloProps> = ({
 }) => {
   return (
     <div
-      className={`p-4 border rounded-lg flex items-center justify-between mb-3 transition-colors ${seleccionado ? "border-primary bg-primary/5" : "border-gray-border bg-white"}`}
+      className={`p-4 border rounded-lg flex items-center justify-between mb-3 transition-colors ${seleccionado ? "border-primary bg-primary/5" : "border-gray-200 bg-white"}`}
     >
       <div className="flex items-center gap-4">
         <input
@@ -37,7 +37,7 @@ const ItemSeleccionArticulo: React.FC<ItemSeleccionArticuloProps> = ({
       </div>
 
       {seleccionado && (
-        <div className="flex items-center gap-2 bg-white p-2 rounded-md border border-gray-border shadow-sm">
+        <div className="flex items-center gap-2 bg-white p-2 rounded-md border border-gray-200 shadow-sm">
           <span className="text-xs font-bold text-gray-500 uppercase">
             Cant:
           </span>

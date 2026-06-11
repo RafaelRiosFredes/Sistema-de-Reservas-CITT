@@ -208,10 +208,7 @@ const UsuariosPage = () => {
 
   return (
     <>
-      <div className="flex flex-col mb-6 ml-6 mt-6">
-        <h1 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
-        <span className="text-xs text-gray-400 mt-1">CITT DuocUC / Usuarios</span>
-      </div>
+
 
       <SessionTimeout />
 
@@ -273,25 +270,9 @@ const UsuariosPage = () => {
       </Modal>
 
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="w-full mx-auto px-6 py-10">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl">
-              <Users size={28} />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight">Gestión de Usuarios</h1>
-              <p className="text-slate-500 font-medium">Crea cuentas, revisa registros y administra los roles.</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => navigate('/perfil')}
-            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-colors self-start md:self-auto"
-          >
-            Volver a Mi Perfil
-          </button>
-        </div>
+
 
         {/* MENSAJES GLOBALES */}
         {errorMsg && (

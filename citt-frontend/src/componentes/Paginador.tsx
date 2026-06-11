@@ -15,7 +15,7 @@ const Paginador: React.FC<PaginadorProps> = ({
   if (totalPaginas <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-border sm:px-6">
+    <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
       <div className="flex justify-between flex-1 sm:hidden">
         <button
           onClick={() => onCambiarPagina(paginaActual - 1)}
@@ -44,14 +44,14 @@ const Paginador: React.FC<PaginadorProps> = ({
             <button
               onClick={() => onCambiarPagina(paginaActual - 1)}
               disabled={paginaActual === 0}
-              className="relative inline-flex items-center px-2 py-2 text-gray-400 bg-white border border-gray-border rounded-l-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+              className="relative inline-flex items-center px-2 py-2 text-gray-400 bg-white border border-gray-200 rounded-l-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => onCambiarPagina(paginaActual + 1)}
               disabled={paginaActual === totalPaginas - 1}
-              className="relative inline-flex items-center px-2 py-2 text-gray-400 bg-white border border-gray-border rounded-r-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
+              className="relative inline-flex items-center px-2 py-2 text-gray-400 bg-white border border-gray-200 rounded-r-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
             >
               <ChevronRight size={20} />
             </button>

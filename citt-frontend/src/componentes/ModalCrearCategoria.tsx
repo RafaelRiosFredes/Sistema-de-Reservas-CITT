@@ -151,14 +151,14 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
             type="button"
             variante="secundario"
             onClick={handleClose}
-            className="flex-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            className="flex-1"
             disabled={isLoading}
           >
             Cancelar
           </Boton>
           <Boton
             type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200"
+            className="flex-1"
             disabled={isLoading}
           >
             {isLoading ? "Guardando..." : "Crear Categoría"}

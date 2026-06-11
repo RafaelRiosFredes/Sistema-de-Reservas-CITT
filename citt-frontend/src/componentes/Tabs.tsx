@@ -14,7 +14,7 @@ interface TabsProps {
 
 const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => {
   return (
-    <div className="flex gap-8 border-b border-gray-border mb-6">
+    <div className="flex gap-8 border-b border-gray-200 mb-6">
       {tabs.map((tab) => (
         <button
           key={tab.id}

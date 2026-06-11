@@ -10,6 +10,7 @@ const Boton: React.FC<BotonProps> = ({
   variante = "primario",
   bloque = false,
   type = "button",
+  className,
   ...props
 }) => {
   const claseVariante =
@@ -19,7 +20,9 @@ const Boton: React.FC<BotonProps> = ({
   return (
     <button
       type={type}
-      className={`btn ${claseVariante} ${claseBloque}`} {...props}>
+      className={`btn ${claseVariante} ${claseBloque} ${className || ""}`}
+      {...props}
+    >
       {children}
     </button>
   );

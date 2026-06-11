@@ -20,20 +20,7 @@ export const AlumnoDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row gap-6 bg-gradient-to-br from-gray-900 to-gray-800 p-8 rounded-2xl shadow-lg relative overflow-hidden items-center">
-        <div className="bg-blue-500/20 p-4 rounded-full border border-blue-500/30 shrink-0">
-          <GraduationCap className="w-12 h-12 text-blue-400" />
-        </div>
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold text-white mb-2">Portal del Alumno</h2>
-          <p className="text-gray-300 text-sm max-w-2xl leading-relaxed">
-            Te damos la bienvenida al Centro de Innovación y Transferencia Tecnológica. 
-            Utiliza este espacio para revisar los laboratorios disponibles, pedir materiales para tus proyectos o reservar un lugar tranquilo para programar y estudiar con tu equipo.
-          </p>
-        </div>
-        {/* Decoración abstracta */}
-        <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-blue-600/20 to-transparent pointer-events-none"></div>
-      </div>
+
 
       {/* Accesos Rápidos (Alumno) */}
       <div>

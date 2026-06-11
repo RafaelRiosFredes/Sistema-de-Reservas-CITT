@@ -113,7 +113,7 @@ export const ModalActualizarEstado = ({ isOpen, onClose, onSuccess, espacio }: M
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2 bg-[#021626] hover:bg-[#003b73] text-white rounded-lg font-bold transition-colors cursor-pointer border-none shadow-sm"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors cursor-pointer border-none shadow-sm"
           >
             {isSubmitting ? "Guardando..." : "Confirmar Estado"}
           </button>

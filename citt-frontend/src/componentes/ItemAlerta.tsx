@@ -19,7 +19,7 @@ const ItemAlerta: React.FC<ItemAlertaProps> = ({
     : "text-gray-500";
 
   return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-border last:border-0 hover:bg-gray-50 transition-colors px-2 rounded-md">
+    <div className="flex items-center justify-between py-3 border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors px-2 rounded-md">
       <div className="flex items-center gap-4">
         <div className={`w-2 h-2 rounded-full ${colorPunto}`}></div>
         <span className="font-bold text-dark text-sm">{titulo}</span>

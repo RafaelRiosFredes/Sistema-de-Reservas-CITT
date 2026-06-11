@@ -84,22 +84,9 @@ export const SolicitarReservaPage: React.FC = () => {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Reserva de Espacios</h1>
-        <p className="text-sm text-gray-500">Inicio / Reserva Espacios</p>
-      </div>
+
       <div className="flex flex-col gap-6 animate-in fade-in duration-500">
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-[#021626] flex items-center gap-3">
-              <DoorOpen size={28} className="text-blue-600" />
-              {titulosPorRol[rolUser]}
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              {subtitulosPorRol[rolUser]}
-            </p>
-          </div>
-        </div>
+
 
         {!isLoading && espacios.length > 0 && (
           <div className="w-full mb-2">

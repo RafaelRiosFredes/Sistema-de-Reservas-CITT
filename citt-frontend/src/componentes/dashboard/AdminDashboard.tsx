@@ -72,17 +72,13 @@ export const AdminDashboard: React.FC = () => {
   const accesosRapidos = [
     { titulo: "Gestión Reservas", ruta: "/reservas", icono: CalendarCheck, color: "text-blue-600", bg: "bg-blue-100" },
     { titulo: "Inventario", ruta: "/articulos", icono: Box, color: "text-indigo-600", bg: "bg-indigo-100" },
-    { titulo: "Espacios (Admin)", ruta: "/espacios", icono: MonitorSmartphone, color: "text-emerald-600", bg: "bg-emerald-100" },
-    { titulo: "Usuarios", ruta: "/usuarios", icono: Users, color: "text-amber-600", bg: "bg-amber-100" },
-    { titulo: "Reportes", ruta: "/reportes", icono: FileText, color: "text-rose-600", bg: "bg-rose-100" }
+    { titulo: "Espacios", ruta: "/espacios", icono: MonitorSmartphone, color: "text-emerald-600", bg: "bg-emerald-100" },
+    { titulo: "Usuarios", ruta: "/usuarios", icono: Users, color: "text-amber-600", bg: "bg-amber-100" }
   ];
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold text-gray-800">Panel de Administración</h2>
-        <p className="text-gray-500 text-sm">Resumen global del estado de inventario y accesos rápidos de gestión.</p>
-      </div>
+
 
       {/* Tarjetas de Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
