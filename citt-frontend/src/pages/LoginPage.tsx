@@ -482,24 +482,24 @@ const LoginPage = () => {
               {/* VISTA 4: REGISTRO */}
               {view === 'register' && (
                 <>
-                  <h2 className="text-[1.8rem] font-bold text-white mb-2 text-center">Crear Cuenta</h2>
-                  <p className="text-[14px] text-blue-200/70 mb-8 text-center leading-relaxed">
+                  <h2 className="text-[1.8rem] font-bold text-slate-800 mb-2 text-center">Crear Cuenta</h2>
+                  <p className="text-[14px] text-slate-500 mb-8 text-center leading-relaxed">
                     Ingresa tu correo institucional y te enviaremos una clave provisoria.
                   </p>
                   <form onSubmit={handleAutoRegistro} className="w-full space-y-4">
                     <div>
-                      <label className="block text-sm font-bold text-slate-300 mb-1.5">Correo Institucional</label>
+                      <label className="block text-sm font-bold text-slate-600 mb-1.5">Correo Institucional</label>
                       <input type="email" placeholder="ejemplo@duocuc.cl"
                         value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all" />
                     </div>
                     <button type="submit" disabled={isLoading}
-                      className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 cursor-pointer border-none mt-2 disabled:opacity-60">
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-200 cursor-pointer border-none mt-2 disabled:opacity-60">
                       {isLoading ? 'Registrando...' : 'Crear Cuenta'}
                     </button>
                   </form>
                   <button type="button" onClick={() => changeView('login')}
-                    className="text-slate-400 hover:text-slate-300 text-[14px] font-medium bg-transparent border-none cursor-pointer flex items-center justify-center gap-2 mx-auto mt-6 transition-colors">
+                    className="text-slate-500 hover:text-slate-700 text-[14px] font-medium bg-transparent border-none cursor-pointer flex items-center justify-center gap-2 mx-auto mt-6 transition-colors">
                     <ArrowLeft size={16} /> Volver al inicio
                   </button>
                 </>
