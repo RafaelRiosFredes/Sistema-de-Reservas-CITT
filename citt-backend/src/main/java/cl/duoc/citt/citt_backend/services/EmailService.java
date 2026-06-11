@@ -24,15 +24,34 @@ public class EmailService {
     // Si este correo falla, la reserva ya está aprobada en la base de datos.
     // No es crítico detener el sistema por esto. Queremos velocidad.
     @Async
-    public void enviarCorreoAprobacion(String destinatario, Long idSolicitud, String nombreEspacio, LocalDate fecha, LocalTime horaInicio) {
+    public void enviarCorreoAprobacion(String destinatario, Long idSolicitud, String nombreEspacio, java.util.List<String> articulos, LocalDate fecha, LocalTime horaInicio) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
         mensaje.setFrom(remitente);
         mensaje.setTo(destinatario);
         mensaje.setSubject("¡Tu Reserva #" + idSolicitud + " ha sido Aprobada! - CITT");
 
-        String cuerpo = "Estimado/a Usuario,\n\nNos alegra informarte que tu solicitud de reserva #" + idSolicitud + " ha sido APROBADA...\n";
-        // ... (resto de tu cuerpo) ...
-        mensaje.setText(cuerpo);
+        StringBuilder cuerpo = new StringBuilder();
+        cuerpo.append("Estimado/a Usuario,\n\n");
+        cuerpo.append("Nos alegra informarte que tu solicitud de reserva #").append(idSolicitud).append(" ha sido APROBADA.\n\n");
+        cuerpo.append("Detalles de la reserva:\n");
+        cuerpo.append("- Fecha: ").append(fecha).append("\n");
+        cuerpo.append("- Hora de inicio: ").append(horaInicio).append("\n");
+        
+        if (nombreEspacio != null && !nombreEspacio.trim().isEmpty()) {
+            cuerpo.append("- Espacio asignado: ").append(nombreEspacio).append("\n");
+        }
+        
+        if (articulos != null && !articulos.isEmpty()) {
+            cuerpo.append("- Artículos solicitados:\n");
+            for (String art : articulos) {
+                cuerpo.append("  * ").append(art).append("\n");
+            }
+        }
+        
+        cuerpo.append("\nRecuerda presentarte a la hora indicada para hacer uso de tu reserva. Si solicitaste artículos, por favor acércate a retirarlos en el mesón.\n\n");
+        cuerpo.append("Saludos,\nEquipo CITT");
+
+        mensaje.setText(cuerpo.toString());
 
         try {
             mailSender.send(mensaje);
@@ -50,8 +69,15 @@ public class EmailService {
         mensaje.setTo(destinatario);
         mensaje.setSubject("Actualización de tu Reserva #" + idSolicitud + " - CITT");
 
-        // ... (resto de tu cuerpo) ...
-        mensaje.setText("Tu reserva ha sido rechazada...");
+        StringBuilder cuerpo = new StringBuilder();
+        cuerpo.append("Estimado/a Usuario,\n\n");
+        cuerpo.append("Lamentamos informarte que tu solicitud de reserva #").append(idSolicitud).append(" ha sido RECHAZADA.\n\n");
+        cuerpo.append("Motivo del rechazo:\n");
+        cuerpo.append(motivoRechazo != null ? motivoRechazo : "No se especificó un motivo.").append("\n\n");
+        cuerpo.append("Si tienes alguna duda, por favor contáctanos o acércate al CITT.\n\n");
+        cuerpo.append("Saludos,\nEquipo CITT");
+
+        mensaje.setText(cuerpo.toString());
 
         try {
             mailSender.send(mensaje);

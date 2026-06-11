@@ -190,24 +190,27 @@ public class SolicitudServiceImpl implements SolicitudService {
         solicitud.setEstadoSolicitud(estadoDb);
         Solicitud guardada = solicitudRepository.save(solicitud);
 
+        SolicitudResponseDTO dtoResponse = mapToDTO(guardada);
+
         // 📧 GATILLAR CORREOS AUTOMÁTICOS CONECTADOS A TU EMAILSERVICE REAL
         if (nombreEstado.equals("RECHAZADA")) {
             emailService.enviarCorreoRechazo(
-                    guardada.getUsuario().getEmail(),
-                    guardada.getIdSolicitud(),
+                    dtoResponse.getEmailUsuario(),
+                    dtoResponse.getIdSolicitud(),
                     guardada.getMotivoRechazo()
             );
         } else if (nombreEstado.equals("APROBADA")) {
             emailService.enviarCorreoAprobacion(
-                    guardada.getUsuario().getEmail(),
-                    guardada.getIdSolicitud(),
-                    guardada.getEspacio() != null ? guardada.getEspacio().getNombre() : null,
-                    guardada.getFecha(),
-                    guardada.getHoraInicio()
+                    dtoResponse.getEmailUsuario(),
+                    dtoResponse.getIdSolicitud(),
+                    dtoResponse.getNombreEspacio(),
+                    dtoResponse.getNombresArticulos(),
+                    dtoResponse.getFecha(),
+                    dtoResponse.getHoraInicio()
             );
         }
 
-        return mapToDTO(guardada);
+        return dtoResponse;
     }
 
     @Override
