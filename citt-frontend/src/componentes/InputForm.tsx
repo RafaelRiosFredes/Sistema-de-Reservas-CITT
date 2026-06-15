@@ -17,12 +17,12 @@ const InputForm: React.FC<InputFormProps> = ({
     <div className="form-group">
       <label className="form-label">{label}</label>
       <input
-        className={`form-input ${esError ? "border-error focus:border-error focus:ring-error" : ""} ${className}`}
+        className={`form-input ${esError ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""} ${className}`}
         {...props}
       />
       {mensajeAyuda && (
         <span
-          className={`block mt-1 text-sm ${esError ? "text-error" : "text-gray-500"}`}
+          className={`block mt-1 text-xs font-medium ${esError ? "text-red-500" : "text-gray-500"}`}
         >
           {mensajeAyuda}
         </span>

@@ -76,12 +76,30 @@ export const FormularioSolicitudPage: React.FC = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsj, setErrorMsj] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    fecha: "",
+    horaInicio: "",
+    horaFin: "",
+    proposito: "",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsj("");
+    setSuccessMsg("");
+    setFieldErrors({ fecha: "", horaInicio: "", horaFin: "", proposito: "" });
 
-    if (!proposito || !fecha || !horaInicio || !horaFin) {
+    let hasErrors = false;
+    const newErrors = { fecha: "", horaInicio: "", horaFin: "", proposito: "" };
+
+    if (!fecha) { newErrors.fecha = "Este campo es requerido"; hasErrors = true; }
+    if (!horaInicio) { newErrors.horaInicio = "Este campo es requerido"; hasErrors = true; }
+    if (!horaFin) { newErrors.horaFin = "Este campo es requerido"; hasErrors = true; }
+    if (!proposito) { newErrors.proposito = "Este campo es requerido"; hasErrors = true; }
+
+    if (hasErrors) {
+      setFieldErrors(newErrors);
       setErrorMsj("Por favor, completa todos los campos obligatorios.");
       return;
     }
@@ -113,8 +131,11 @@ export const FormularioSolicitudPage: React.FC = () => {
         requerimientos: requerimientos.length > 0 ? requerimientos : []
       });
 
-      // Navigate a mis solicitudes
-      navigate("/solicitudes");
+      // Muestra mensaje de éxito y espera antes de redirigir
+      setSuccessMsg("Solicitud creada exitosamente");
+      setTimeout(() => {
+        navigate("/solicitudes");
+      }, 1500);
 
     } catch (error: any) {
       console.error(error);
@@ -153,7 +174,7 @@ export const FormularioSolicitudPage: React.FC = () => {
             </h2>
           </div>
           
-          <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-6">
+          <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-6" noValidate>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-2">
@@ -162,11 +183,11 @@ export const FormularioSolicitudPage: React.FC = () => {
                 </label>
                 <input 
                   type="date" 
-                  required
                   value={fecha}
-                  onChange={e => setFecha(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700 outline-none" 
+                  onChange={e => { setFecha(e.target.value); setFieldErrors(p => ({...p, fecha: ""})); }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.fecha ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
                 />
+                {fieldErrors.fecha && <span className="text-red-500 text-xs font-medium">{fieldErrors.fecha}</span>}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -191,13 +212,13 @@ export const FormularioSolicitudPage: React.FC = () => {
                 </label>
                 <input 
                   type="time" 
-                  required
                   min="08:00"
                   max="22:00"
                   value={horaInicio}
-                  onChange={e => setHoraInicio(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700 outline-none" 
+                  onChange={e => { setHoraInicio(e.target.value); setFieldErrors(p => ({...p, horaInicio: ""})); }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.horaInicio ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
                 />
+                {fieldErrors.horaInicio && <span className="text-red-500 text-xs font-medium">{fieldErrors.horaInicio}</span>}
               </div>
 
               <div className="flex flex-col gap-2">
@@ -206,13 +227,13 @@ export const FormularioSolicitudPage: React.FC = () => {
                 </label>
                 <input 
                   type="time" 
-                  required
                   min="08:00"
                   max="22:00"
                   value={horaFin}
-                  onChange={e => setHoraFin(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700 outline-none" 
+                  onChange={e => { setHoraFin(e.target.value); setFieldErrors(p => ({...p, horaFin: ""})); }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.horaFin ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
                 />
+                {fieldErrors.horaFin && <span className="text-red-500 text-xs font-medium">{fieldErrors.horaFin}</span>}
               </div>
             </div>
 
@@ -239,13 +260,13 @@ export const FormularioSolicitudPage: React.FC = () => {
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-gray-700">Propósito de la solicitud</label>
               <textarea 
-                required
                 rows={4}
                 value={proposito}
-                onChange={e => setProposito(e.target.value)}
+                onChange={e => { setProposito(e.target.value); setFieldErrors(p => ({...p, proposito: ""})); }}
                 placeholder="Indica brevemente para qué necesitas los recursos (Ej: Trabajo de título, proyecto personal, clase práctica...)"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700 outline-none resize-none" 
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none resize-none ${fieldErrors.proposito ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
               />
+              {fieldErrors.proposito && <span className="text-red-500 text-xs font-medium">{fieldErrors.proposito}</span>}
             </div>
 
             {canRequestExclusividad && (
@@ -267,6 +288,13 @@ export const FormularioSolicitudPage: React.FC = () => {
             {errorMsj && (
               <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
                 {errorMsj}
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="p-4 bg-green-50 text-green-700 rounded-xl text-sm font-medium border border-green-100 flex items-center gap-2">
+                <CheckCircle size={18} />
+                {successMsg}
               </div>
             )}
 

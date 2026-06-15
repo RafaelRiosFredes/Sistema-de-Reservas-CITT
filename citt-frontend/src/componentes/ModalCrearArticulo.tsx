@@ -32,6 +32,9 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
   const [estados, setEstados] = useState<EstadoArticuloDTO[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    nombreArticulo: "",
+  });
 
   // Agrupamos el estado en un solo objeto para facilitar su manejo
   const [formData, setFormData] = useState({
@@ -88,6 +91,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
         comentarios: "",
       });
       setErrorMsg("");
+      setFieldErrors({ nombreArticulo: "" });
     }
   }, [isOpen]);
 
@@ -103,15 +107,23 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setFieldErrors({ nombreArticulo: "" });
+    let hasError = false;
+    
+    if (!formData.nombreArticulo.trim()) {
+      setFieldErrors({ nombreArticulo: "El nombre es obligatorio" });
+      hasError = true;
+    }
+
     // VALIDACIONES BÁSICAS
     if (
       !formData.nombreArticulo.trim() ||
       !formData.idCategoria ||
       !formData.idEstadoArticulo
     ) {
-      setErrorMsg(
-        "El nombre, la categoría y el estado son campos obligatorios.",
-      );
+      if (!hasError) {
+        setErrorMsg("La categoría y el estado son campos obligatorios.");
+      }
       return;
     }
     if (formData.codigoDuoc && formData.codigoDuoc.trim().length !== 13) {
@@ -180,7 +192,7 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} titulo="Añadir Nuevo Artículo">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {errorMsg && (
           <div className="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -203,8 +215,13 @@ export const ModalCrearArticulo: React.FC<ModalCrearArticuloProps> = ({
                   placeholder="Ej: Monitor Dell 24 pulgadas"
                   name="nombreArticulo"
                   value={formData.nombreArticulo}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => {
+                    handleChange(e);
+                    setFieldErrors((prev) => ({ ...prev, nombreArticulo: "" }));
+                    setErrorMsg("");
+                  }}
+                  esError={!!fieldErrors.nombreArticulo}
+                  mensajeAyuda={fieldErrors.nombreArticulo}
                 />
               </div>
 

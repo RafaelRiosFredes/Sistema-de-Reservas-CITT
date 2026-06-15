@@ -12,10 +12,18 @@ export const ModalCrearEspacio = ({ isOpen, onClose, onSuccess }: ModalCrearEspa
   const [nombre, setNombre] = useState("");
   const [capacidad, setCapacidad] = useState(10);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({ nombre: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({ nombre: "" });
+    
+    if (!nombre.trim()) {
+      setFieldErrors({ nombre: "El nombre del espacio es obligatorio" });
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
@@ -41,7 +49,7 @@ export const ModalCrearEspacio = ({ isOpen, onClose, onSuccess }: ModalCrearEspa
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} titulo="Registrar Nuevo Espacio">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2" noValidate>
         {error && (
           <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm border border-red-200">
             {error}
@@ -53,11 +61,16 @@ export const ModalCrearEspacio = ({ isOpen, onClose, onSuccess }: ModalCrearEspa
           <input 
             type="text" 
             value={nombre} 
-            onChange={(e) => setNombre(e.target.value)}
+            onChange={(e) => {
+              setNombre(e.target.value);
+              setFieldErrors({ nombre: "" });
+            }}
             placeholder="Ej: Laboratorio Mac" 
-            className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
-            required 
+            className={`p-3 border rounded-lg focus:ring-2 outline-none transition-all ${fieldErrors.nombre ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'}`}
           />
+          {fieldErrors.nombre && (
+            <span className="text-red-500 text-xs font-medium mt-1">{fieldErrors.nombre}</span>
+          )}
         </div>
         
         <div className="flex flex-col gap-1">
