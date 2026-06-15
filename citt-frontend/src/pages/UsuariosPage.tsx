@@ -46,7 +46,7 @@ const UsuariosPage = () => {
       try {
         const response = await api.get('/auth/perfil');
         setUserData(response.data);
-        
+
         // SEGURIDAD: Validar que el rol guardado en localStorage
         // realmente pertenece a los roles que el SERVIDOR devolvió.
         // Si alguien manipuló el localStorage, este check lo detecta.
@@ -86,14 +86,14 @@ const UsuariosPage = () => {
 
   // Maneja la selección múltiple de roles como "cajas chequeables" para registro
   const handleToggleRol = (rol: string) => {
-    setRolesSeleccionados(prev => 
+    setRolesSeleccionados(prev =>
       prev.includes(rol) ? prev.filter(r => r !== rol) : [...prev, rol]
     );
   };
 
   // Maneja la selección de roles en el modal de edición
   const handleToggleRolEdicion = (rol: string) => {
-    setRolesEdicion(prev => 
+    setRolesEdicion(prev =>
       prev.includes(rol) ? prev.filter(r => r !== rol) : [...prev, rol]
     );
   };
@@ -173,7 +173,7 @@ const UsuariosPage = () => {
   };
 
   // Filtrar usuarios
-  const usuariosFiltrados = usuarios.filter(u => 
+  const usuariosFiltrados = usuarios.filter(u =>
     u.email.toLowerCase().includes(busqueda.toLowerCase())
   );
 
@@ -195,7 +195,7 @@ const UsuariosPage = () => {
             Actualmente estás navegando con el rol <span className="font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-md">{rolActivoActual}</span>. Esta sección es exclusiva para administradores.
           </p>
 
-          <button 
+          <button
             onClick={() => navigate('/perfil')}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-md shadow-blue-200 active:scale-95 flex items-center justify-center gap-2 mt-2"
           >
@@ -236,12 +236,12 @@ const UsuariosPage = () => {
               {TODOS_LOS_ROLES.map(rol => {
                 const seleccionado = rolesEdicion.includes(rol);
                 return (
-                  <div 
+                  <div
                     key={rol}
                     onClick={() => handleToggleRolEdicion(rol)}
                     className={`p-3 rounded-xl border-2 cursor-pointer flex items-center gap-2 transition-all duration-200 active:scale-95 select-none
-                      ${seleccionado 
-                        ? 'border-blue-600 bg-blue-50 text-blue-700' 
+                      ${seleccionado
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : 'border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:bg-slate-50'}`}
                   >
                     <div className={`flex items-center justify-center w-4 h-4 rounded border ${seleccionado ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300'}`}>
@@ -271,7 +271,7 @@ const UsuariosPage = () => {
 
 
       <div className="w-full mx-auto px-6 py-10">
-        
+
 
 
         {/* MENSAJES GLOBALES */}
@@ -289,7 +289,7 @@ const UsuariosPage = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* PANEL IZQUIERDO: FORMULARIO DE REGISTRO */}
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 sticky top-28">
@@ -300,14 +300,14 @@ const UsuariosPage = () => {
 
               <form onSubmit={handleRegistrarUsuario} className="space-y-6">
                 <div>
-                  <InputForm 
-                    label="Correo Institucional" 
-                    type="email" 
+                  <InputForm
+                    label="Correo Institucional"
+                    type="email"
                     placeholder="ejemplo@duoc.cl"
-                    value={emailNuevo} 
-                    onChange={(e) => setEmailNuevo(e.target.value)} 
-                    required 
-                    disabled={isLoading} 
+                    value={emailNuevo}
+                    onChange={(e) => setEmailNuevo(e.target.value)}
+                    required
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -317,12 +317,12 @@ const UsuariosPage = () => {
                     {TODOS_LOS_ROLES.map(rol => {
                       const seleccionado = rolesSeleccionados.includes(rol);
                       return (
-                        <div 
+                        <div
                           key={rol}
                           onClick={() => handleToggleRol(rol)}
                           className={`p-2.5 rounded-xl border-2 cursor-pointer flex items-center gap-2 transition-all duration-200 active:scale-95 select-none
-                            ${seleccionado 
-                              ? 'border-blue-600 bg-blue-50 text-blue-700' 
+                            ${seleccionado
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
                               : 'border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:bg-slate-50'}`}
                         >
                           <div className={`flex items-center justify-center w-4 h-4 rounded border ${seleccionado ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300'}`}>
@@ -347,13 +347,13 @@ const UsuariosPage = () => {
           {/* PANEL DERECHO: LISTA DE USUARIOS */}
           <div className="lg:col-span-8 space-y-6">
             <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-              
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
                   <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><Users size={20}/></div>
                   Usuarios Registrados <span className="bg-slate-100 text-slate-500 text-sm py-1 px-2.5 rounded-full">{usuarios.length}</span>
                 </h3>
-                
+
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Search size={18} />
