@@ -33,13 +33,15 @@ const UsuariosPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // 🔥 ESTADO NUEVO PARA EL ERROR ROJO DEL INPUT
+  const [emailError, setEmailError] = useState('');
+
   // Estados del modal de edición
   const [showEditModal, setShowEditModal] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState<UsuarioData | null>(null);
   const [rolesEdicion, setRolesEdicion] = useState<string[]>([]);
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
-
 
   useEffect(() => {
     const fetchPerfilYUsuarios = async () => {
@@ -100,8 +102,17 @@ const UsuariosPage = () => {
 
   const handleRegistrarUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailNuevo) {
-      setErrorMsg('Debe ingresar un correo institucional.');
+    setEmailError(''); // Limpiar errores visuales previos
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    // 🔥 VALIDACIONES PERSONALIZADAS SIN USAR EL GLOBO GRIS NATIVO
+    if (!emailNuevo.trim()) {
+      setEmailError('El correo institucional es obligatorio.');
+      return;
+    }
+    if (!emailNuevo.includes('@') || !emailNuevo.split('@')[1]) {
+      setEmailError('La dirección de correo está incompleta.');
       return;
     }
     if (rolesSeleccionados.length === 0) {
@@ -109,8 +120,6 @@ const UsuariosPage = () => {
       return;
     }
 
-    setErrorMsg('');
-    setSuccessMsg('');
     setIsLoading(true);
 
     try {
@@ -123,7 +132,14 @@ const UsuariosPage = () => {
       setRolesSeleccionados([]);
       cargarUsuarios(); // Recargar la lista
     } catch (error: any) {
-      setErrorMsg(error.response?.data?.mensaje || 'Error al registrar el usuario. Verifique los datos e intente nuevamente.');
+      const msgError = error.response?.data?.mensaje || 'Error al registrar el usuario. Verifique los datos e intente nuevamente.';
+
+      //  ERROR DE CORREO EXISTENTE
+      if (msgError.toLowerCase().includes('correo') || msgError.toLowerCase().includes('institución') || msgError.toLowerCase().includes('permiten')) {
+        setEmailError(msgError);
+      } else {
+        setErrorMsg(msgError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -298,17 +314,23 @@ const UsuariosPage = () => {
                 Registrar Usuario
               </h3>
 
-              <form onSubmit={handleRegistrarUsuario} className="space-y-6">
+              {/* NOVALIDATE */}
+              <form onSubmit={handleRegistrarUsuario} className="space-y-6" noValidate>
                 <div>
                   <InputForm
                     label="Correo Institucional"
                     type="email"
                     placeholder="ejemplo@duoc.cl"
                     value={emailNuevo}
-                    onChange={(e) => setEmailNuevo(e.target.value)}
-                    required
+                    onChange={(e) => {
+                      setEmailNuevo(e.target.value);
+                      setEmailError(''); // Quitar error al escribir
+                    }}
                     disabled={isLoading}
+                    esError={!!emailError} // Si hay error, pone el borde rojo al input
                   />
+
+                  {emailError && <span className="text-red-500 text-xs mt-1.5 block font-medium">{emailError}</span>}
                 </div>
 
                 <div>
