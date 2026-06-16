@@ -104,7 +104,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             } else {
                 int choquesSala = solicitudRepository.contarChoquesDeHorario(espacio.getId(), dto.getFecha(), dto.getHoraInicio(), dto.getHoraFin());
                 if (choquesSala > 0) {
-                    throw new ReglaNegocioException("El espacio seleccionado ya tiene reservas en el horario seleccionado.");
+                    throw new ReglaNegocioException("El espacio seleccionado ya tiene reservas en el horario seleccionado.", org.springframework.http.HttpStatus.CONFLICT);
                 }
             }
             solicitud.setEspacio(espacio);
@@ -125,7 +125,7 @@ public class SolicitudServiceImpl implements SolicitudService {
 
                 if (stockDisponible < req.getCantidad()) {
                     throw new ReglaNegocioException("No hay stock suficiente para " + cat.getNombreCategoria() + " marca " + marcaNormalizada +
-                            ". Solicitados: " + req.getCantidad() + ", Disponibles: " + stockDisponible);
+                            ". Solicitados: " + req.getCantidad() + ", Disponibles: " + stockDisponible, org.springframework.http.HttpStatus.CONFLICT);
                 }
 
                 RequerimientoArticulo requerimiento = RequerimientoArticulo.builder()

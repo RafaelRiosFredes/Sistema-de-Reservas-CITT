@@ -46,11 +46,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> manejarReglaNegocioException(ReglaNegocioException ex) {
         ErrorResponseDTO error = ErrorResponseDTO.builder()
                 .mensaje(ex.getMessage())
-                .status(HttpStatus.BAD_REQUEST.value()) // Código 400
+                .status(ex.getStatus().value()) // Usa el código dinámico (400 o 409)
                 .fecha(LocalDateTime.now())
                 .build();
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(error, ex.getStatus());
     }
+
 
     /**
      * Captura errores de autenticación de Spring Security (ej: claves incorrectas, usuario inexistente).
