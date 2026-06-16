@@ -8,6 +8,9 @@ import cl.duoc.citt.citt_backend.repositories.RolRepository;
 import cl.duoc.citt.citt_backend.repositories.UsuarioRepository;
 import cl.duoc.citt.citt_backend.exception.ReglaNegocioException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,6 +30,22 @@ public class UsuarioService {
         return usuarioRepository.findAll().stream()
                 .map(this::mapearADTO) // Convierte cada entidad Usuario en un objeto
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene una página de usuarios, opcionalmente filtrando por email.
+     */
+    public Page<UsuarioResponseDTO> obtenerTodosPaginados(int page, int size, String buscar) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Usuario> usuariosPage;
+        
+        if (buscar != null && !buscar.trim().isEmpty()) {
+            usuariosPage = usuarioRepository.findByEmailContainingIgnoreCase(buscar.trim(), pageable);
+        } else {
+            usuariosPage = usuarioRepository.findAll(pageable);
+        }
+        
+        return usuariosPage.map(this::mapearADTO);
     }
 
     /**
@@ -82,7 +101,7 @@ public class UsuarioService {
     }
 
     /**
-     * MÉTODO DE APOYO (Mapper):
+     * Mapper:
      * Convierte un objeto 'Usuario' (que tiene la contraseña y datos sensibles)
      * en un 'UsuarioResponseDTO' (que solo tiene datos públicos y seguros).
      */

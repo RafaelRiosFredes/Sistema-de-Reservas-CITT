@@ -4,6 +4,7 @@ import cl.duoc.citt.citt_backend.dto.UsuarioResponseDTO;
 import cl.duoc.citt.citt_backend.dto.UsuarioUpdateDTO;
 import cl.duoc.citt.citt_backend.services.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,11 +26,14 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.buscarPorEmail(email));
     }
 
-    // Lista completa de usuarios registrados. Solo COORDINADOR y DIRECTOR
+    // Lista paginada de usuarios registrados. Solo COORDINADOR y DIRECTOR
     @GetMapping
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
-    public ResponseEntity<List<UsuarioResponseDTO>> obtenerTodos() {
-        return ResponseEntity.ok(usuarioService.obtenerTodos());
+    public ResponseEntity<Page<UsuarioResponseDTO>> obtenerTodos(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String buscar) {
+        return ResponseEntity.ok(usuarioService.obtenerTodosPaginados(page, size, buscar));
     }
 
     // Actualiza los datos de un usuario específico. Solo COORDINADOR y DIRECTOR
