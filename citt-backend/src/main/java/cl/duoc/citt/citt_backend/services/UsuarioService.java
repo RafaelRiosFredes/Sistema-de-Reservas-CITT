@@ -1,5 +1,6 @@
 package cl.duoc.citt.citt_backend.services;
 
+import cl.duoc.citt.citt_backend.dto.RegistroRequestDTO;
 import cl.duoc.citt.citt_backend.dto.UsuarioResponseDTO;
 import cl.duoc.citt.citt_backend.dto.UsuarioUpdateDTO;
 import cl.duoc.citt.citt_backend.model.Rol;
@@ -114,4 +115,6 @@ public class UsuarioService {
                 .debeCambiarPassword(usuario.isDebeCambiarPassword())
                 .build();
     }
+
+
 }
