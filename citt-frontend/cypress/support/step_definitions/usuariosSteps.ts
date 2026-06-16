@@ -9,7 +9,7 @@ Given("que soy un administrador en la pantalla de Gestión de Usuarios", () => {
   cy.get('input[type="password"]').type("admin123");
   cy.contains("button", "Iniciar Sesión").click();
   
-  // Seleccionamos el rol de COORDINADOR (Administrador)
+  // Seleccionamos el rol de COORDINADOR
   cy.contains("COORDINADOR").click();
   cy.contains("button", "Ingresar como COORDINADOR").click();
 
@@ -19,12 +19,11 @@ Given("que soy un administrador en la pantalla de Gestión de Usuarios", () => {
   cy.wait(1000);
 });
 
-// Variable global para guardar el correo generado en este test
+// Variable global para guardar el correo generado
 let correoGenerado = "";
 
 When("escribo el correo {string} en el formulario de registro", (email: string) => {
   //  Generamos un correo con un número al azar
-  // para burlar al backend y que nunca nos tire Error 400 de "ya existe".
   if (email === "nuevo@duocuc.cl") {
     correoGenerado = `nuevo${Math.floor(Math.random() * 10000)}@duocuc.cl`;
   } else {
