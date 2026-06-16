@@ -40,7 +40,7 @@ public class AutenticacionControllerTest {
     }
 
     @Test
-    @DisplayName("PRU-01: Login exitoso retorna 200 ")
+    @DisplayName("PRU-02: Login exitoso retorna 200 ")
     void loginExitoso_RetornaOk() throws Exception {
         System.out.println("\n▶ EJECUTANDO PRU-02: LOGIN CON CLAVE CORRECTA");
 
