@@ -229,7 +229,14 @@ public class ArticuloServiceImpl implements ArticuloService{
     }
 
     @Override
+    @Transactional(readOnly = false)
     public void eliminarFisicamente(Long id) {
-        articuloRepository.eliminarFisicamente(id);
+        try {
+            articuloRepository.eliminarFisicamente(id);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new ReglaNegocioException(
+                    "No se puede eliminar físicamente el artículo porque tiene historial de préstamos o solicitudes asociadas. " +
+                    "Use el borrado lógico en su lugar.");
+        }
     }
 }

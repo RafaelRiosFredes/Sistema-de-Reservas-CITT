@@ -12,21 +12,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
-    @Query(value = "SELECT COUNT(*) FROM articulo WHERE LOWER(codigo_duoc) = LOWER(:codigoDuoc)", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM articulo WHERE LOWER(codigo_duoc) = LOWER(CAST(:codigoDuoc AS TEXT))", nativeQuery = true)
     int contarPorCodigoDuocIgnorandoFiltros(@Param("codigoDuoc") String codigoDuoc);
 
     @Query(value = "SELECT COUNT(*) FROM articulo WHERE id_categoria = :idCategoria", nativeQuery = true)
     int contarHistoricoPorCategoriaId(@Param("idCategoria") Long idCategoria);
 
     @Query(value = "SELECT * FROM articulo " +
-            "WHERE (:idCategoria IS NULL OR id_categoria = :idCategoria) " +
-            "AND (:nombre IS NULL OR LOWER(nombre_articulo) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
-            "AND (:mostrarEliminados = true OR eliminado = false) " +
+            "WHERE (CAST(:idCategoria AS BIGINT) IS NULL OR id_categoria = CAST(:idCategoria AS BIGINT)) " +
+            "AND (CAST(:nombre AS TEXT) IS NULL OR LOWER(nombre_articulo) LIKE LOWER(CONCAT('%', CAST(:nombre AS TEXT), '%'))) " +
+            "AND (CAST(:mostrarEliminados AS BOOLEAN) = true OR eliminado = false) " +
             "ORDER BY nombre_articulo ASC",
             countQuery = "SELECT COUNT(*) FROM articulo " +
-                    "WHERE (:idCategoria IS NULL OR id_categoria = :idCategoria) " +
-                    "AND (:nombre IS NULL OR LOWER(nombre_articulo) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
-                    "AND (:mostrarEliminados = true OR eliminado = false)",
+                    "WHERE (CAST(:idCategoria AS BIGINT) IS NULL OR id_categoria = CAST(:idCategoria AS BIGINT)) " +
+                    "AND (CAST(:nombre AS TEXT) IS NULL OR LOWER(nombre_articulo) LIKE LOWER(CONCAT('%', CAST(:nombre AS TEXT), '%'))) " +
+                    "AND (CAST(:mostrarEliminados AS BOOLEAN) = true OR eliminado = false)",
             nativeQuery = true)
     Page<Articulo> findAllAdminNativo(
             @Param("idCategoria") Long idCategoria,
@@ -42,11 +42,11 @@ public interface ArticuloRepository extends JpaRepository<Articulo,Long> {
     // countQuery para que Spring sepa cuántas páginas totales hay cuando usamos JOIN FETCH
     @Query(value = "SELECT a FROM Articulo a JOIN FETCH a.categoria JOIN FETCH a.estadoArticulo " +
             "WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria) " +
-            "AND (:nombre IS NULL OR LOWER(a.nombreArticulo) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
+            "AND (CAST(:nombre AS STRING) IS NULL OR LOWER(a.nombreArticulo) LIKE LOWER(CONCAT('%', CAST(:nombre AS STRING), '%'))) " +
             "ORDER BY a.nombreArticulo ASC",
             countQuery = "SELECT COUNT(a) FROM Articulo a " +
                     "WHERE (:idCategoria IS NULL OR a.categoria.idCategoria = :idCategoria) " +
-                    "AND (:nombre IS NULL OR LOWER(a.nombreArticulo) LIKE LOWER(CONCAT('%', :nombre, '%')))")
+                    "AND (CAST(:nombre AS STRING) IS NULL OR LOWER(a.nombreArticulo) LIKE LOWER(CONCAT('%', CAST(:nombre AS STRING), '%')))")
     Page<Articulo> findAllPaginadoFiltrado(@Param("idCategoria") Long idCategoria, @Param("nombre") String nombre, Pageable pageable);
 
     @Query(value = "SELECT c.id_categoria, c.nombre_categoria, a.marca, COUNT(a.id_articulo) AS total " +

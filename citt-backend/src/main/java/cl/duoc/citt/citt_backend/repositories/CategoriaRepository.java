@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CategoriaRepository extends JpaRepository<Categoria,Long> {
-    @Query(value = "SELECT COUNT(*) FROM categoria WHERE LOWER(nombre_categoria) = LOWER(:nombre)", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM categoria WHERE LOWER(nombre_categoria) = LOWER(CAST(:nombre AS TEXT))", nativeQuery = true)
     int contarPorNombreIgnorandoFiltros(@Param("nombre") String nombre);
 
     List<Categoria> findByEsTecnologicoTrue();
