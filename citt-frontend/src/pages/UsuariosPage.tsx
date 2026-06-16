@@ -25,6 +25,9 @@ const UsuariosPage = () => {
   // Estados del listado de usuarios
   const [usuarios, setUsuarios] = useState<UsuarioData[]>([]);
   const [busqueda, setBusqueda] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   // Estados del formulario de registro
   const [emailNuevo, setEmailNuevo] = useState('');
@@ -32,8 +35,6 @@ const UsuariosPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
-  // 🔥 ESTADO NUEVO PARA EL ERROR ROJO DEL INPUT
   const [emailError, setEmailError] = useState('');
 
   // Estados del modal de edición
@@ -42,6 +43,7 @@ const UsuariosPage = () => {
   const [rolesEdicion, setRolesEdicion] = useState<string[]>([]);
   const [isEditLoading, setIsEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
+
 
   useEffect(() => {
     const fetchPerfilYUsuarios = async () => {
@@ -67,9 +69,7 @@ const UsuariosPage = () => {
           return;
         }
 
-        // Si tiene permiso, cargar la lista de usuarios
-        cargarUsuarios();
-
+        // Si tiene permiso, la lista se cargará con el useEffect de currentPage
       } catch (error) {
         navigate('/');
       }
@@ -77,14 +77,26 @@ const UsuariosPage = () => {
     fetchPerfilYUsuarios();
   }, [navigate]);
 
-  const cargarUsuarios = async () => {
+  const cargarUsuarios = async (page = currentPage, search = busqueda) => {
     try {
-      const response = await api.get('/usuarios');
-      setUsuarios(response.data);
+      const response = await api.get(`/usuarios?page=${page}&size=10&buscar=${search}`);
+      setUsuarios(response.data.content || []);
+      setTotalPages(response.data.totalPages || 0);
+      setTotalElements(response.data.totalElements || 0);
     } catch (error) {
       console.error('Error al cargar usuarios', error);
     }
   };
+
+  // Efecto para buscar y paginar (se ejecuta cuando cambia la página o la búsqueda)
+  useEffect(() => {
+    if (userData && !accesoDenegado) {
+      const delaySearch = setTimeout(() => {
+        cargarUsuarios(currentPage, busqueda);
+      }, 300); // Pequeño delay para no saturar al escribir rápido
+      return () => clearTimeout(delaySearch);
+    }
+  }, [currentPage, busqueda, userData, accesoDenegado]);
 
   // Maneja la selección múltiple de roles como "cajas chequeables" para registro
   const handleToggleRol = (rol: string) => {
@@ -106,7 +118,7 @@ const UsuariosPage = () => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    // 🔥 VALIDACIONES PERSONALIZADAS SIN USAR EL GLOBO GRIS NATIVO
+    // validaciones
     if (!emailNuevo.trim()) {
       setEmailError('El correo institucional es obligatorio.');
       return;
@@ -134,7 +146,6 @@ const UsuariosPage = () => {
     } catch (error: any) {
       const msgError = error.response?.data?.mensaje || 'Error al registrar el usuario. Verifique los datos e intente nuevamente.';
 
-      //  ERROR DE CORREO EXISTENTE
       if (msgError.toLowerCase().includes('correo') || msgError.toLowerCase().includes('institución') || msgError.toLowerCase().includes('permiten')) {
         setEmailError(msgError);
       } else {
@@ -187,11 +198,6 @@ const UsuariosPage = () => {
       navigate('/');
     }
   };
-
-  // Filtrar usuarios
-  const usuariosFiltrados = usuarios.filter(u =>
-    u.email.toLowerCase().includes(busqueda.toLowerCase())
-  );
 
   if (!userData) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -286,7 +292,7 @@ const UsuariosPage = () => {
       </Modal>
 
 
-      <div className="w-full mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-6 py-10">
 
 
 
@@ -308,29 +314,23 @@ const UsuariosPage = () => {
 
           {/* PANEL IZQUIERDO: FORMULARIO DE REGISTRO */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 sticky top-28">
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
               <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><UserPlus size={20}/></div>
                 Registrar Usuario
               </h3>
 
-              {/* NOVALIDATE */}
-              <form onSubmit={handleRegistrarUsuario} className="space-y-6" noValidate>
+              <form onSubmit={handleRegistrarUsuario} className="space-y-6">
                 <div>
                   <InputForm
                     label="Correo Institucional"
                     type="email"
                     placeholder="ejemplo@duoc.cl"
                     value={emailNuevo}
-                    onChange={(e) => {
-                      setEmailNuevo(e.target.value);
-                      setEmailError(''); // Quitar error al escribir
-                    }}
+                    onChange={(e) => setEmailNuevo(e.target.value)}
+                    required
                     disabled={isLoading}
-                    esError={!!emailError} // Si hay error, pone el borde rojo al input
                   />
-
-                  {emailError && <span className="text-red-500 text-xs mt-1.5 block font-medium">{emailError}</span>}
                 </div>
 
                 <div>
@@ -373,7 +373,7 @@ const UsuariosPage = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
                   <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><Users size={20}/></div>
-                  Usuarios Registrados <span className="bg-slate-100 text-slate-500 text-sm py-1 px-2.5 rounded-full">{usuarios.length}</span>
+                  Usuarios Registrados <span className="bg-slate-100 text-slate-500 text-sm py-1 px-2.5 rounded-full">{totalElements}</span>
                 </h3>
 
                 <div className="relative">
@@ -384,7 +384,10 @@ const UsuariosPage = () => {
                     type="text"
                     placeholder="Buscar por correo..."
                     value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
+                    onChange={(e) => {
+                      setBusqueda(e.target.value);
+                      setCurrentPage(0);
+                    }}
                     className="pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 w-full sm:w-64 text-sm font-medium transition-all"
                   />
                 </div>
@@ -402,8 +405,8 @@ const UsuariosPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {usuariosFiltrados.length > 0 ? (
-                      usuariosFiltrados.map((usuario) => (
+                    {usuarios.length > 0 ? (
+                      usuarios.map((usuario) => (
                         <tr key={usuario.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="p-4 text-sm text-slate-500 font-medium">#{usuario.id}</td>
                           <td className="p-4">
@@ -439,6 +442,29 @@ const UsuariosPage = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* PAGINACIÓN */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                    disabled={currentPage === 0}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${currentPage === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:border-blue-500 hover:text-blue-600 shadow-sm'}`}
+                  >
+                    Anterior
+                  </button>
+                  <span className="text-sm font-medium text-slate-600">
+                    Página <span className="font-bold text-slate-800">{currentPage + 1}</span> de <span className="font-bold text-slate-800">{totalPages}</span>
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                    disabled={currentPage >= totalPages - 1}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${currentPage >= totalPages - 1 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 border border-slate-200 hover:border-blue-500 hover:text-blue-600 shadow-sm'}`}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
 
             </div>
           </div>
