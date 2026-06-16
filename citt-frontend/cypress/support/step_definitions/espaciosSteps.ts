@@ -1,25 +1,33 @@
 import { Given, When, Then } from "@badeball/cypress-cucumber-preprocessor";
 
 Given("que soy un administrador en la pantalla de Gestión de Espacios", () => {
-  // ruta principal donde se encuentra el Login
+  // 1. Visitar la página base (login)
   cy.visit("/");
-  
-  // Ingresamos credenciales
+
+  // 2. Ingresar credenciales de administrador
   cy.get('input[type="email"]').type("admin@duoc.cl");
   cy.get('input[type="password"]').type("admin123");
+  cy.intercept('GET', '**/api/usuarios/mi-perfil').as('getPerfil');
   cy.contains("button", "Iniciar Sesión").click();
 
-  cy.contains("COORDINADOR").click();
-  cy.contains("button", "Ingresar como COORDINADOR").click();
+  cy.wait('@getPerfil').then((interception) => {
+    const roles = interception.response?.body?.roles || [];
+    if (roles.length > 1) {
+      // Hace clic dinámicamente en el primer rol que tenga el usuario
+      cy.contains(roles[0]).click();
+      cy.contains("button", `Ingresar como ${roles[0]}`).click();
+    }
+  });
 
-  //  Ir a la ruta de espacios
-  cy.visit("/espacios"); // Esta es la ruta
-  
-  //  Esperamos que cargue la tabla inicial
+  // 5. Ir a la ruta de espacios
+  cy.visit("/espacios");
+
+  // 6. Esperamos que cargue la tabla inicial
   cy.wait(1000);
 });
 
 When("abro el modal de {string}", (modalName: string) => {
+  // El botón en EspaciosPage.tsx dice "Agregar Espacio"
   cy.contains("button", "Agregar Espacio").click();
 });
 
@@ -28,11 +36,11 @@ When("lleno el formulario con el nombre {string} y capacidad {string}", (nombre:
   const nombreAleatorio = `${nombre}-${Math.floor(Math.random() * 10000)}`;
   cy.wrap(nombreAleatorio).as('nombreGenerado');
 
-  // Input del nombre
+  // Input del nombre (placeholder="Ej: Laboratorio Mac")
   cy.get('input[placeholder="Ej: Laboratorio Mac"]').type(nombreAleatorio);
-  
 
-  // Usamos {selectAll} para sobreescribir el valor de forma segura.
+  // Para los input number en React, a veces clear() falla y deja un 0.
+  // Usamos {selectall} para sobreescribir el valor de forma segura.
   cy.get('input[type="number"]').type('{selectall}' + capacidad);
 });
 
