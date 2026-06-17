@@ -1,0 +1,29 @@
+node_modules
+.vite
+dist
+dist-ssr
+*.local
+.env
+.env.*
+
+### Cypress ###
+cypress/
+cypress.config.ts
+
+### IntelliJ IDEA / VSCode ###
+.idea
+.vscode
+*.iws
+*.iml
+*.ipr
+
+### Git ###
+.git
+.gitignore
+
+### Mac ###
+.DS_Store
+
+### Docker ###
+Dockerfile
+.dockerignore
