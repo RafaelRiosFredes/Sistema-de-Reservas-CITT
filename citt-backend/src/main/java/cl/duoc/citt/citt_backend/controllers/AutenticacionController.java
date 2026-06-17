@@ -17,6 +17,9 @@ public class AutenticacionController {
 
     private final AutenticacionService autenticacionService;
 
+    // true en producción (HTTPS), false en local (HTTP)
+    private static final boolean EN_PRODUCCION = System.getenv("PRODUCTION") != null;
+
     // Solo coordinadores y directores pueden registrar usuarios manualmente
     @PostMapping("/registro")
     @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
@@ -36,23 +39,22 @@ public class AutenticacionController {
         AutenticacionResponseDTO authData = autenticacionService.iniciarSesion(solicitud);
 
         // Cookie para el ACCESS TOKEN - dura 1 hora
-        // secure(false) y sameSite("Lax") para que funcione en desarrollo local con HTTP
         ResponseCookie tokenCookie = ResponseCookie.from("auth_token", authData.getToken())
                 .httpOnly(true)
-                .secure(false)
+                .secure(EN_PRODUCCION)
                 .path("/")
                 .maxAge(3600)
-                .sameSite("Lax")
+                .sameSite(EN_PRODUCCION ? "None" : "Lax")
                 .build();
 
         // Cookie para el REFRESH TOKEN - dura 7 días
         // Solo se envía al endpoint de refrescar token por seguridad
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", authData.getRefreshToken())
                 .httpOnly(true)
-                .secure(false)
+                .secure(EN_PRODUCCION)
                 .path("/api/auth/refrescar-token")
                 .maxAge(604800)
-                .sameSite("Lax")
+                .sameSite(EN_PRODUCCION ? "None" : "Lax")
                 .build();
 
         response.addHeader("Set-Cookie", tokenCookie.toString());
@@ -81,19 +83,19 @@ public class AutenticacionController {
         // Se actualiza la cookie del access token con el nuevo token generado
         ResponseCookie tokenCookie = ResponseCookie.from("auth_token", nuevoTokens.getToken())
                 .httpOnly(true)
-                .secure(false)
+                .secure(EN_PRODUCCION)
                 .path("/")
                 .maxAge(3600)
-                .sameSite("Lax")
+                .sameSite(EN_PRODUCCION ? "None" : "Lax")
                 .build();
 
         // Se actualiza también la cookie del refresh token
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", nuevoTokens.getRefreshToken())
                 .httpOnly(true)
-                .secure(false)
+                .secure(EN_PRODUCCION)
                 .path("/api/auth/refrescar-token")
                 .maxAge(604800)
-                .sameSite("Lax")
+                .sameSite(EN_PRODUCCION ? "None" : "Lax")
                 .build();
 
         response.addHeader("Set-Cookie", tokenCookie.toString());

@@ -38,13 +38,16 @@ public class DataInitializer implements CommandLineRunner {
 
             Usuario admin = Usuario.builder()
                     .email("admin@duoc.cl")
-                    .password(passwordEncoder.encode("admin123"))
+                    .password(passwordEncoder.encode(
+                            System.getenv("ADMIN_PASSWORD") != null
+                                    ? System.getenv("ADMIN_PASSWORD")
+                                    : "admin123"
+                    ))
                     .roles(Set.of(rolDirector, rolCoordinador))
                     .debeCambiarPassword(false)
                     .build();
             usuarioRepository.save(admin);
-            System.out.println(">>> Usuario inicial MULTI-ROL creado: admin@duoc.cl / admin123");
+            System.out.println(">>> Usuario inicial MULTI-ROL creado: admin@duoc.cl");
         }
-
     }
 }
