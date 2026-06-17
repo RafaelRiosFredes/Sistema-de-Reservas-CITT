@@ -49,7 +49,7 @@ public class SolicitudController {
 
     @Operation(summary = "Cambiar estado de solicitud (Admin)", description = "Aprueba, rechaza o finaliza una solicitud.")
     @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRole('COORDINADOR', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('AYUDANTE', 'DOCENTE', 'COORDINADOR', 'DIRECTOR')")
     public ResponseEntity<SolicitudResponseDTO> cambiarEstado(
             @PathVariable Long id,
             @Valid @RequestBody ActualizarEstadoSolicitudRequestDTO dto) {

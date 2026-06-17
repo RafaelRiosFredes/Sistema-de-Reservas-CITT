@@ -64,12 +64,11 @@ export const SolicitudesPage: React.FC = () => {
   const isStaff = ["AYUDANTE", "DOCENTE", "COORDINADOR", "DIRECTOR"].includes(
     rolActivo.toUpperCase()
   );
-  const isDirectorOrCoordinador = ["COORDINADOR", "DIRECTOR"].includes(rolActivo.toUpperCase());
 
   const [misSolicitudes, setMisSolicitudes] = useState<SolicitudDTO[]>([]);
   const [todasSolicitudes, setTodasSolicitudes] = useState<SolicitudDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [vistaActiva, setVistaActiva] = useState<"mias" | "todas">(isDirectorOrCoordinador ? "todas" : "mias");
+  const [vistaActiva, setVistaActiva] = useState<"mias" | "todas">(isStaff ? "todas" : "mias");
   const [filtro, setFiltro] = useState("");
 
   // Modal states
@@ -280,21 +279,19 @@ export const SolicitudesPage: React.FC = () => {
         {/* TABS PARA STAFF */}
         {isStaff && (
           <div className="flex gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm w-max">
-            {isDirectorOrCoordinador && (
-              <button
-                onClick={() => setVistaActiva("todas")}
-                className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
-                  vistaActiva === "todas"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <FileText size={16} />
-                  Todas las Solicitudes
-                </span>
-              </button>
-            )}
+            <button
+              onClick={() => setVistaActiva("todas")}
+              className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
+                vistaActiva === "todas"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <FileText size={16} />
+                Todas las Solicitudes
+              </span>
+            </button>
             <button
               onClick={() => setVistaActiva("mias")}
               className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
@@ -308,21 +305,6 @@ export const SolicitudesPage: React.FC = () => {
                 Mis Solicitudes
               </span>
             </button>
-            {!isDirectorOrCoordinador && (
-              <button
-                onClick={() => setVistaActiva("todas")}
-                className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer ${
-                  vistaActiva === "todas"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <FileText size={16} />
-                  Todas las Solicitudes
-                </span>
-              </button>
-            )}
           </div>
         )}
 
@@ -514,7 +496,6 @@ export const SolicitudesPage: React.FC = () => {
                               </button>
                             )}
                             {s.estado === "PENDIENTE" && (
-                              isDirectorOrCoordinador ? (
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => {
@@ -538,11 +519,6 @@ export const SolicitudesPage: React.FC = () => {
                                     Rechazar
                                   </button>
                                 </div>
-                              ) : (
-                                <span className="text-xs text-slate-400 italic px-2">
-                                  Esperando aprobación
-                                </span>
-                              )
                             )}
                           </div>
                         </td>
