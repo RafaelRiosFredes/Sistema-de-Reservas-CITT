@@ -12,8 +12,9 @@ services:
       POSTGRES_DB: cittdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+      TZ: America/Santiago
     volumes:
-      # Guarda la info de la BD en Docker para no perder datos si se apaga
+      # Guarda la info de la BD en un volumen de Docker para no perder datos si se apaga
       - postgres_data:/var/lib/postgresql/data
 
   # 2. BACKEND (Spring Boot)
@@ -32,6 +33,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - JWT_SECRET=tu_clave_secreta_super_segura_para_el_citt_duoc
       - PRODUCTION=true
+      - TZ=America/Santiago
     depends_on:
       - db # Espera a que postgres encienda antes de iniciar
 
