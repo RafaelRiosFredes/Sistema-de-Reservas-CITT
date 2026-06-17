@@ -22,9 +22,8 @@ When("presiono el botón {string}", (textoDelBoton: string) => {
 });
 
 Then("el sistema me redirige al Dashboard según mi rol", () => {
-  //  Como somos usuarios multi-rol, nos aparecerá un modal intermedio.
-  // Seleccionamos la opción "COORDINADOR".
-  cy.contains("COORDINADOR").click();
+  // Seleccionamos la opción "COORDINADOR" con mayor tiempo de espera por si el backend está lento en la primera petición
+  cy.contains("COORDINADOR", { timeout: 10000 }).click();
   
   //  Confirmamos la selección haciendo clic en el botón del modal
   cy.contains("button", "Ingresar como COORDINADOR").click();
