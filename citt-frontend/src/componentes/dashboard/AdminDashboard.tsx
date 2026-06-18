@@ -47,7 +47,7 @@ export const AdminDashboard: React.FC = () => {
       bgLight: "bg-blue-50"
     },
     {
-      titulo: "Inmobiliario",
+      titulo: "Mobiliario",
       valor: estadisticas?.totalInmobiliario ?? 0,
       icono: Box,
       color: "bg-indigo-500",

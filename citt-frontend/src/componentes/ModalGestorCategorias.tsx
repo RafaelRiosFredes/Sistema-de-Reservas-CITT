@@ -83,7 +83,7 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
     } catch (error: any) {
       setErrorMsg(
         error.response?.data?.mensaje ||
-          "Error al cambiar el estado de la categoría.",
+        "Error al cambiar el estado de la categoría.",
       );
     }
   };
@@ -211,15 +211,14 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
                             className="w-full px-2 py-1 border border-blue-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
                             <option value="true">Tecnológico</option>
-                            <option value="false">Inmobiliario</option>
+                            <option value="false">Mobiliario</option>
                           </select>
                         ) : (
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
-                              cat.esTecnologico
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${cat.esTecnologico
                                 ? "bg-purple-50 text-purple-700 border-purple-200"
                                 : "bg-amber-50 text-amber-700 border-amber-200"
-                            }`}
+                              }`}
                           >
                             {cat.esTecnologico ? (
                               <Cpu size={10} />
@@ -234,11 +233,10 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
                       {/* COLUMNA ESTADO */}
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                            isActivo
+                          className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isActivo
                               ? "bg-green-100 text-green-700"
                               : "bg-slate-200 text-slate-500"
-                          }`}
+                            }`}
                         >
                           {/* Traducimos el booleano a texto visual */}
                           {isActivo ? "ACTIVO" : "INACTIVO"}
@@ -289,11 +287,10 @@ export const ModalGestorCategorias: React.FC<ModalGestorCategoriasProps> = ({
                             {/* EL SWITCH DE ESTADO (Desactivar / Restaurar) */}
                             <button
                               onClick={() => handleToggleEstado(cat)}
-                              className={`p-1.5 rounded-full transition-colors ${
-                                isActivo
+                              className={`p-1.5 rounded-full transition-colors ${isActivo
                                   ? "bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600"
                                   : "bg-green-50 text-green-500 hover:bg-green-100 hover:text-green-600"
-                              }`}
+                                }`}
                               title={
                                 isActivo
                                   ? "Desactivar Categoría"

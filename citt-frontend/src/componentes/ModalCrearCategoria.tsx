@@ -58,7 +58,7 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
     } catch (error: any) {
       setErrorMsg(
         error.response?.data?.mensaje ||
-          "Error inesperado al crear la categoría. Por favor, intenta nuevamente.",
+        "Error inesperado al crear la categoría. Por favor, intenta nuevamente.",
       );
     } finally {
       setIsLoading(false);
@@ -109,11 +109,10 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
               <button
                 type="button"
                 onClick={() => setEsTecnologico(true)}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                  esTecnologico
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${esTecnologico
                     ? "border-blue-600 bg-blue-50 text-blue-700"
                     : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-                }`}
+                  }`}
               >
                 <Cpu
                   size={24}
@@ -125,17 +124,16 @@ export const ModalCrearCategoria: React.FC<ModalCrearCategoriaProps> = ({
               <button
                 type="button"
                 onClick={() => setEsTecnologico(false)}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                  !esTecnologico
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${!esTecnologico
                     ? "border-amber-500 bg-amber-50 text-amber-700"
                     : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-                }`}
+                  }`}
               >
                 <Box
                   size={24}
                   className={`mb-2 ${!esTecnologico ? "text-amber-500" : "text-slate-400"}`}
                 />
-                <span className="text-sm font-bold">Inmobiliario</span>
+                <span className="text-sm font-bold">Mobiliario</span>
               </button>
             </div>
             <p className="text-xs text-slate-400 mt-2 font-medium">
