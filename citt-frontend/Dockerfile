@@ -7,8 +7,8 @@ WORKDIR /app
 # Copiamos package.json y package-lock.json
 COPY package*.json ./
 
-# Instalamos dependencias
-RUN npm install
+# Instalamos dependencias saltando la descarga pesada de Cypress
+RUN CYPRESS_INSTALL_BINARY=0 npm install
 
 # Copiamos el resto del código y construimos la versión de producción
 COPY . .

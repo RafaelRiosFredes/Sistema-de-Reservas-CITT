@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: 'https://gestion-reservas-e-inventario-citt.onrender.com/api',
   // Obligatorio para enviar y recibir cookies entre frontend y backend
   withCredentials: true,
   headers: {
@@ -109,7 +109,7 @@ api.interceptors.response.use(
         const storedRefreshToken = localStorage.getItem('refreshToken');
 
         // Pedimos un nuevo access token usando el refresh token guardado
-        const refreshResponse = await axios.post('http://localhost:8080/api/auth/refrescar-token', {
+        const refreshResponse = await axios.post('https://gestion-reservas-e-inventario-citt.onrender.com/api/auth/refrescar-token', {
           refreshToken: storedRefreshToken
         }, { withCredentials: true });
 
