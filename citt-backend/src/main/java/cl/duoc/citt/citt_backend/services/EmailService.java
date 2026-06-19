@@ -58,7 +58,7 @@ public class EmailService {
         restTemplate.exchange(url, HttpMethod.POST, request, String.class);
     }
 
-    // NOTIFICACIONES INFORMATIVAS: Se usa @Async
+    // correo de aprobacion a una reserva
     @Async
     public void enviarCorreoAprobacion(String destinatario, Long idSolicitud, String nombreEspacio, java.util.List<String> articulos, LocalDate fecha, LocalTime horaInicio) {
         StringBuilder cuerpo = new StringBuilder();
@@ -90,7 +90,7 @@ public class EmailService {
         }
     }
 
-    // NOTIFICACIONES INFORMATIVAS: Se usa @Async
+    // correo de rechazo a una reserva
     @Async
     public void enviarCorreoRechazo(String destinatario, Long idSolicitud, String motivoRechazo) {
         StringBuilder cuerpo = new StringBuilder();
@@ -109,12 +109,7 @@ public class EmailService {
         }
     }
 
-    // ==============================================================================
-    // OPERACIONES CRÍTICAS DE SEGURIDAD E IDENTIDAD: NO SE USA @Async
-    // El hilo principal DEBE esperar. Si el correo no sale, la base de datos
-    // debe hacer rollback. La integridad es más importante que la velocidad.
-    // ==============================================================================
-
+        // correo de contraseña provisoria
     public void enviarPasswordProvisoria(String destinatario, String password) {
         String cuerpo = "Hola,\n\nTu cuenta ha sido creada exitosamente. Tu contraseña provisoria es: <b>" + password +
                 "</b>\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT";
@@ -129,7 +124,7 @@ public class EmailService {
             );
         }
     }
-
+        //  // correo de contraseña de recuperacion
     public void enviarPasswordRecuperacion(String destinatario, String passwordTemporal) {
         String cuerpo = "Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: <b>" + passwordTemporal +
                 "</b>\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT";

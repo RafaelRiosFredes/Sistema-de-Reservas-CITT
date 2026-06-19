@@ -159,24 +159,16 @@ public class AutenticacionService {
 
     /**
      * LOGOUT: Invalida la sesión eliminando el Refresh Token.
+     * Recibe el valor del refresh token desde la cookie.
      */
-    public void cerrarSesion(String authHeader) {
-        String email = null;
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-            email = auth.getName();
-        } else if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            email = jwtUtilidades.extraerUsernameInclusoSiExpirado(token);
+    @Transactional
+    public void cerrarSesion(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return; // No hay token que invalidar, pero no fallamos
         }
 
-        if (email == null) throw new ReglaNegocioException("Sesión no identificada");
-
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
-
-        refreshTokenService.eliminarPorUsuario(usuario.getId());
+        refreshTokenRepository.findByToken(refreshToken)
+                .ifPresent(rt -> refreshTokenService.eliminarPorUsuario(rt.getUsuario().getId()));
     }
 
     /**

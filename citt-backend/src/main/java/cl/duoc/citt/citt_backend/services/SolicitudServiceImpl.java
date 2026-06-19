@@ -272,14 +272,16 @@ public class SolicitudServiceImpl implements SolicitudService {
         // 3. CAMBIO DE ESTADOS ATÓMICO
         if (!articulosFisicos.isEmpty()) {
             EstadoArticulo prestado = estadoArticuloRepository.findAll().stream()
-                    .filter(e -> e.getNombreEstado().equalsIgnoreCase("PRESTADO")).findFirst().get();
+                    .filter(e -> e.getNombreEstado().equalsIgnoreCase("PRESTADO")).findFirst()
+                    .orElseThrow(() -> new ReglaNegocioException("Estado PRESTADO no configurado en la BD."));
             articulosFisicos.forEach(art -> art.setEstadoArticulo(prestado));
             articuloRepository.saveAll(articulosFisicos);
             solicitud.setArticulos(articulosFisicos);
         }
 
         EstadoEspacio ocupado = estadoEspacioRepository.findAll().stream()
-                .filter(e -> e.getNombre().equalsIgnoreCase("OCUPADO")).findFirst().get();
+                .filter(e -> e.getNombre().equalsIgnoreCase("OCUPADO")).findFirst()
+                .orElseThrow(() -> new ReglaNegocioException("Estado OCUPADO no configurado en la BD."));
 
         if (Boolean.TRUE.equals(solicitud.getExclusividad())) {
             List<Espacio> todosEspacios = espacioRepository.findAll();
@@ -296,7 +298,8 @@ public class SolicitudServiceImpl implements SolicitudService {
             espacioRepository.save(solicitud.getEspacio());
         }
 
-        EstadoSolicitud enProceso = estadoSolicitudRepository.findByNombreIgnoreCase("EN PROCESO").get();
+        EstadoSolicitud enProceso = estadoSolicitudRepository.findByNombreIgnoreCase("EN PROCESO")
+                .orElseThrow(() -> new ReglaNegocioException("Estado EN PROCESO no configurado en la BD."));
         solicitud.setEstadoSolicitud(enProceso);
 
         return mapToDTO(solicitudRepository.save(solicitud));
@@ -314,9 +317,11 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
 
         EstadoArticulo disponibleArt = estadoArticuloRepository.findAll().stream()
-                .filter(e -> e.getNombreEstado().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
+                .filter(e -> e.getNombreEstado().equalsIgnoreCase("DISPONIBLE")).findFirst()
+                .orElseThrow(() -> new ReglaNegocioException("Estado DISPONIBLE de artículo no configurado en la BD."));
         EstadoArticulo danadoArt = estadoArticuloRepository.findAll().stream()
-                .filter(e -> e.getNombreEstado().equalsIgnoreCase("DAÑADO")).findFirst().get();
+                .filter(e -> e.getNombreEstado().equalsIgnoreCase("DAÑADO")).findFirst()
+                .orElseThrow(() -> new ReglaNegocioException("Estado DAÑADO de artículo no configurado en la BD."));
 
         // 2. PROCESAMIENTO DE ARTÍCULOS
         if (solicitud.getArticulos() != null && !solicitud.getArticulos().isEmpty()) {
@@ -342,9 +347,11 @@ public class SolicitudServiceImpl implements SolicitudService {
 
         // 3. PROCESAMIENTO DEL ESPACIO FÍSICO (Comentarios exclusivos por daño en devolución)
         EstadoEspacio disponibleEspacio = estadoEspacioRepository.findAll().stream()
-                .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE")).findFirst().get();
+                .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE")).findFirst()
+                .orElseThrow(() -> new ReglaNegocioException("Estado DISPONIBLE de espacio no configurado en la BD."));
         EstadoEspacio danadoEspacio = estadoEspacioRepository.findAll().stream()
-                .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst().get();
+                .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst()
+                .orElseThrow(() -> new ReglaNegocioException("Estado DAÑADO de espacio no configurado en la BD."));
 
         if (Boolean.TRUE.equals(solicitud.getExclusividad())) {
             List<Espacio> todosEspacios = espacioRepository.findAll();
@@ -383,7 +390,8 @@ public class SolicitudServiceImpl implements SolicitudService {
             espacioRepository.save(solicitud.getEspacio());
         }
 
-        EstadoSolicitud finalizada = estadoSolicitudRepository.findByNombreIgnoreCase("FINALIZADA").get();
+        EstadoSolicitud finalizada = estadoSolicitudRepository.findByNombreIgnoreCase("FINALIZADA")
+                .orElseThrow(() -> new ReglaNegocioException("Estado FINALIZADA no configurado en la BD."));
         solicitud.setEstadoSolicitud(finalizada);
 
         return mapToDTO(solicitudRepository.save(solicitud));

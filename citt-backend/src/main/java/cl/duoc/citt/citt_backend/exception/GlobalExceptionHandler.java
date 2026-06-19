@@ -26,11 +26,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponseDTO> manejarValidacion(MethodArgumentNotValidException ex) {
         String mensajes = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .map(fe -> fe.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
         ErrorResponseDTO error = ErrorResponseDTO.builder()
-                .mensaje("Error de validación: " + mensajes)
+                .mensaje(mensajes)
                 .status(HttpStatus.BAD_REQUEST.value())
                 .fecha(LocalDateTime.now())
                 .build();
