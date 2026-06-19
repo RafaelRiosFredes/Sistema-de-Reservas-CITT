@@ -2,6 +2,7 @@ package cl.duoc.citt.citt_backend.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -21,12 +22,16 @@ import java.util.Map;
 @Slf4j
 public class EmailService {
 
-    // Configuración de Brevo API
-    private final String remitente = "citt.ts01@gmail.com";
-    private final String apiKey = "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";
+    // Configuración de Brevo API — leída desde variables de entorno
+    @Value("${brevo.sender-email:citt.ts01@gmail.com}")
+    private String remitente;
+
+    @Value("${brevo.api-key}")
+    private String apiKey;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     private void enviarPorBrevo(String destinatario, String asunto, String contenido) throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
         String url = "https://api.brevo.com/v3/smtp/email";
 
         HttpHeaders headers = new HttpHeaders();
@@ -116,7 +121,7 @@ public class EmailService {
 
         try {
             enviarPorBrevo(destinatario, "Tu cuenta CITT ha sido creada - Contraseña Provisoria", cuerpo);
-            log.info("Correo provisorio enviado exitosamente a {}", destinatario);
+            log.info("Correo enviado exitosamente a {}", destinatario);
         } catch (Exception e) {
             log.error("Error crítico al enviar correo a {}: {}", destinatario, e.getMessage());
             throw new cl.duoc.citt.citt_backend.exception.ReglaNegocioException(
@@ -126,7 +131,8 @@ public class EmailService {
     }
 
     public void enviarPasswordRecuperacion(String destinatario, String passwordTemporal) {
-        String cuerpo = "Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: <b>" + passwordTemporal + "</b>";
+        String cuerpo = "Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: <b>" + passwordTemporal +
+                "</b>\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT";
 
         try {
             enviarPorBrevo(destinatario, "Recuperación de Contraseña - CITT", cuerpo);
