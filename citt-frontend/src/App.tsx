@@ -14,10 +14,12 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ArticulosPage } from "./pages/ArticulosPage";
 import { SolicitarPrestamoPage } from "./pages/SolicitarPrestamoPage";
 import { SolicitudesPage } from "./pages/SolicitudesPage";
+import SessionTimeout from "./componentes/sessionTimeout";
 
 function App() {
   return (
     <BrowserRouter>
+      <SessionTimeout />
       <Routes>
         <Route path="/" element={<LoginPage />} />
 
