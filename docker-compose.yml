@@ -32,6 +32,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
       - JWT_SECRET=tu_clave_secreta_super_segura_para_el_citt_duoc
+      - BREVO_API_KEY=${BREVO_API_KEY:-}
       - PRODUCTION=true
       - TZ=America/Santiago
     depends_on:
