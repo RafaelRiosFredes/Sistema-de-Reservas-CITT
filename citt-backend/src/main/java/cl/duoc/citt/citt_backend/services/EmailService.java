@@ -2,6 +2,7 @@ package cl.duoc.citt.citt_backend.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -21,12 +22,16 @@ import java.util.Map;
 @Slf4j
 public class EmailService {
 
-    // Configuración de Brevo API
-    private final String remitente = "citt.ts01@gmail.com";
-    private final String apiKey = "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";
+    // Configuración de Brevo API — leída desde variables de entorno
+    @Value("${brevo.sender-email:citt.ts01@gmail.com}")
+    private String remitente;
+
+    @Value("${brevo.api-key}")
+    private String apiKey;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     private void enviarPorBrevo(String destinatario, String asunto, String contenido) throws Exception {
-        RestTemplate restTemplate = new RestTemplate();
         String url = "https://api.brevo.com/v3/smtp/email";
 
         HttpHeaders headers = new HttpHeaders();
@@ -53,7 +58,7 @@ public class EmailService {
         restTemplate.exchange(url, HttpMethod.POST, request, String.class);
     }
 
-    // NOTIFICACIONES INFORMATIVAS: Se usa @Async
+    // correo de aprobacion a una reserva
     @Async
     public void enviarCorreoAprobacion(String destinatario, Long idSolicitud, String nombreEspacio, java.util.List<String> articulos, LocalDate fecha, LocalTime horaInicio) {
         StringBuilder cuerpo = new StringBuilder();
@@ -85,7 +90,7 @@ public class EmailService {
         }
     }
 
-    // NOTIFICACIONES INFORMATIVAS: Se usa @Async
+    // correo de rechazo a una reserva
     @Async
     public void enviarCorreoRechazo(String destinatario, Long idSolicitud, String motivoRechazo) {
         StringBuilder cuerpo = new StringBuilder();
@@ -104,12 +109,7 @@ public class EmailService {
         }
     }
 
-    // ==============================================================================
-    // OPERACIONES CRÍTICAS DE SEGURIDAD E IDENTIDAD: NO SE USA @Async
-    // El hilo principal DEBE esperar. Si el correo no sale, la base de datos
-    // debe hacer rollback. La integridad es más importante que la velocidad.
-    // ==============================================================================
-
+        // correo de contraseña provisoria
     public void enviarPasswordProvisoria(String destinatario, String password) {
         String cuerpo = "Hola,\n\nTu cuenta ha sido creada exitosamente. Tu contraseña provisoria es: <b>" + password +
                 "</b>\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT";
@@ -124,10 +124,10 @@ public class EmailService {
             );
         }
     }
-
+        //  // correo de contraseña de recuperacion
     public void enviarPasswordRecuperacion(String destinatario, String passwordTemporal) {
-        String cuerpo = "Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: <b>" + passwordTemporal + "</b>";
-
+        String cuerpo = "Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: <b>" + passwordTemporal +
+                "</b>\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT";
         try {
             enviarPorBrevo(destinatario, "Recuperación de Contraseña - CITT", cuerpo);
             log.info("Correo de recuperación enviado exitosamente a {}", destinatario);
