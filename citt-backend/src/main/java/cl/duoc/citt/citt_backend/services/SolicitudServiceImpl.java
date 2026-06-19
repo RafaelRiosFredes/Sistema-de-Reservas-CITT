@@ -46,6 +46,10 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new ReglaNegocioException("El horario de reservas del CITT es estrictamente entre las 08:00 y las 22:00 horas.");
         }
 
+        if (dto.getFecha().isBefore(LocalDate.now())) {
+            throw new ReglaNegocioException("La fecha de la reserva no puede estar en el pasado.");
+        }
+
         if (dto.getFecha().equals(LocalDate.now()) && dto.getHoraInicio().isBefore(LocalTime.now())) {
             throw new ReglaNegocioException("La hora de inicio de la reserva no puede estar en el pasado.");
         }

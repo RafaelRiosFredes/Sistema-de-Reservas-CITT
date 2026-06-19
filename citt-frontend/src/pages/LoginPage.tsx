@@ -106,6 +106,10 @@ const LoginPage = () => {
 
       const perfilResponse = await api.get('/auth/perfil');
       const roles: string[] = perfilResponse.data.roles;
+      const userEmail: string = perfilResponse.data.email;
+
+      localStorage.setItem('userEmail', userEmail || '');
+      localStorage.setItem('userRoles', JSON.stringify(roles || []));
 
       if (roles.length > 1) {
         setRolesDisponibles(roles);
@@ -182,6 +186,10 @@ const LoginPage = () => {
 
       const perfilResponse = await api.get('/auth/perfil');
       const roles: string[] = perfilResponse.data.roles;
+      const userEmail: string = perfilResponse.data.email;
+
+      localStorage.setItem('userEmail', userEmail || '');
+      localStorage.setItem('userRoles', JSON.stringify(roles || []));
 
       if (roles.length > 1) {
         setRolesDisponibles(roles);

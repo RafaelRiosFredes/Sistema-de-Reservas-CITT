@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
 const api = axios.create({
-  baseURL: 'https://gestion-reservas-e-inventario-citt.onrender.com/api',
+  baseURL: API_BASE_URL,
   // Obligatorio para enviar y recibir cookies entre frontend y backend
   withCredentials: true,
   headers: {
@@ -37,12 +39,6 @@ api.interceptors.request.use(
       config.url = config.url.replace('/auth/perfil', '/usuarios/mi-perfil');
     }
 
-    // Adjunta el token JWT automáticamente en cada petición si existe en localStorage
-    const token = localStorage.getItem('token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     return config;
   },
   (error) => {
@@ -55,19 +51,6 @@ api.interceptors.request.use(
 // =================================================================
 api.interceptors.response.use(
   (response) => {
-    // Al hacer login exitoso, guardamos el token y los roles en localStorage
-    if (response.config.url?.includes('/auth/login') && response.status === 200) {
-      const data = response.data;
-      if (data && data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userEmail', data.email || '');
-        localStorage.setItem('userRoles', JSON.stringify(data.roles || []));
-
-        if (data.refreshToken) {
-          localStorage.setItem('refreshToken', data.refreshToken);
-        }
-      }
-    }
     return response;
   },
   async (error) => {
@@ -106,17 +89,8 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const storedRefreshToken = localStorage.getItem('refreshToken');
-
-        // Pedimos un nuevo access token usando el refresh token guardado
-        const refreshResponse = await axios.post('https://gestion-reservas-e-inventario-citt.onrender.com/api/auth/refrescar-token', {
-          refreshToken: storedRefreshToken
-        }, { withCredentials: true });
-
-        // Guardamos el nuevo token en localStorage
-        if (refreshResponse.data && refreshResponse.data.token) {
-          localStorage.setItem('token', refreshResponse.data.token);
-        }
+        // Pedimos un nuevo access token usando el refresh token (viaja automáticamente en la cookie)
+        await axios.post(`${API_BASE_URL}/auth/refrescar-token`, {}, { withCredentials: true });
 
         // Procesamos las peticiones que estaban esperando
         processQueue(null);
