@@ -132,9 +132,25 @@ public class AutenticacionController {
             }
         }
 
-        // Borramos las cookies del navegador poniendo Max-Age en 0
-        response.addHeader("Set-Cookie", "auth_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax");
-        response.addHeader("Set-Cookie", "refresh_token=; Max-Age=0; Path=/api/auth/refrescar-token; HttpOnly; SameSite=Lax");
+        // Borramos las cookies del navegador poniendo Max-Age en 0 usando ResponseCookie para respetar los atributos
+        ResponseCookie clearTokenCookie = ResponseCookie.from("auth_token", "")
+                .httpOnly(true)
+                .secure(EN_PRODUCCION)
+                .path("/")
+                .maxAge(0)
+                .sameSite(EN_PRODUCCION ? "None" : "Lax")
+                .build();
+
+        ResponseCookie clearRefreshCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(EN_PRODUCCION)
+                .path("/api/auth/refrescar-token")
+                .maxAge(0)
+                .sameSite(EN_PRODUCCION ? "None" : "Lax")
+                .build();
+
+        response.addHeader("Set-Cookie", clearTokenCookie.toString());
+        response.addHeader("Set-Cookie", clearRefreshCookie.toString());
 
         return ResponseEntity.noContent().build();
     }
