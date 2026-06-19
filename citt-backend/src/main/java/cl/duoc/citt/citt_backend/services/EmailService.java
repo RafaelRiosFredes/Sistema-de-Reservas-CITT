@@ -2,59 +2,83 @@ package cl.duoc.citt.citt_backend.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
 
-    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
-    private String remitente;
+    // Configuración de Brevo API
+    private final String remitente = "citt.ts01@gmail.com";
+    private final String apiKey = "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";
 
-    private final JavaMailSender mailSender;
+    private void enviarPorBrevo(String destinatario, String asunto, String contenido) throws Exception {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.brevo.com/v3/smtp/email";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", apiKey);
+        headers.set("accept", "application/json");
+
+        Map<String, Object> body = new HashMap<>();
+
+        Map<String, String> sender = new HashMap<>();
+        sender.put("name", "Equipo CITT");
+        sender.put("email", remitente);
+        body.put("sender", sender);
+
+        Map<String, String> to = new HashMap<>();
+        to.put("email", destinatario);
+        body.put("to", List.of(to));
+
+        body.put("subject", asunto);
+        // Brevo usa HTML, así que convertimos los saltos de línea de Java a saltos de HTML
+        body.put("htmlContent", contenido.replace("\n", "<br>"));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+    }
 
     // NOTIFICACIONES INFORMATIVAS: Se usa @Async
-    // Si este correo falla, la reserva ya está aprobada en la base de datos.
-    // No es crítico detener el sistema por esto. Queremos velocidad.
     @Async
     public void enviarCorreoAprobacion(String destinatario, Long idSolicitud, String nombreEspacio, java.util.List<String> articulos, LocalDate fecha, LocalTime horaInicio) {
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(remitente);
-        mensaje.setTo(destinatario);
-        mensaje.setSubject("¡Tu Reserva #" + idSolicitud + " ha sido Aprobada! - CITT");
-
         StringBuilder cuerpo = new StringBuilder();
         cuerpo.append("Estimado/a Usuario,\n\n");
         cuerpo.append("Nos alegra informarte que tu solicitud de reserva #").append(idSolicitud).append(" ha sido APROBADA.\n\n");
         cuerpo.append("Detalles de la reserva:\n");
         cuerpo.append("- Fecha: ").append(fecha).append("\n");
         cuerpo.append("- Hora de inicio: ").append(horaInicio).append("\n");
-        
+
         if (nombreEspacio != null && !nombreEspacio.trim().isEmpty()) {
             cuerpo.append("- Espacio asignado: ").append(nombreEspacio).append("\n");
         }
-        
+
         if (articulos != null && !articulos.isEmpty()) {
             cuerpo.append("- Artículos solicitados:\n");
             for (String art : articulos) {
                 cuerpo.append("  * ").append(art).append("\n");
             }
         }
-        
+
         cuerpo.append("\nRecuerda presentarte a la hora indicada para hacer uso de tu reserva. Si solicitaste artículos, por favor acércate a retirarlos en el mesón.\n\n");
         cuerpo.append("Saludos,\nEquipo CITT");
 
-        mensaje.setText(cuerpo.toString());
-
         try {
-            mailSender.send(mensaje);
+            enviarPorBrevo(destinatario, "¡Tu Reserva #" + idSolicitud + " ha sido Aprobada! - CITT", cuerpo.toString());
             log.info("Notificación de aprobación enviada con éxito a {}", destinatario);
         } catch (Exception e) {
             log.error("Fallo al despachar correo de aprobación a {}: {}", destinatario, e.getMessage());
@@ -64,11 +88,6 @@ public class EmailService {
     // NOTIFICACIONES INFORMATIVAS: Se usa @Async
     @Async
     public void enviarCorreoRechazo(String destinatario, Long idSolicitud, String motivoRechazo) {
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(remitente);
-        mensaje.setTo(destinatario);
-        mensaje.setSubject("Actualización de tu Reserva #" + idSolicitud + " - CITT");
-
         StringBuilder cuerpo = new StringBuilder();
         cuerpo.append("Estimado/a Usuario,\n\n");
         cuerpo.append("Lamentamos informarte que tu solicitud de reserva #").append(idSolicitud).append(" ha sido RECHAZADA.\n\n");
@@ -77,10 +96,8 @@ public class EmailService {
         cuerpo.append("Si tienes alguna duda, por favor contáctanos o acércate al CITT.\n\n");
         cuerpo.append("Saludos,\nEquipo CITT");
 
-        mensaje.setText(cuerpo.toString());
-
         try {
-            mailSender.send(mensaje);
+            enviarPorBrevo(destinatario, "Actualización de tu Reserva #" + idSolicitud + " - CITT", cuerpo.toString());
             log.info("Notificación de rechazo enviada con éxito a {}", destinatario);
         } catch (Exception e) {
             log.error("Fallo al despachar correo de rechazo a {}: {}", destinatario, e.getMessage());
@@ -94,15 +111,11 @@ public class EmailService {
     // ==============================================================================
 
     public void enviarPasswordProvisoria(String destinatario, String password) {
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(remitente);
-        mensaje.setTo(destinatario);
-        mensaje.setSubject("Tu cuenta CITT ha sido creada - Contraseña Provisoria");
-        mensaje.setText("Hola,\n\nTu cuenta ha sido creada exitosamente. Tu contraseña provisoria es: " + password +
-                "\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT");
+        String cuerpo = "Hola,\n\nTu cuenta ha sido creada exitosamente. Tu contraseña provisoria es: <b>" + password +
+                "</b>\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT";
 
         try {
-            mailSender.send(mensaje);
+            enviarPorBrevo(destinatario, "Tu cuenta CITT ha sido creada - Contraseña Provisoria", cuerpo);
             log.info("Correo provisorio enviado exitosamente a {}", destinatario);
         } catch (Exception e) {
             log.error("Error crítico al enviar correo a {}: {}", destinatario, e.getMessage());
@@ -113,14 +126,10 @@ public class EmailService {
     }
 
     public void enviarPasswordRecuperacion(String destinatario, String passwordTemporal) {
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(remitente);
-        mensaje.setTo(destinatario);
-        mensaje.setSubject("Recuperación de Contraseña - CITT");
-        mensaje.setText("Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: " + passwordTemporal);
+        String cuerpo = "Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: <b>" + passwordTemporal + "</b>";
 
         try {
-            mailSender.send(mensaje);
+            enviarPorBrevo(destinatario, "Recuperación de Contraseña - CITT", cuerpo);
             log.info("Correo de recuperación enviado exitosamente a {}", destinatario);
         } catch (Exception e) {
             log.error("Error al enviar recuperación a {}: {}", destinatario, e.getMessage());
