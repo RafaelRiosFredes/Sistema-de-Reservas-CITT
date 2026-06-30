@@ -116,7 +116,7 @@ public class EmailService {
 
         try {
             enviarPorBrevo(destinatario, "Tu cuenta CITT ha sido creada - Contraseña Provisoria", cuerpo);
-            log.info("Correo provisorio enviado exitosamente a {}", destinatario);
+            log.info("Correo enviado exitosamente a {}", destinatario);
         } catch (Exception e) {
             log.error("Error crítico al enviar correo a {}: {}", destinatario, e.getMessage());
             throw new cl.duoc.citt.citt_backend.exception.ReglaNegocioException(
@@ -128,6 +128,7 @@ public class EmailService {
     public void enviarPasswordRecuperacion(String destinatario, String passwordTemporal) {
         String cuerpo = "Hola,\n\nHas solicitado restablecer tu contraseña.\n\nTu contraseña temporal para recuperar tu cuenta es: <b>" + passwordTemporal +
                 "</b>\n\nPor favor, inicia sesión y cámbiala.\n\nCittSaludos,\nEquipo CITT";
+
         try {
             enviarPorBrevo(destinatario, "Recuperación de Contraseña - CITT", cuerpo);
             log.info("Correo de recuperación enviado exitosamente a {}", destinatario);
