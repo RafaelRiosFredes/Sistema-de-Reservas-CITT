@@ -53,10 +53,10 @@ public class SecurityConfig {
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
 
-                // puertos frontend permitidos (Local y Vercel)
+                // puertos frontend
                 configuration.setAllowedOrigins(List.of(
-                        "http://localhost:5173",
-                        "https://sistema-de-reservas-citt.vercel.app"
+                        "http://localhost:5173", // local
+                        "http://148.116.110.191:5173" // IP publica
                 ));
 
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
