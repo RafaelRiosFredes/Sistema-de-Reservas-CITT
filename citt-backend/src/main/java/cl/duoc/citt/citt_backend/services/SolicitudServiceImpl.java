@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,12 @@ public class SolicitudServiceImpl implements SolicitudService {
 
         if (dto.getHoraInicio().isAfter(dto.getHoraFin()) || dto.getHoraInicio().equals(dto.getHoraFin())) {
             throw new ReglaNegocioException("La hora de inicio debe ser anterior a la hora de fin.");
+        }
+
+        // Validar duración mínima de 15 minutos
+        long duracionMinutos = java.time.Duration.between(dto.getHoraInicio(), dto.getHoraFin()).toMinutes();
+        if (duracionMinutos < 15) {
+            throw new ReglaNegocioException("El mínimo de tiempo de uso de una solicitud es de 15 minutos.");
         }
 
         LocalTime apertura = LocalTime.of(8, 0);
@@ -269,7 +276,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new ReglaNegocioException("Discrepancia en recursos: Los artículos físicos escaneados no coinciden en categoría, marca o cantidad exacta con lo especificado en la solicitud original.");
         }
 
-        // 3. CAMBIO DE ESTADOS ATÓMICO
+        // 3. CAMBIO DE ESTADOS ATÓMICO (Solo artículos)
         if (!articulosFisicos.isEmpty()) {
             EstadoArticulo prestado = estadoArticuloRepository.findAll().stream()
                     .filter(e -> e.getNombreEstado().equalsIgnoreCase("PRESTADO")).findFirst()
@@ -279,24 +286,10 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setArticulos(articulosFisicos);
         }
 
-        EstadoEspacio ocupado = estadoEspacioRepository.findAll().stream()
-                .filter(e -> e.getNombre().equalsIgnoreCase("OCUPADO")).findFirst()
-                .orElseThrow(() -> new ReglaNegocioException("Estado OCUPADO no configurado en la BD."));
-
-        if (Boolean.TRUE.equals(solicitud.getExclusividad())) {
-            List<Espacio> todosEspacios = espacioRepository.findAll();
-            for (Espacio esp : todosEspacios) {
-                // Solo ocupamos los que están disponibles, para no pisar mantenimientos o daños previos
-                if (esp.getEstado().getNombre().equalsIgnoreCase("DISPONIBLE") ||
-                        (solicitud.getEspacio() != null && esp.getId().equals(solicitud.getEspacio().getId()))) {
-                    esp.setEstado(ocupado);
-                }
-            }
-            espacioRepository.saveAll(todosEspacios);
-        } else if (solicitud.getEspacio() != null) {
-            solicitud.getEspacio().setEstado(ocupado);
-            espacioRepository.save(solicitud.getEspacio());
-        }
+        // NOTA: Ya NO se cambia el estado del espacio a OCUPADO.
+        // La disponibilidad temporal del espacio se controla a nivel de solicitudes
+        // (la query contarChoquesDeHorario verifica choques por fecha/hora).
+        // El estado del espacio solo refleja su condición operativa (DISPONIBLE, DAÑADO, MANTENCION).
 
         EstadoSolicitud enProceso = estadoSolicitudRepository.findByNombreIgnoreCase("EN PROCESO")
                 .orElseThrow(() -> new ReglaNegocioException("Estado EN PROCESO no configurado en la BD."));
@@ -312,8 +305,9 @@ public class SolicitudServiceImpl implements SolicitudService {
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
 
         // 1. CONTROL DE FLUJO SOBERANO: Evita re-procesar una solicitud finalizada o inactiva
-        if (!solicitud.getEstadoSolicitud().getNombre().equalsIgnoreCase("EN PROCESO")) {
-            throw new ReglaNegocioException("Operación rechazada: Solo se pueden devolver los recursos de una solicitud que esté actualmente EN PROCESO.");
+        String estadoActual = solicitud.getEstadoSolicitud().getNombre().toUpperCase();
+        if (!estadoActual.equals("EN PROCESO") && !estadoActual.equals("ATRASADO")) {
+            throw new ReglaNegocioException("Operación rechazada: Solo se pueden devolver los recursos de una solicitud que esté EN PROCESO o ATRASADO.");
         }
 
         EstadoArticulo disponibleArt = estadoArticuloRepository.findAll().stream()
@@ -343,52 +337,43 @@ public class SolicitudServiceImpl implements SolicitudService {
                 }
             }
             articuloRepository.saveAll(solicitud.getArticulos());
+
+            // Feature 4: Registrar IDs de artículos dañados en la solicitud
+            List<Long> idsDanados = solicitud.getArticulos().stream()
+                    .filter(art -> dto.getArticulosDanados().stream()
+                            .anyMatch(d -> d.getIdArticulo().equals(art.getIdArticulo())))
+                    .map(Articulo::getIdArticulo)
+                    .collect(Collectors.toList());
+            if (!idsDanados.isEmpty()) {
+                solicitud.setIdsArticulosDanados(
+                        idsDanados.stream().map(String::valueOf).collect(Collectors.joining(","))
+                );
+            }
         }
 
-        // 3. PROCESAMIENTO DEL ESPACIO FÍSICO (Comentarios exclusivos por daño en devolución)
-        EstadoEspacio disponibleEspacio = estadoEspacioRepository.findAll().stream()
-                .filter(e -> e.getNombre().equalsIgnoreCase("DISPONIBLE")).findFirst()
-                .orElseThrow(() -> new ReglaNegocioException("Estado DISPONIBLE de espacio no configurado en la BD."));
-        EstadoEspacio danadoEspacio = estadoEspacioRepository.findAll().stream()
-                .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst()
-                .orElseThrow(() -> new ReglaNegocioException("Estado DAÑADO de espacio no configurado en la BD."));
-
-        if (Boolean.TRUE.equals(solicitud.getExclusividad())) {
-            List<Espacio> todosEspacios = espacioRepository.findAll();
-            for (Espacio esp : todosEspacios) {
-                // Solo liberamos los que nosotros ocupamos (y que actualmente digan OCUPADO)
-                if (esp.getEstado().getNombre().equalsIgnoreCase("OCUPADO") ||
-                        (solicitud.getEspacio() != null && esp.getId().equals(solicitud.getEspacio().getId()))) {
-
-                    if (solicitud.getEspacio() != null && esp.getId().equals(solicitud.getEspacio().getId()) && Boolean.TRUE.equals(dto.getEspacioDanado())) {
-                        if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
-                            throw new ReglaNegocioException("Justificación obligatoria: Debe ingresar una explicación detallada indicando qué daños sufrió el espacio físico.");
-                        }
-                        esp.setEstado(danadoEspacio);
-                        esp.setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + dto.getComentarioEspacio().trim().toUpperCase());
-                    } else {
-                        esp.setEstado(disponibleEspacio);
-                        esp.setComentarios(null); // Limpiamos cualquier comentario anterior al liberar
-                    }
-                }
+        // 3. PROCESAMIENTO DEL ESPACIO FÍSICO (Solo si se reporta daño)
+        // NOTA: Ya NO se revierte el estado del espacio de OCUPADO a DISPONIBLE,
+        // porque el espacio nunca fue marcado como OCUPADO. Solo se maneja el caso de daño.
+        if (Boolean.TRUE.equals(dto.getEspacioDanado()) && solicitud.getEspacio() != null) {
+            if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
+                throw new ReglaNegocioException("Justificación obligatoria: Debe ingresar una explicación detallada indicando qué daños sufrió el espacio físico.");
             }
-            espacioRepository.saveAll(todosEspacios);
 
-        } else if (solicitud.getEspacio() != null) {
-            if (Boolean.TRUE.equals(dto.getEspacioDanado())) {
-                if (dto.getComentarioEspacio() == null || dto.getComentarioEspacio().trim().isEmpty()) {
-                    throw new ReglaNegocioException("Justificación obligatoria: Debe ingresar una explicación detallada indicando qué daños sufrió el espacio físico.");
-                }
+            EstadoEspacio danadoEspacio = estadoEspacioRepository.findAll().stream()
+                    .filter(e -> e.getNombre().equalsIgnoreCase("DAÑADO")).findFirst()
+                    .orElseThrow(() -> new ReglaNegocioException("Estado DAÑADO de espacio no configurado en la BD."));
 
-                solicitud.getEspacio().setEstado(danadoEspacio);
-                // Aquí es el único punto donde se genera el comentario de daño del espacio
-                solicitud.getEspacio().setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + dto.getComentarioEspacio().trim().toUpperCase());
-            } else {
-                solicitud.getEspacio().setEstado(disponibleEspacio);
-                solicitud.getEspacio().setComentarios(null);
-            }
+            solicitud.getEspacio().setEstado(danadoEspacio);
+            solicitud.getEspacio().setComentarios("DAÑADO EN RESERVA #" + solicitud.getIdSolicitud() + " - MOTIVO: " + dto.getComentarioEspacio().trim().toUpperCase());
             espacioRepository.save(solicitud.getEspacio());
+
+            // Feature 4: Registrar daño del espacio en la solicitud
+            solicitud.setEspacioDanadoEnDevolucion(true);
+            solicitud.setComentarioDanoEspacio(dto.getComentarioEspacio().trim());
         }
+
+        // Feature 2: Guardar timestamp real de devolución
+        solicitud.setFechaDevolucionReal(LocalDateTime.now());
 
         EstadoSolicitud finalizada = estadoSolicitudRepository.findByNombreIgnoreCase("FINALIZADA")
                 .orElseThrow(() -> new ReglaNegocioException("Estado FINALIZADA no configurado en la BD."));
@@ -479,6 +464,14 @@ public class SolicitudServiceImpl implements SolicitudService {
                         }).collect(Collectors.toList())
                                 : new ArrayList<>()
                 )
+                // Feature 2: Timestamp real de devolución
+                .fechaDevolucionReal(s.getFechaDevolucionReal())
+                // Feature 4: Rastreo de daños por solicitud
+                .espacioDanadoEnDevolucion(s.getEspacioDanadoEnDevolucion())
+                .comentarioDanoEspacio(s.getComentarioDanoEspacio())
+                .idsArticulosDanados(s.getIdsArticulosDanados())
+                // Motivo de rechazo
+                .motivoRechazo(s.getMotivoRechazo())
                 .build();
     }
 }

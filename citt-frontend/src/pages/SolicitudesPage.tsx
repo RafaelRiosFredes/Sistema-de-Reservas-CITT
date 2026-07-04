@@ -57,7 +57,7 @@ interface ArticuloDTO {
   nombreEstado: string;
 }
 
-const ESTADOS_ACTIVOS = ["PENDIENTE", "APROBADA", "EN PROCESO"];
+const ESTADOS_ACTIVOS = ["PENDIENTE", "APROBADA", "EN PROCESO", "ATRASADO"];
 
 export const SolicitudesPage: React.FC = () => {
   const rolActivo = localStorage.getItem("activeRole") || "";
@@ -91,6 +91,9 @@ export const SolicitudesPage: React.FC = () => {
   // Feedback
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Feature 5: Doble confirmación visual para aceptar
+  const [confirmarAprobacionId, setConfirmarAprobacionId] = useState<number | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -229,10 +232,11 @@ export const SolicitudesPage: React.FC = () => {
     }
   };
 
-  const handleCambiarEstado = async (idEstado: number, motivo?: string) => {
-    if (!solicitudSeleccionada) return;
+  const handleCambiarEstado = async (idEstado: number, motivo?: string, solicitudDirecta?: SolicitudDTO) => {
+    const solicitud = solicitudDirecta || solicitudSeleccionada;
+    if (!solicitud) return;
     try {
-      await api.patch(`/solicitudes/${solicitudSeleccionada.idSolicitud}/estado`, {
+      await api.patch(`/solicitudes/${solicitud.idSolicitud}/estado`, {
         idEstadoSolicitud: idEstado,
         motivo: motivo || ""
       });
@@ -461,6 +465,7 @@ export const SolicitudesPage: React.FC = () => {
                               | "EN PROCESO"
                               | "RECHAZADA"
                               | "FINALIZADA"
+                              | "ATRASADO"
                               | "DISPONIBLE"
                               | "PRESTADO"
                               | "DAÑADO"
@@ -483,7 +488,7 @@ export const SolicitudesPage: React.FC = () => {
                                 Entregar
                               </button>
                             )}
-                            {s.estado === "EN PROCESO" && (
+                            {(s.estado === "EN PROCESO" || s.estado === "ATRASADO") && (
                               <button
                                 onClick={() => {
                                   setSolicitudSeleccionada(s);
@@ -497,17 +502,30 @@ export const SolicitudesPage: React.FC = () => {
                             )}
                             {s.estado === "PENDIENTE" && (
                                 <div className="flex gap-2">
-                                  <button
-                                    onClick={() => {
-                                      setSolicitudSeleccionada(s);
-                                      // Ejecutar en el próximo ciclo de eventos para asegurar que el estado se actualice
-                                      setTimeout(() => handleCambiarEstado(2), 0);
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs font-bold hover:bg-green-100 hover:border-green-300 transition-all cursor-pointer"
-                                  >
-                                    <CheckCircle size={14} />
-                                    Aceptar
-                                  </button>
+                                  {(() => {
+                                    const isConfirmando = confirmarAprobacionId === s.idSolicitud;
+                                    return (
+                                      <button
+                                        onClick={() => {
+                                          if (isConfirmando) {
+                                            handleCambiarEstado(2, undefined, s);
+                                            setConfirmarAprobacionId(null);
+                                          } else {
+                                            setConfirmarAprobacionId(s.idSolicitud);
+                                            setTimeout(() => setConfirmarAprobacionId(null), 3000);
+                                          }
+                                        }}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                          isConfirmando
+                                            ? 'bg-green-600 text-white shadow-md scale-105 ring-2 ring-green-300'
+                                            : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 hover:border-green-300'
+                                        }`}
+                                      >
+                                        <CheckCircle size={14} />
+                                        {isConfirmando ? "¿Confirmar?" : "Aceptar"}
+                                      </button>
+                                    );
+                                  })()}
                                   <button
                                     onClick={() => {
                                       setSolicitudSeleccionada(s);

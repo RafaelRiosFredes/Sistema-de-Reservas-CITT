@@ -20,9 +20,9 @@ const EstadoActualEspacios = ({ espacios }: Props) => {
       {/* Contenedor con scroll horizontal en caso de que sean muchos laboratorios */}
       <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
         {espacios.map((e) => {
-          // Asumimos que si está "DISPONIBLE" físicamente, por ahora lo mostramos "LIBRE"
-          // A futuro aquí puedes validar contra las reservas del día.
-          const isLibre = e.estado?.toUpperCase() === "DISPONIBLE";
+          // Un espacio es "libre" si está operativo (no dañado ni en mantención)
+          const estadoUpper = e.estado?.toUpperCase() || "";
+          const isLibre = estadoUpper !== "DAÑADO" && estadoUpper !== "MANTENCION";
 
           return (
             <div 
@@ -44,7 +44,7 @@ const EstadoActualEspacios = ({ espacios }: Props) => {
                 <p className={`text-xs font-bold tracking-wide mt-1 ${
                   isLibre ? 'text-green-600' : 'text-red-500'
                 }`}>
-                  {isLibre ? 'LIBRE' : 'NO DISPONIBLE'}
+                  {isLibre ? 'LIBRE' : estadoUpper === "DAÑADO" ? 'DAÑADO' : 'EN MANTENCIÓN'}
                 </p>
               </div>
             </div>

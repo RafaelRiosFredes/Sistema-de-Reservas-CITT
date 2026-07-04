@@ -40,9 +40,9 @@ export const FormularioSolicitudPage: React.FC = () => {
     const fetchEspacios = async () => {
       try {
         const res = await api.get("/espacios");
-        // Filtramos solo los disponibles si queremos obligar a que estén disponibles,
-        // o mostramos todos y luego el backend rechaza, pero mejor filtrar por DISPONIBLE
-        const disponibles = Array.isArray(res.data) ? res.data.filter((e: any) => e.estado === "DISPONIBLE") : [];
+        // Filtramos solo los que tienen un problema operativo (DAÑADO o MANTENCION).
+        // Los espacios operativos siempre aparecen; la validación de choques horarios la hace el backend.
+        const disponibles = Array.isArray(res.data) ? res.data.filter((e: any) => e.estado !== "DAÑADO" && e.estado !== "MANTENCION") : [];
         setEspaciosDisponibles(disponibles);
       } catch (err) {
         console.error("Error cargando espacios", err);
@@ -107,6 +107,17 @@ export const FormularioSolicitudPage: React.FC = () => {
     if (horaInicio < "08:00" || horaFin > "22:00") {
       setErrorMsj("El horario de reservas es estrictamente entre las 08:00 y las 22:00 horas.");
       return;
+    }
+
+    // Validar duración mínima de 15 minutos
+    if (horaInicio && horaFin) {
+      const [hi, mi] = horaInicio.split(":").map(Number);
+      const [hf, mf] = horaFin.split(":").map(Number);
+      const diffMinutos = (hf * 60 + mf) - (hi * 60 + mi);
+      if (diffMinutos < 15) {
+        setErrorMsj("El mínimo de tiempo de uso de una solicitud es de 15 minutos.");
+        return;
+      }
     }
 
     if (!idEspacioLocal && requerimientos.length === 0) {

@@ -49,7 +49,8 @@ public class DataSeedConfig {
                         EstadoSolicitud.builder().nombre("APROBADA").build(),
                         EstadoSolicitud.builder().nombre("EN PROCESO").build(),
                         EstadoSolicitud.builder().nombre("RECHAZADA").build(), // O "DENEGADA" según tu mockup
-                        EstadoSolicitud.builder().nombre("FINALIZADA").build()
+                        EstadoSolicitud.builder().nombre("FINALIZADA").build(),
+                        EstadoSolicitud.builder().nombre("ATRASADO").build()
                 ));
                 System.out.println("Estados de solicitud inicializados con éxito.");
             }

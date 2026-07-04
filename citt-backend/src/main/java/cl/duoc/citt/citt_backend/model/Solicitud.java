@@ -45,6 +45,20 @@ public class Solicitud {
     @Column(name = "motivo_rechazo", length = 500)
     private String motivoRechazo;
 
+    // Feature 2: Timestamp real de devolución
+    @Column(name = "fecha_devolucion_real")
+    private java.time.LocalDateTime fechaDevolucionReal;
+
+    // Feature 4: Rastreo de daños por solicitud
+    @Column(name = "espacio_danado_en_devolucion")
+    private Boolean espacioDanadoEnDevolucion;
+
+    @Column(name = "comentario_dano_espacio", length = 500)
+    private String comentarioDanoEspacio;
+
+    @Column(name = "ids_articulos_danados", length = 500)
+    private String idsArticulosDanados;
+
 
 
     // --- RELACIONES ---

@@ -63,7 +63,7 @@ public class EmailService {
     public void enviarCorreoAprobacion(String destinatario, Long idSolicitud, String nombreEspacio, java.util.List<String> articulos, LocalDate fecha, LocalTime horaInicio) {
         StringBuilder cuerpo = new StringBuilder();
         cuerpo.append("Estimado/a Usuario,\n\n");
-        cuerpo.append("Nos alegra informarte que tu solicitud de reserva #").append(idSolicitud).append(" ha sido APROBADA.\n\n");
+        cuerpo.append("Nos alegra informarte que tu solicitud de reserva ha sido APROBADA.\n\n");
         cuerpo.append("Detalles de la reserva:\n");
         cuerpo.append("- Fecha: ").append(fecha).append("\n");
         cuerpo.append("- Hora de inicio: ").append(horaInicio).append("\n");
@@ -83,7 +83,7 @@ public class EmailService {
         cuerpo.append("Saludos,\nEquipo CITT");
 
         try {
-            enviarPorBrevo(destinatario, "¡Tu Reserva #" + idSolicitud + " ha sido Aprobada! - CITT", cuerpo.toString());
+            enviarPorBrevo(destinatario, "¡Tu Reserva ha sido Aprobada! - CITT", cuerpo.toString());
             log.info("Notificación de aprobación enviada con éxito a {}", destinatario);
         } catch (Exception e) {
             log.error("Fallo al despachar correo de aprobación a {}: {}", destinatario, e.getMessage());
@@ -95,14 +95,14 @@ public class EmailService {
     public void enviarCorreoRechazo(String destinatario, Long idSolicitud, String motivoRechazo) {
         StringBuilder cuerpo = new StringBuilder();
         cuerpo.append("Estimado/a Usuario,\n\n");
-        cuerpo.append("Lamentamos informarte que tu solicitud de reserva #").append(idSolicitud).append(" ha sido RECHAZADA.\n\n");
+        cuerpo.append("Lamentamos informarte que tu solicitud de reserva ha sido RECHAZADA.\n\n");
         cuerpo.append("Motivo del rechazo:\n");
         cuerpo.append(motivoRechazo != null ? motivoRechazo : "No se especificó un motivo.").append("\n\n");
         cuerpo.append("Si tienes alguna duda, por favor contáctanos o acércate al CITT.\n\n");
         cuerpo.append("Saludos,\nEquipo CITT");
 
         try {
-            enviarPorBrevo(destinatario, "Actualización de tu Reserva #" + idSolicitud + " - CITT", cuerpo.toString());
+            enviarPorBrevo(destinatario, "Actualización de tu Reserva - CITT", cuerpo.toString());
             log.info("Notificación de rechazo enviada con éxito a {}", destinatario);
         } catch (Exception e) {
             log.error("Fallo al despachar correo de rechazo a {}: {}", destinatario, e.getMessage());
@@ -137,6 +137,26 @@ public class EmailService {
             throw new cl.duoc.citt.citt_backend.exception.ReglaNegocioException(
                     "Error: No se pudo enviar el correo de recuperación."
             );
+        }
+    }
+
+    // correo de notificación de atraso en devolución
+    @Async
+    public void enviarCorreoAtraso(String destinatario, LocalDate fecha, LocalTime horaFin) {
+        StringBuilder cuerpo = new StringBuilder();
+        cuerpo.append("Estimado/a Usuario,\n\n");
+        cuerpo.append("Te informamos que tu reserva ha superado el horario límite de devolución.\n\n");
+        cuerpo.append("Detalles:\n");
+        cuerpo.append("- Fecha: ").append(fecha).append("\n");
+        cuerpo.append("- Hora límite: ").append(horaFin).append("\n\n");
+        cuerpo.append("Por favor, acércate al CITT lo antes posible para devolver los recursos.\n\n");
+        cuerpo.append("Saludos,\nEquipo CITT");
+
+        try {
+            enviarPorBrevo(destinatario, "⚠️ Reserva ATRASADA - CITT", cuerpo.toString());
+            log.info("Notificación de atraso enviada con éxito a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Fallo al despachar correo de atraso a {}: {}", destinatario, e.getMessage());
         }
     }
 }

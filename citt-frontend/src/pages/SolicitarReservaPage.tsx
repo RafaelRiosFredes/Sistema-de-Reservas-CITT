@@ -110,7 +110,8 @@ export const SolicitarReservaPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {espacios.map((espacio) => {
-              const esDisponible = espacio.estado?.toUpperCase() === "DISPONIBLE";
+              const estadoUpper = espacio.estado?.toUpperCase() || "";
+              const esOperativo = estadoUpper !== "DAÑADO" && estadoUpper !== "MANTENCION";
               const porcentajeOcupacion = espacio.porcentajeOcupacion || 0; 
               
               return (
@@ -118,7 +119,7 @@ export const SolicitarReservaPage: React.FC = () => {
                   key={espacio.id} 
                   className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
                 >
-                  {!esDisponible && (
+                  {!esOperativo && (
                     <div className="absolute inset-0 bg-gray-50/40 z-0 pointer-events-none"></div>
                   )}
 
@@ -155,7 +156,7 @@ export const SolicitarReservaPage: React.FC = () => {
 
                     <BarraOcupacion 
                       porcentaje={porcentajeOcupacion}
-                      esDisponible={esDisponible}
+                      esDisponible={esOperativo}
                       onReservarClick={() => navigate("/crear-solicitud", { state: { idEspacio: espacio.id, nombreEspacio: espacio.nombre } })}
                     />
                   </div>

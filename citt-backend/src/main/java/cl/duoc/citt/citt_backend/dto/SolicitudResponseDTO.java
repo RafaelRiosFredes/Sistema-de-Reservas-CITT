@@ -25,4 +25,15 @@ public class SolicitudResponseDTO {
     private List<String> nombresArticulos; // Nombres o Marcas de los artículos
     private List<RequerimientoDTO> requerimientos;
     private List<ArticuloAsignadoDTO> articulosAsignados;
+
+    // Feature 2: Timestamp real de devolución
+    private java.time.LocalDateTime fechaDevolucionReal;
+
+    // Feature 4: Rastreo de daños por solicitud
+    private Boolean espacioDanadoEnDevolucion;
+    private String comentarioDanoEspacio;
+    private String idsArticulosDanados;
+
+    // Motivo de rechazo (para historial de rechazadas)
+    private String motivoRechazo;
 }
