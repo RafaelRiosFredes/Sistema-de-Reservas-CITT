@@ -178,9 +178,34 @@ public class SolicitudServiceImpl implements SolicitudService {
 
     @Override
     @Transactional
-    public SolicitudResponseDTO cambiarEstado(Long idSolicitud, ActualizarEstadoSolicitudRequestDTO dto) {
+    public SolicitudResponseDTO cambiarEstado(Long idSolicitud, ActualizarEstadoSolicitudRequestDTO dto, String emailAdmin) {
         Solicitud solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
+
+        if (solicitud.getUsuario().getEmail().equalsIgnoreCase(emailAdmin)) {
+            Usuario adminUser = usuarioRepository.findByEmail(emailAdmin)
+                    .orElseThrow(() -> new ReglaNegocioException("Administrador no encontrado"));
+            
+            boolean esAltaDireccion = adminUser.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+            
+            if (!esAltaDireccion) {
+                throw new ReglaNegocioException("Prohibido: No puedes gestionar (aprobar o rechazar) tus propias solicitudes. Espera a que otro administrador lo haga.");
+            } else {
+                String log = "[AUDITORÍA] Estado cambiado por auto-gestión de alta dirección (" + emailAdmin + "). ";
+                solicitud.setRegistroAutogestion(solicitud.getRegistroAutogestion() == null ? log : solicitud.getRegistroAutogestion() + log);
+            }
+        } else if (solicitud.getEspacio() != null) {
+            Usuario adminUser = usuarioRepository.findByEmail(emailAdmin)
+                    .orElseThrow(() -> new ReglaNegocioException("Administrador no encontrado"));
+            
+            boolean esAltaDireccion = adminUser.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+            
+            if (!esAltaDireccion) {
+                throw new ReglaNegocioException("Prohibido: Solo Coordinadores y Directores pueden gestionar solicitudes de espacios.");
+            }
+        }
 
         EstadoSolicitud estadoDb = estadoSolicitudRepository.findById(dto.getIdEstadoSolicitud())
                 .orElseThrow(() -> new ReglaNegocioException("El estado con ID '" + dto.getIdEstadoSolicitud() + "' no existe en el sistema."));
@@ -226,9 +251,34 @@ public class SolicitudServiceImpl implements SolicitudService {
 
     @Override
     @Transactional
-    public SolicitudResponseDTO entregarArticulos(Long idSolicitud, List<Long> idsArticulosEntregados) {
+    public SolicitudResponseDTO entregarArticulos(Long idSolicitud, List<Long> idsArticulosEntregados, String emailAdmin) {
         Solicitud solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
+
+        if (solicitud.getUsuario().getEmail().equalsIgnoreCase(emailAdmin)) {
+            Usuario adminUser = usuarioRepository.findByEmail(emailAdmin)
+                    .orElseThrow(() -> new ReglaNegocioException("Administrador no encontrado"));
+            
+            boolean esAltaDireccion = adminUser.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+            
+            if (!esAltaDireccion) {
+                throw new ReglaNegocioException("Prohibido: No puedes entregar recursos físicos de tus propias solicitudes.");
+            } else {
+                String log = "[AUDITORÍA] Recursos entregados por auto-gestión  (" + emailAdmin + "). ";
+                solicitud.setRegistroAutogestion(solicitud.getRegistroAutogestion() == null ? log : solicitud.getRegistroAutogestion() + log);
+            }
+        } else if (solicitud.getEspacio() != null) {
+            Usuario adminUser = usuarioRepository.findByEmail(emailAdmin)
+                    .orElseThrow(() -> new ReglaNegocioException("Administrador no encontrado"));
+            
+            boolean esAltaDireccion = adminUser.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+            
+            if (!esAltaDireccion) {
+                throw new ReglaNegocioException("Prohibido: Solo Coordinadores y Directores pueden gestionar solicitudes de espacios.");
+            }
+        }
 
         // 1. CONTROL DE FLUJO SOBERANO: Candado de estados
         if (!solicitud.getEstadoSolicitud().getNombre().equalsIgnoreCase("APROBADA")) {
@@ -300,9 +350,34 @@ public class SolicitudServiceImpl implements SolicitudService {
 
     @Override
     @Transactional
-    public SolicitudResponseDTO devolverArticulos(Long idSolicitud, cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto) {
+    public SolicitudResponseDTO devolverArticulos(Long idSolicitud, cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto, String emailAdmin) {
         Solicitud solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new ReglaNegocioException("Solicitud no encontrada"));
+
+        if (solicitud.getUsuario().getEmail().equalsIgnoreCase(emailAdmin)) {
+            Usuario adminUser = usuarioRepository.findByEmail(emailAdmin)
+                    .orElseThrow(() -> new ReglaNegocioException("Administrador no encontrado"));
+            
+            boolean esAltaDireccion = adminUser.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+            
+            if (!esAltaDireccion) {
+                throw new ReglaNegocioException("Prohibido: No puedes gestionar la devolución de tus propias solicitudes.");
+            } else {
+                String log = "[AUDITORÍA] Devolución recibida por auto-gestión de alta dirección (" + emailAdmin + "). ";
+                solicitud.setRegistroAutogestion(solicitud.getRegistroAutogestion() == null ? log : solicitud.getRegistroAutogestion() + log);
+            }
+        } else if (solicitud.getEspacio() != null) {
+            Usuario adminUser = usuarioRepository.findByEmail(emailAdmin)
+                    .orElseThrow(() -> new ReglaNegocioException("Administrador no encontrado"));
+            
+            boolean esAltaDireccion = adminUser.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+            
+            if (!esAltaDireccion) {
+                throw new ReglaNegocioException("Prohibido: Solo Coordinadores y Directores pueden gestionar solicitudes de espacios.");
+            }
+        }
 
         // 1. CONTROL DE FLUJO SOBERANO: Evita re-procesar una solicitud finalizada o inactiva
         String estadoActual = solicitud.getEstadoSolicitud().getNombre().toUpperCase();
@@ -470,8 +545,8 @@ public class SolicitudServiceImpl implements SolicitudService {
                 .espacioDanadoEnDevolucion(s.getEspacioDanadoEnDevolucion())
                 .comentarioDanoEspacio(s.getComentarioDanoEspacio())
                 .idsArticulosDanados(s.getIdsArticulosDanados())
-                // Motivo de rechazo
                 .motivoRechazo(s.getMotivoRechazo())
+                .registroAutogestion(s.getRegistroAutogestion())
                 .build();
     }
 }

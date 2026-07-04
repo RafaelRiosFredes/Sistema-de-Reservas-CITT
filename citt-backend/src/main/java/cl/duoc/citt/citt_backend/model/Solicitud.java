@@ -59,7 +59,9 @@ public class Solicitud {
     @Column(name = "ids_articulos_danados", length = 500)
     private String idsArticulosDanados;
 
-
+    // Autogestión de solicitudes
+    @Column(name = "registro_autogestion", length = 500)
+    private String registroAutogestion;
 
     // --- RELACIONES ---
     @ManyToOne(fetch = FetchType.EAGER)

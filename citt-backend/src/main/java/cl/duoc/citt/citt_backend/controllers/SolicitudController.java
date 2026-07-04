@@ -53,7 +53,8 @@ public class SolicitudController {
     public ResponseEntity<SolicitudResponseDTO> cambiarEstado(
             @PathVariable Long id,
             @Valid @RequestBody ActualizarEstadoSolicitudRequestDTO dto) {
-        return ResponseEntity.ok(solicitudService.cambiarEstado(id, dto));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(solicitudService.cambiarEstado(id, dto, email));
     }
 
     @Operation(summary = "Entregar recursos físicos", description = "Asigna los IDs físicos exactos y pasa la solicitud a EN PROCESO.")
@@ -62,7 +63,8 @@ public class SolicitudController {
     public ResponseEntity<SolicitudResponseDTO> entregarRecursos(
             @PathVariable Long id,
             @RequestBody List<Long> idsArticulosFisicos) {
-        return ResponseEntity.ok(solicitudService.entregarArticulos(id, idsArticulosFisicos));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(solicitudService.entregarArticulos(id, idsArticulosFisicos, email));
     }
 
     @Operation(summary = "Devolver recursos", description = "Recibe los artículos, permite marcar cuáles se dañaron con su justificación y pasa la solicitud a FINALIZADA.")
@@ -76,7 +78,8 @@ public class SolicitudController {
         if(dto == null) {
             dto = new cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO();
         }
-        return ResponseEntity.ok(solicitudService.devolverArticulos(id, dto));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(solicitudService.devolverArticulos(id, dto, email));
     }
 
     @Operation(summary = "Obtener eventos para el calendario", description = "Retorna reservas de espacios aprobadas o en uso. Filtra datos sensibles si no es Admin.")

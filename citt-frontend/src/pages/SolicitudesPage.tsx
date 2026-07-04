@@ -13,6 +13,7 @@ import {
   AlertCircle,
   CheckCircle,
   MapPin,
+  Shield,
 } from "lucide-react";
 
 import api from "../api/axiosConfig";
@@ -47,6 +48,7 @@ interface SolicitudDTO {
   nombresArticulos: string[];
   requerimientos?: RequerimientoDTO[];
   articulosAsignados?: ArticuloAsignadoDTO[];
+  registroAutogestion?: string;
 }
 
 interface ArticuloDTO {
@@ -61,7 +63,11 @@ const ESTADOS_ACTIVOS = ["PENDIENTE", "APROBADA", "EN PROCESO", "ATRASADO"];
 
 export const SolicitudesPage: React.FC = () => {
   const rolActivo = localStorage.getItem("activeRole") || "";
+  const currentUserEmail = localStorage.getItem("userEmail") || "";
   const isStaff = ["AYUDANTE", "DOCENTE", "COORDINADOR", "DIRECTOR"].includes(
+    rolActivo.toUpperCase()
+  );
+  const esAltaDireccion = ["COORDINADOR", "DIRECTOR"].includes(
     rolActivo.toUpperCase()
   );
 
@@ -91,6 +97,10 @@ export const SolicitudesPage: React.FC = () => {
   // Feedback
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Estados para Auditoría (autogestion)
+  const [modalAuditoria, setModalAuditoria] = useState(false);
+  const [auditoriaSeleccionada, setAuditoriaSeleccionada] = useState("");
 
   // Feature 5: Doble confirmación visual para aceptar
   const [confirmarAprobacionId, setConfirmarAprobacionId] = useState<number | null>(null);
@@ -457,25 +467,50 @@ export const SolicitudesPage: React.FC = () => {
                         {s.proposito || "—"}
                       </td>
                       <td className="p-4">
-                        <BadgeEstado
-                          estado={
-                            s.estado as
-                              | "PENDIENTE"
-                              | "APROBADA"
-                              | "EN PROCESO"
-                              | "RECHAZADA"
-                              | "FINALIZADA"
-                              | "ATRASADO"
-                              | "DISPONIBLE"
-                              | "PRESTADO"
-                              | "DAÑADO"
-                              | "MANTENCION"
-                          }
-                        />
+                        <div className="flex flex-col gap-1.5">
+                          <div>
+                            <BadgeEstado
+                              estado={
+                                s.estado as
+                                  | "PENDIENTE"
+                                  | "APROBADA"
+                                  | "EN PROCESO"
+                                  | "RECHAZADA"
+                                  | "FINALIZADA"
+                                  | "ATRASADO"
+                                  | "DISPONIBLE"
+                                  | "PRESTADO"
+                                  | "DAÑADO"
+                                  | "MANTENCION"
+                              }
+                            />
+                            {s.registroAutogestion && (
+                              <div 
+                                className="mt-1.5 flex items-center text-[11px] text-[#307FE2] font-medium tracking-wide group cursor-pointer transition-all" 
+                                title="Haz clic para ver detalles"
+                                onClick={() => {
+                                  setAuditoriaSeleccionada(s.registroAutogestion!);
+                                  setModalAuditoria(true);
+                                }}
+                              >
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#307FE2] mr-1.5 shadow-[0_0_4px_rgba(48,127,226,0.5)] animate-pulse"></div>
+                                <span className="opacity-80 group-hover:opacity-100 transition-opacity underline decoration-dotted underline-offset-2">Auto-gestionado</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       {isStaff && vistaActiva === "todas" && (
                         <td className="p-4">
-                          <div className="flex justify-center gap-2">
+                          {!esAltaDireccion && (s.emailUsuario?.toLowerCase() === currentUserEmail.toLowerCase() || s.nombreEspacio) ? (
+                            <div className="flex items-center justify-center text-xs text-slate-400 font-medium">
+                              <span className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md">
+                                <AlertCircle size={12} />
+                                {s.emailUsuario?.toLowerCase() === currentUserEmail.toLowerCase() ? "Requiere gestión de terceros" : "Solo gestión de artículos"}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex justify-center gap-2">
                             {s.estado === "APROBADA" && (
                               <button
                                 onClick={() => {
@@ -539,6 +574,7 @@ export const SolicitudesPage: React.FC = () => {
                                 </div>
                             )}
                           </div>
+                          )}
                         </td>
                       )}
                     </tr>
@@ -817,6 +853,33 @@ export const SolicitudesPage: React.FC = () => {
                 className="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors cursor-pointer"
               >
                 Confirmar Rechazo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AUTOGESTION */}
+      {modalAuditoria && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-[#307FE2]/10 flex items-center justify-center text-[#307FE2] shrink-0">
+                  <Shield size={20} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 m-0">Registro de Auditoría</h3>
+              </div>
+              <div className="bg-[#307FE2]/5 p-4 rounded-xl text-[#307FE2] text-sm border border-[#307FE2]/20 shadow-inner font-medium">
+                Auto-gestionado por: <span className="font-bold">{auditoriaSeleccionada.match(/\(([^)]+)\)/)?.[1] || "Administrador"}</span>
+              </div>
+            </div>
+            <div className="bg-slate-50 px-6 py-4 flex justify-end border-t border-slate-100">
+              <button
+                onClick={() => setModalAuditoria(false)}
+                className="px-5 py-2 text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm transition-colors cursor-pointer w-full sm:w-auto"
+              >
+                OK
               </button>
             </div>
           </div>

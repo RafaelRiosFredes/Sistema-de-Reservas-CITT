@@ -10,8 +10,8 @@ public interface SolicitudService {
     SolicitudResponseDTO crearSolicitud(SolicitudRequestDTO dto, String emailUsuario);
     List<SolicitudResponseDTO> obtenerMisSolicitudes(String emailUsuario);
     List<SolicitudResponseDTO> obtenerTodas();
-    SolicitudResponseDTO cambiarEstado(Long idSolicitud, ActualizarEstadoSolicitudRequestDTO dto);
-    SolicitudResponseDTO entregarArticulos(Long idSolicitud, List<Long> idsArticulosEntregados);
-    SolicitudResponseDTO devolverArticulos(Long idSolicitud, cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto);
+    SolicitudResponseDTO cambiarEstado(Long idSolicitud, ActualizarEstadoSolicitudRequestDTO dto, String emailAdmin);
+    SolicitudResponseDTO entregarArticulos(Long idSolicitud, List<Long> idsArticulosEntregados, String emailAdmin);
+    SolicitudResponseDTO devolverArticulos(Long idSolicitud, cl.duoc.citt.citt_backend.dto.DevolucionRequestDTO dto, String emailAdmin);
     List<cl.duoc.citt.citt_backend.dto.CalendarioEventoDTO> obtenerEventosCalendario(String emailUsuario);
 }

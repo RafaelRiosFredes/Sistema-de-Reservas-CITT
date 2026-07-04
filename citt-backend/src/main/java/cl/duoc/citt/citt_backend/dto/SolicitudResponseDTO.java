@@ -36,4 +36,7 @@ public class SolicitudResponseDTO {
 
     // Motivo de rechazo (para historial de rechazadas)
     private String motivoRechazo;
+
+    // Autogestión de solicitudes
+    private String registroAutogestion;
 }
