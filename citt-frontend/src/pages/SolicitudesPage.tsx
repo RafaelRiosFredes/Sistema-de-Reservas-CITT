@@ -610,6 +610,23 @@ export const SolicitudesPage: React.FC = () => {
                 Por favor, ingresa los IDs de los artículos físicos que estás entregando (separados por coma) para la solicitud <strong>#{solicitudSeleccionada?.idSolicitud}</strong>.
               </p>
               
+              {solicitudSeleccionada && (() => {
+                const d = new Date();
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                const localDateStr = d.toISOString().split('T')[0];
+                if (solicitudSeleccionada.fecha !== localDateStr) {
+                  return (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-2 animate-in fade-in">
+                      <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                      <p className="m-0 font-medium">
+                        Solo se pueden retirar los equipos el día agendado para la reserva: {solicitudSeleccionada.fecha}
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Sección de Selección por Inventario */}
               {solicitudSeleccionada?.requerimientos && solicitudSeleccionada.requerimientos.length > 0 && (
                 <div className="mb-4">
@@ -678,7 +695,16 @@ export const SolicitudesPage: React.FC = () => {
               </button>
               <button
                 onClick={handleEntregar}
-                disabled={idsSeleccionadosList.length === 0 && !idsFisicos.trim() && (solicitudSeleccionada?.requerimientos?.length || 0) > 0}
+                disabled={
+                  (() => {
+                    const d = new Date();
+                    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                    const localDateStr = d.toISOString().split('T')[0];
+                    const wrongDate = solicitudSeleccionada?.fecha !== localDateStr;
+                    const noItems = idsSeleccionadosList.length === 0 && !idsFisicos.trim() && (solicitudSeleccionada?.requerimientos?.length || 0) > 0;
+                    return wrongDate || noItems;
+                  })()
+                }
                 className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors cursor-pointer"
               >
                 Confirmar Entrega
