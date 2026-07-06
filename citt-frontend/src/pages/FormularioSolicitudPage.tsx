@@ -34,6 +34,7 @@ export const FormularioSolicitudPage: React.FC = () => {
   const [seleccionesGlobalesLocales, setSeleccionesGlobalesLocales] = useState<Record<number, Record<string, number>>>(state?.seleccionesGlobales || {});
   const [idEspacioLocal, setIdEspacioLocal] = useState<number | null>(state?.idEspacio || null);
   const [isModalArticulosOpen, setIsModalArticulosOpen] = useState(false);
+  const [categoriasMap, setCategoriasMap] = useState<Record<number, string>>({});
 
   React.useEffect(() => {
     // Fetch espacios para el combo box
@@ -49,6 +50,22 @@ export const FormularioSolicitudPage: React.FC = () => {
       }
     };
     fetchEspacios();
+
+    const fetchCategorias = async () => {
+      try {
+        const res = await api.get("/categorias/catalogo-alumnos");
+        const map: Record<number, string> = {};
+        if (Array.isArray(res.data)) {
+          res.data.forEach((c: any) => {
+            map[c.idCategoria] = c.nombreCategoria;
+          });
+        }
+        setCategoriasMap(map);
+      } catch (err) {
+        console.error("Error cargando categorias", err);
+      }
+    };
+    fetchCategorias();
   }, []);
 
   // Transformar seleccionesGlobales a RequerimientoDTO[]
@@ -368,18 +385,34 @@ export const FormularioSolicitudPage: React.FC = () => {
               {requerimientos.length > 0 && (
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Artículos ({requerimientos.reduce((acc, curr) => acc + curr.cantidad, 0)})</h4>
-                  <div className="flex flex-col gap-2">
-                    {requerimientos.map((req, i) => (
-                      <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                          <Package size={16} className="text-slate-400" />
-                          {req.marca}
+                  <div className="flex flex-col gap-3">
+                    {Object.entries(seleccionesGlobalesLocales).map(([idCatStr, marcas]) => {
+                      const idCat = Number(idCatStr);
+                      const entries = Object.entries(marcas);
+                      if (entries.length === 0) return null;
+                      const catName = categoriasMap[idCat] || `Categoría ${idCat}`;
+                      
+                      return (
+                        <div key={idCat} className="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                          <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-600 uppercase tracking-wide">
+                            {catName}
+                          </div>
+                          <div className="flex flex-col">
+                            {entries.map(([marca, cantidad], index) => (
+                              <div key={marca} className={`flex justify-between items-center p-3 ${index !== entries.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                                  <Package size={16} className="text-slate-400" />
+                                  {marca}
+                                </div>
+                                <span className="bg-blue-50 px-2 py-1 rounded text-xs font-bold text-blue-700 border border-blue-100">
+                                  x{cantidad}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <span className="bg-white px-2 py-1 rounded text-xs font-bold text-blue-600 border border-slate-200">
-                          x{req.cantidad}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
