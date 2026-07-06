@@ -13,7 +13,7 @@ interface Espacio {
   comentarios: string;
   capacidad: number;
   estado: string;
-  porcentajeOcupacion?: number;
+  enUsoAhora?: boolean;
 }
 
 export const SolicitarReservaPage: React.FC = () => {
@@ -112,7 +112,7 @@ export const SolicitarReservaPage: React.FC = () => {
             {espacios.map((espacio) => {
               const estadoUpper = espacio.estado?.toUpperCase() || "";
               const esOperativo = estadoUpper !== "DAÑADO" && estadoUpper !== "MANTENCION";
-              const porcentajeOcupacion = espacio.porcentajeOcupacion || 0; 
+              const enUsoAhora = espacio.enUsoAhora || false; 
               
               return (
                 <div 
@@ -155,7 +155,7 @@ export const SolicitarReservaPage: React.FC = () => {
                     </div>
 
                     <BarraOcupacion 
-                      porcentaje={porcentajeOcupacion}
+                      enUsoAhora={enUsoAhora}
                       esDisponible={esOperativo}
                       onReservarClick={() => navigate("/crear-solicitud", { state: { idEspacio: espacio.id, nombreEspacio: espacio.nombre } })}
                     />

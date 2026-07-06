@@ -25,6 +25,9 @@ export const CalendarioEspacios: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
+  const rolActivo = localStorage.getItem("activeRole") || "";
+  const isAlumno = rolActivo.toUpperCase() === "ALUMNO";
+
   useEffect(() => {
     fetchEventos();
   }, []);
@@ -63,14 +66,6 @@ export const CalendarioEspacios: React.FC = () => {
   };
 
   const handleEventClick = (clickInfo: any) => {
-    // Solo admins/coordinadores/directores pueden abrir el detalle
-    const rolActivo = localStorage.getItem("activeRole") || "";
-    const isAdmin = ["ADMIN", "DIRECTOR", "COORDINADOR"].includes(rolActivo.toUpperCase());
-    
-    if (!isAdmin) {
-      return; // No hace nada si no es admin
-    }
-
     const props = clickInfo.event.extendedProps;
     setSelectedEvent({
       title: clickInfo.event.title,
@@ -89,7 +84,7 @@ export const CalendarioEspacios: React.FC = () => {
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            right: 'timeGridWeek,timeGridDay'
           }}
           buttonText={{
             today: 'Hoy',
@@ -115,7 +110,7 @@ export const CalendarioEspacios: React.FC = () => {
           <div className="bg-white rounded-2xl p-8 max-w-lg w-full m-4 shadow-2xl transform transition-all duration-300 scale-100 animate-in fade-in zoom-in-95 border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <h3 className="text-2xl font-bold text-gray-800 break-words flex-1 pr-4">
-                {selectedEvent.proposito}
+                {isAlumno ? "Detalles de Reserva" : selectedEvent.proposito}
               </h3>
               <button 
                 onClick={() => setModalOpen(false)}
@@ -136,7 +131,7 @@ export const CalendarioEspacios: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`grid ${!isAlumno ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm transition hover:shadow-md">
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Horario</p>
                   <p className="text-gray-800 font-semibold flex items-center gap-2">
@@ -144,29 +139,32 @@ export const CalendarioEspacios: React.FC = () => {
                     {selectedEvent.horaInicio.substring(0, 5)} - {selectedEvent.horaFin.substring(0, 5)}
                   </p>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center transition hover:shadow-md">
-                  {selectedEvent.exclusivo ? (
-                    <span className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold bg-red-100 text-red-700 shadow-sm">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                
+                {!isAlumno && (
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center transition hover:shadow-md">
+                    {selectedEvent.exclusivo ? (
+                      <span className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold bg-red-100 text-red-700 shadow-sm">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        </span>
+                        Exclusivo
                       </span>
-                      Exclusivo
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 shadow-sm">
-                      Normal
-                    </span>
-                  )}
-                </div>
+                    ) : (
+                      <span className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 shadow-sm">
+                        Normal
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Vista exclusiva para Administradores: Solo se renderiza si los datos vienen en el evento */}
-              {selectedEvent.solicitante && (
+              {/* Vista para Roles con más permisos: DOCENTE, AYUDANTE, DIRECTOR, COORDINADOR, ADMIN */}
+              {!isAlumno && selectedEvent.solicitante && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h4 className="text-xs font-extrabold text-indigo-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                    Información de Administrador
+                    Información Adicional
                   </h4>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 shadow-sm">

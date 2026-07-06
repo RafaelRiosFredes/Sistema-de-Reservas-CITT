@@ -117,30 +117,29 @@ public class EspacioServiceImpl implements EspacioService {
 
     private EspacioResponseDTO mapToDTO(Espacio espacio) {
         LocalDate hoy = LocalDate.now();
-        List<Solicitud> reservasHoy = solicitudRepository.findByFecha(hoy).stream()
-                .filter(s -> s.getEstadoSolicitud().getNombre().equalsIgnoreCase("FINALIZADA"))
-                .collect(Collectors.toList());
+        java.time.LocalTime ahora = java.time.LocalTime.now();
+        List<Solicitud> reservasHoy = solicitudRepository.findByFecha(hoy);
 
-        long minutosOcupados = 0;
+        boolean enUso = false;
         for (Solicitud s : reservasHoy) {
-            if (Boolean.TRUE.equals(s.getExclusividad()) ||
-                    (s.getEspacio() != null && s.getEspacio().getId().equals(espacio.getId()))) {
-                minutosOcupados += java.time.Duration.between(s.getHoraInicio(), s.getHoraFin()).toMinutes();
+            String estado = s.getEstadoSolicitud().getNombre().toUpperCase();
+            if (estado.equals("EN PROCESO") || 
+               (estado.equals("APROBADA") && !ahora.isBefore(s.getHoraInicio()) && ahora.isBefore(s.getHoraFin()))) {
+                if (Boolean.TRUE.equals(s.getExclusividad()) ||
+                        (s.getEspacio() != null && s.getEspacio().getId().equals(espacio.getId()))) {
+                    enUso = true;
+                    break;
+                }
             }
         }
-
-        double porcentaje = (minutosOcupados / 840.0) * 100.0;
-        porcentaje = Math.round(porcentaje * 10.0) / 10.0;
-        if (porcentaje > 100.0) porcentaje = 100.0;
 
         return EspacioResponseDTO.builder()
                 .id(espacio.getId())
                 .nombre(espacio.getNombre())
                 .comentarios(espacio.getComentarios())
                 .capacidad(espacio.getCapacidad())
-                // Forzar mayúsculas ayuda a evitar errores en el === del frontend
                 .estado(espacio.getEstado().getNombre().toUpperCase())
-                .porcentajeOcupacion(porcentaje)
+                .enUsoAhora(enUso)
                 .build();
     }
 

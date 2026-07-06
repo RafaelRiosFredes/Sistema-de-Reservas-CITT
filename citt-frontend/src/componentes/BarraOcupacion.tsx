@@ -1,30 +1,31 @@
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, CheckCircle } from "lucide-react";
 
 interface Props {
-  porcentaje: number;
+  enUsoAhora: boolean;
   esDisponible: boolean;
   onReservarClick?: () => void;
 }
 
-const BarraOcupacion = ({ porcentaje, esDisponible, onReservarClick }: Props) => {
+const BarraOcupacion = ({ enUsoAhora, esDisponible, onReservarClick }: Props) => {
   return (
-    <div className="flex flex-col gap-5 mt-auto pt-4 border-t border-gray-50">
+    <div className="flex flex-col gap-4 mt-auto pt-4 border-t border-gray-50">
       
-      {/* Textos y Barra */}
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between items-end">
-          <span className="font-bold text-gray-500 text-sm">Ocupación hoy</span>
-          <span className="font-bold text-[#003b73] text-sm">{porcentaje}%</span>
-        </div>
-        
-        <div className="w-full bg-gray-100 rounded-full h-2.5">
-          <div 
-            className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${
-              esDisponible ? 'bg-green-500' : 'bg-gray-300'
-            }`} 
-            style={{ width: `${porcentaje}%` }}
-          ></div>
-        </div>
+      {/* Indicador de Uso Actual */}
+      <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-100">
+        {enUsoAhora ? (
+          <>
+            <div className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+            </div>
+            <span className="text-sm font-bold text-amber-700">En uso en este momento</span>
+          </>
+        ) : (
+          <>
+            <CheckCircle size={16} className="text-emerald-500" />
+            <span className="text-sm font-bold text-emerald-700">Desocupado en este momento</span>
+          </>
+        )}
       </div>
 
       {/* Botón de Reserva Rápida */}
@@ -37,7 +38,7 @@ const BarraOcupacion = ({ porcentaje, esDisponible, onReservarClick }: Props) =>
             : "bg-gray-100 text-gray-400 cursor-not-allowed"
         }`}
       >
-        <CalendarPlus size={20} /> {esDisponible ? "Reservar Espacio" : "No Disponible"}
+        <CalendarPlus size={20} /> {esDisponible ? "Reservar Espacio" : "No Operativo"}
       </button>
 
     </div>

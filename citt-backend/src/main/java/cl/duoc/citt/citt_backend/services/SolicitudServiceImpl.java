@@ -465,28 +465,37 @@ public class SolicitudServiceImpl implements SolicitudService {
              usuario = usuarioRepository.findByEmail(emailUsuario).orElse(null);
         }
         
-        boolean isAdmin = false;
+        boolean isAdminOrStaff = false;
+        boolean isAlumno = true;
+
         if (usuario != null) {
-            isAdmin = usuario.getRoles().stream()
-                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("COORDINADOR") || r.getNombre().equalsIgnoreCase("DIRECTOR"));
+            isAdminOrStaff = usuario.getRoles().stream()
+                    .anyMatch(r -> {
+                        String nombre = r.getNombre().toUpperCase();
+                        return nombre.equals("COORDINADOR") || nombre.equals("DIRECTOR") || nombre.equals("DOCENTE") || nombre.equals("AYUDANTE");
+                    });
+                    
+            isAlumno = usuario.getRoles().stream()
+                    .anyMatch(r -> r.getNombre().equalsIgnoreCase("ALUMNO"));
         }
         
-        boolean finalIsAdmin = isAdmin;
+        boolean finalIsAdminOrStaff = isAdminOrStaff;
+        boolean finalIsAlumno = isAlumno;
 
         List<Solicitud> solicitudes = solicitudRepository.findSolicitudesParaCalendario();
         
         return solicitudes.stream().map(s -> {
             cl.duoc.citt.citt_backend.dto.CalendarioEventoDTO dto = cl.duoc.citt.citt_backend.dto.CalendarioEventoDTO.builder()
                     .idSolicitud(s.getIdSolicitud())
-                    .title(s.getProposito())
+                    .title(finalIsAlumno && !finalIsAdminOrStaff ? "Ocupado" : s.getProposito())
                     .date(s.getFecha())
                     .start(s.getHoraInicio())
                     .end(s.getHoraFin())
                     .nombreEspacio(s.getEspacio() != null ? s.getEspacio().getNombre() : "CITT Completo")
-                    .esExclusivo(s.getExclusividad())
+                    .esExclusivo(finalIsAlumno && !finalIsAdminOrStaff ? false : s.getExclusividad())
                     .build();
                     
-            if (finalIsAdmin) {
+            if (finalIsAdminOrStaff) {
                 dto.setSolicitanteEmail(s.getUsuario().getEmail());
                 dto.setEstadoActual(s.getEstadoSolicitud().getNombre());
             }
