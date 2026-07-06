@@ -2,6 +2,7 @@ import React from "react";
 import { AdminDashboard } from "../componentes/dashboard/AdminDashboard";
 import { StaffDashboard } from "../componentes/dashboard/StaffDashboard";
 import { AlumnoDashboard } from "../componentes/dashboard/AlumnoDashboard";
+import { FraseDelDia } from "../componentes/dashboard/FraseDelDia";
 
 export const DashboardPage: React.FC = () => {
   const rolActivo = localStorage.getItem("activeRole") || "";
@@ -13,15 +14,30 @@ export const DashboardPage: React.FC = () => {
 
   // Evaluar qué dashboard mostrar
   if (rol === "ADMIN" || rol === "DIRECTOR" || rol === "COORDINADOR") {
-    return <AdminDashboard />;
+    return (
+      <div className="space-y-8 pb-8">
+        <AdminDashboard />
+        <FraseDelDia />
+      </div>
+    );
   }
 
   if (rol === "DOCENTE" || rol === "AYUDANTE") {
-    return <StaffDashboard />;
+    return (
+      <div className="space-y-8 pb-8">
+        <StaffDashboard />
+        <FraseDelDia />
+      </div>
+    );
   }
 
   if (rol === "ALUMNO") {
-    return <AlumnoDashboard />;
+    return (
+      <div className="space-y-8 pb-8">
+        <AlumnoDashboard />
+        <FraseDelDia />
+      </div>
+    );
   }
 
   // Fallback si no tiene rol o el rol no coincide
