@@ -207,10 +207,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
-        {/* Envolvemos el Header en un contenedor con max-width para que coincida con el contenido */}
-        <div className="w-full flex-shrink-0">
-          <div className="max-w-[1600px] mx-auto px-8 pt-8">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50 min-w-0">
+        <main
+          className="flex-1 overflow-x-hidden overflow-y-scroll scroll-styled scroll-light relative min-h-0"
+          style={{ scrollbarGutter: "stable" }}
+        >
+          <div className="max-w-[1600px] mx-auto w-full px-8 pt-8 pb-4">
             <HeaderBanner 
               pantallaActual={RUTAS_NOMBRES[location.pathname] || "Sistema CITT"} 
               descripcion={
@@ -223,15 +225,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   : RUTAS_DESCRIPCIONES[location.pathname] || ""
               }
             />
-          </div>
-        </div>
-
-        <main
-          className="flex-1 overflow-x-hidden overflow-y-scroll scroll-styled scroll-light"
-          style={{ scrollbarGutter: "stable" }}
-        >
-          {/* El contenido principal también tiene el mismo max-width para alinear perfecto */}
-          <div className="max-w-[1600px] mx-auto w-full px-8 py-4">
             {children || <Outlet />}
           </div>
         </main>
