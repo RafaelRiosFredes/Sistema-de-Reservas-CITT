@@ -154,6 +154,16 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new ReglaNegocioException("Debe solicitar al menos un espacio o un artículo.");
         }
 
+        // Regla de Uso Externo: Si pide artículos SIN espacio, debe indicar destino externo
+        if (solicitud.getEspacio() == null && !solicitud.getRequerimientos().isEmpty()) {
+            if (dto.getDestinoExterno() == null || dto.getDestinoExterno().trim().isEmpty()) {
+                throw new ReglaNegocioException(
+                    "Para solicitar artículos sin un espacio del CITT, debe activar 'Uso externo' e indicar el destino al que llevará los equipos."
+                );
+            }
+            solicitud.setDestinoExterno(dto.getDestinoExterno().trim());
+        }
+
         return mapToDTO(solicitudRepository.save(solicitud));
     }
 
@@ -171,7 +181,7 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Override
     @Transactional(readOnly = true)
     public List<SolicitudResponseDTO> obtenerTodas() {
-        return solicitudRepository.findAll().stream()
+        return solicitudRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "idSolicitud")).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -556,6 +566,7 @@ public class SolicitudServiceImpl implements SolicitudService {
                 .idsArticulosDanados(s.getIdsArticulosDanados())
                 .motivoRechazo(s.getMotivoRechazo())
                 .registroAutogestion(s.getRegistroAutogestion())
+                .destinoExterno(s.getDestinoExterno())
                 .build();
     }
 }

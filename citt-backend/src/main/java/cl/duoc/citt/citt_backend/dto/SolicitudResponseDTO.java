@@ -39,4 +39,7 @@ public class SolicitudResponseDTO {
 
     // Autogestión de solicitudes
     private String registroAutogestion;
+
+    // Uso externo
+    private String destinoExterno;
 }

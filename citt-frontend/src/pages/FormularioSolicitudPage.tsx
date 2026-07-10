@@ -19,7 +19,7 @@ interface EspacioDTO {
 export const FormularioSolicitudPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const rolActivo = localStorage.getItem("activeRole") || "ALUMNO";
   const rolUpper = rolActivo.toUpperCase();
   const canRequestExclusividad = rolUpper.includes("DOCENTE") || rolUpper.includes("DIRECTOR") || rolUpper.includes("COORDINADOR");
@@ -90,7 +90,9 @@ export const FormularioSolicitudPage: React.FC = () => {
   const [proposito, setProposito] = useState("");
   const [cantidadIntegrantes, setCantidadIntegrantes] = useState<number | "">("");
   const [exclusividad, setExclusividad] = useState(false);
-  
+  const [usoExterno, setUsoExterno] = useState(false);
+  const [destinoExterno, setDestinoExterno] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsj, setErrorMsj] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -142,6 +144,18 @@ export const FormularioSolicitudPage: React.FC = () => {
       return;
     }
 
+    // Si hay artículos pero no espacio, debe ser uso externo con destino
+    if (!idEspacioLocal && requerimientos.length > 0) {
+      if (!usoExterno) {
+        setErrorMsj("Si no seleccionas un espacio, debes marcar 'Uso externo' para indicar dónde llevarás los artículos.");
+        return;
+      }
+      if (!destinoExterno.trim()) {
+        setErrorMsj("Debes indicar el destino al que llevarás los artículos.");
+        return;
+      }
+    }
+
     // El backend espera formato "HH:mm:ss", pero los input time devuelven "HH:mm"
     const horaInicioFmt = horaInicio.length === 5 ? `${horaInicio}:00` : horaInicio;
     const horaFinFmt = horaFin.length === 5 ? `${horaFin}:00` : horaFin;
@@ -156,7 +170,8 @@ export const FormularioSolicitudPage: React.FC = () => {
         idEspacio: idEspacioLocal || null,
         cantidadIntegrantes: cantidadIntegrantes ? Number(cantidadIntegrantes) : null,
         exclusividad: exclusividad,
-        requerimientos: requerimientos.length > 0 ? requerimientos : []
+        requerimientos: requerimientos.length > 0 ? requerimientos : [],
+        destinoExterno: usoExterno ? destinoExterno.trim() : null
       });
 
       // Muestra mensaje de éxito y espera antes de redirigir
@@ -176,7 +191,7 @@ export const FormularioSolicitudPage: React.FC = () => {
   return (
     <>
       <div className="mb-6 flex items-center gap-4">
-        <button 
+        <button
           onClick={() => navigate(-1)}
           className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-blue-600 hover:border-blue-300 transition-colors cursor-pointer"
           title="Volver"
@@ -192,7 +207,7 @@ export const FormularioSolicitudPage: React.FC = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8 w-full mx-auto animate-in fade-in duration-500">
-        
+
         {/* LADO IZQUIERDO: FORMULARIO */}
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 bg-gray-50/50">
@@ -201,19 +216,19 @@ export const FormularioSolicitudPage: React.FC = () => {
               Detalles de la Solicitud
             </h2>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-6" noValidate>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                   <Calendar size={16} className="text-blue-500" /> Fecha
                 </label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   value={fecha}
-                  onChange={e => { setFecha(e.target.value); setFieldErrors(p => ({...p, fecha: ""})); }}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.fecha ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
+                  onChange={e => { setFecha(e.target.value); setFieldErrors(p => ({ ...p, fecha: "" })); }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.fecha ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`}
                 />
                 {fieldErrors.fecha && <span className="text-red-500 text-xs font-medium">{fieldErrors.fecha}</span>}
               </div>
@@ -222,13 +237,13 @@ export const FormularioSolicitudPage: React.FC = () => {
                 <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                   <Users size={16} className="text-blue-500" /> N° Integrantes (Opcional)
                 </label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   min="1"
                   placeholder="Ej: 3"
                   value={cantidadIntegrantes}
                   onChange={e => setCantidadIntegrantes(e.target.value ? Number(e.target.value) : "")}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700 outline-none" 
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700 outline-none"
                 />
               </div>
             </div>
@@ -238,13 +253,13 @@ export const FormularioSolicitudPage: React.FC = () => {
                 <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                   <Clock size={16} className="text-blue-500" /> Hora Inicio
                 </label>
-                <input 
-                  type="time" 
+                <input
+                  type="time"
                   min="08:00"
                   max="22:00"
                   value={horaInicio}
-                  onChange={e => { setHoraInicio(e.target.value); setFieldErrors(p => ({...p, horaInicio: ""})); }}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.horaInicio ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
+                  onChange={e => { setHoraInicio(e.target.value); setFieldErrors(p => ({ ...p, horaInicio: "" })); }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.horaInicio ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`}
                 />
                 {fieldErrors.horaInicio && <span className="text-red-500 text-xs font-medium">{fieldErrors.horaInicio}</span>}
               </div>
@@ -253,13 +268,13 @@ export const FormularioSolicitudPage: React.FC = () => {
                 <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
                   <Clock size={16} className="text-blue-500" /> Hora Fin
                 </label>
-                <input 
-                  type="time" 
+                <input
+                  type="time"
                   min="08:00"
                   max="22:00"
                   value={horaFin}
-                  onChange={e => { setHoraFin(e.target.value); setFieldErrors(p => ({...p, horaFin: ""})); }}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.horaFin ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
+                  onChange={e => { setHoraFin(e.target.value); setFieldErrors(p => ({ ...p, horaFin: "" })); }}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none ${fieldErrors.horaFin ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`}
                 />
                 {fieldErrors.horaFin && <span className="text-red-500 text-xs font-medium">{fieldErrors.horaFin}</span>}
               </div>
@@ -271,7 +286,14 @@ export const FormularioSolicitudPage: React.FC = () => {
               </label>
               <select
                 value={idEspacioLocal || ""}
-                onChange={e => setIdEspacioLocal(e.target.value ? Number(e.target.value) : null)}
+                onChange={e => {
+                  const val = e.target.value ? Number(e.target.value) : null;
+                  setIdEspacioLocal(val);
+                  if (val) {
+                    setUsoExterno(false);
+                    setDestinoExterno("");
+                  }
+                }}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700 outline-none bg-white cursor-pointer"
               >
                 <option value="">Sin espacio seleccionado (Solo préstamo)</option>
@@ -285,14 +307,46 @@ export const FormularioSolicitudPage: React.FC = () => {
               </select>
             </div>
 
+            {/* USO EXTERNO — Solo visible si hay artículos, no hay espacio y no se pidió exclusividad */}
+            {!idEspacioLocal && !exclusividad && requerimientos.length > 0 && (
+              <div className="flex flex-col gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={usoExterno}
+                    onChange={(e) => {
+                      setUsoExterno(e.target.checked);
+                      if (!e.target.checked) setDestinoExterno("");
+                    }}
+                    className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-200"
+                  />
+                  <span className="text-sm font-bold text-orange-900">
+                    Uso externo (sacar artículos fuera del CITT)
+                    <span className="block text-xs font-normal text-orange-700 mt-0.5">
+                      Marca esta opción si necesitas llevar los equipos a otro lugar fuera de la sala CITT.
+                    </span>
+                  </span>
+                </label>
+                {usoExterno && (
+                  <input
+                    type="text"
+                    value={destinoExterno}
+                    onChange={(e) => setDestinoExterno(e.target.value)}
+                    placeholder="¿Hacia dónde llevarás los artículos? (Ej: Sala A-301, Laboratorio X...)"
+                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-gray-700 outline-none"
+                  />
+                )}
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-gray-700">Propósito de la solicitud</label>
-              <textarea 
+              <textarea
                 rows={4}
                 value={proposito}
-                onChange={e => { setProposito(e.target.value); setFieldErrors(p => ({...p, proposito: ""})); }}
+                onChange={e => { setProposito(e.target.value); setFieldErrors(p => ({ ...p, proposito: "" })); }}
                 placeholder="Indica brevemente para qué necesitas los recursos (Ej: Trabajo de título, proyecto personal, clase práctica...)"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none resize-none ${fieldErrors.proposito ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`} 
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all text-gray-700 outline-none resize-none ${fieldErrors.proposito ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-200 focus:ring-blue-500/20 focus:border-blue-500'}`}
               />
               {fieldErrors.proposito && <span className="text-red-500 text-xs font-medium">{fieldErrors.proposito}</span>}
             </div>
@@ -326,7 +380,7 @@ export const FormularioSolicitudPage: React.FC = () => {
               </div>
             )}
 
-            <button 
+            <button
               type="submit"
               disabled={isSubmitting}
               className={`w-full py-4 rounded-xl font-bold text-white shadow-md flex justify-center items-center gap-2 transition-all cursor-pointer ${isSubmitting ? "bg-blue-400" : "bg-[#003B5C] hover:bg-blue-800"}`}
@@ -351,9 +405,9 @@ export const FormularioSolicitudPage: React.FC = () => {
               <h3 className="font-bold text-lg">Resumen de Recursos</h3>
               <p className="text-blue-300 text-xs mt-1">Lo que estás solicitando</p>
             </div>
-            
+
             <div className="p-6 flex flex-col gap-6">
-              
+
               {exclusividad ? (
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-bold text-amber-600 uppercase tracking-wider">Espacios Físicos (Exclusividad)</h4>
@@ -391,7 +445,7 @@ export const FormularioSolicitudPage: React.FC = () => {
                       const entries = Object.entries(marcas);
                       if (entries.length === 0) return null;
                       const catName = categoriasMap[idCat] || `Categoría ${idCat}`;
-                      
+
                       return (
                         <div key={idCat} className="flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                           <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-600 uppercase tracking-wide">
@@ -447,7 +501,7 @@ export const FormularioSolicitudPage: React.FC = () => {
                 <Package size={24} />
                 Seleccionar Artículos
               </h3>
-              <button 
+              <button
                 onClick={() => setIsModalArticulosOpen(false)}
                 className="text-gray-300 hover:text-white transition-colors cursor-pointer"
               >
@@ -455,13 +509,13 @@ export const FormularioSolicitudPage: React.FC = () => {
               </button>
             </div>
             <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
-              <CatalogoArticulos 
-                isEmbedded={true} 
-                initialSelecciones={seleccionesGlobalesLocales} 
+              <CatalogoArticulos
+                isEmbedded={true}
+                initialSelecciones={seleccionesGlobalesLocales}
                 onConfirmSelection={(selecciones) => {
                   setSeleccionesGlobalesLocales(selecciones);
                   setIsModalArticulosOpen(false);
-                }} 
+                }}
               />
             </div>
           </div>

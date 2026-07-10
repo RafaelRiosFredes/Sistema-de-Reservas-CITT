@@ -14,6 +14,7 @@ import {
   CheckCircle,
   MapPin,
   Shield,
+  ExternalLink,
 } from "lucide-react";
 
 import api from "../api/axiosConfig";
@@ -49,6 +50,7 @@ interface SolicitudDTO {
   requerimientos?: RequerimientoDTO[];
   articulosAsignados?: ArticuloAsignadoDTO[];
   registroAutogestion?: string;
+  destinoExterno?: string;
 }
 
 interface ArticuloDTO {
@@ -442,6 +444,12 @@ export const SolicitudesPage: React.FC = () => {
                             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700">
                               <MapPin size={14} className="text-blue-500" />
                               {s.nombreEspacio}
+                            </span>
+                          )}
+                          {!s.nombreEspacio && s.destinoExterno && (
+                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-orange-700">
+                              <ExternalLink size={14} className="text-orange-500" />
+                              Uso externo: {s.destinoExterno}
                             </span>
                           )}
                           <div className="flex flex-wrap gap-1">

@@ -16,6 +16,7 @@ import {
   Tag,
   Barcode,
   CheckCircle,
+  ExternalLink,
 } from "lucide-react";
 
 import api from "../api/axiosConfig";
@@ -54,6 +55,7 @@ interface SolicitudDTO {
   comentarioDanoEspacio?: string;
   idsArticulosDanados?: string;
   motivoRechazo?: string;
+  destinoExterno?: string;
 }
 
 export const HistorialPage: React.FC = () => {
@@ -251,6 +253,12 @@ export const HistorialPage: React.FC = () => {
                               {s.espacioDanadoEnDevolucion && (<AlertTriangle size={12} className="text-red-500" />)}
                             </span>
                           )}
+                          {!s.nombreEspacio && s.destinoExterno && (
+                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-orange-700">
+                              <ExternalLink size={14} className="text-orange-500" />
+                              Uso externo: {s.destinoExterno}
+                            </span>
+                          )}
                           <div className="flex flex-wrap gap-1">
                             {s.nombresArticulos && s.nombresArticulos.length > 0 ? (
                               s.nombresArticulos.map((art, i) => (
@@ -337,6 +345,12 @@ export const HistorialPage: React.FC = () => {
                           {s.nombreEspacio && (
                             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700">
                               <MapPin size={14} className="text-blue-500" />{s.nombreEspacio}
+                            </span>
+                          )}
+                          {!s.nombreEspacio && s.destinoExterno && (
+                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-orange-700">
+                              <ExternalLink size={14} className="text-orange-500" />
+                              Uso externo: {s.destinoExterno}
                             </span>
                           )}
                           <div className="flex flex-wrap gap-1">
@@ -468,6 +482,19 @@ export const HistorialPage: React.FC = () => {
                         <strong>Motivo del daño:</strong> {solicitudDetalle.comentarioDanoEspacio}
                       </p>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Uso Externo (si no hay espacio) */}
+              {!solicitudDetalle.nombreEspacio && solicitudDetalle.destinoExterno && (
+                <div className="mb-6">
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wide mb-2">Uso Externo</p>
+                  <div className="rounded-xl p-4 border bg-orange-50 border-orange-200">
+                    <p className="text-sm font-bold text-orange-700 m-0 flex items-center gap-2">
+                      <ExternalLink size={16} />
+                      Destino: {solicitudDetalle.destinoExterno}
+                    </p>
                   </div>
                 </div>
               )}

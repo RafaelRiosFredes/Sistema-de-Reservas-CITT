@@ -41,4 +41,7 @@ public class SolicitudRequestDTO {
 
     @Schema(description = "Lista de artículos solicitados por categoría y marca")
     private List<RequerimientoDTO> requerimientos;
+
+    @Schema(description = "Destino externo al cual se llevarán los artículos fuera del CITT. Obligatorio si no se selecciona un espacio.")
+    private String destinoExterno;
 }

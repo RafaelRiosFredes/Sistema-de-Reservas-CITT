@@ -63,6 +63,10 @@ public class Solicitud {
     @Column(name = "registro_autogestion", length = 500)
     private String registroAutogestion;
 
+    // Uso externo: destino al que se llevarán los artículos fuera del CITT
+    @Column(name = "destino_externo", length = 300)
+    private String destinoExterno;
+
     // --- RELACIONES ---
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_estado_solicitud", nullable = false)
